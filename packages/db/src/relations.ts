@@ -1,5 +1,5 @@
 import { defineRelations } from "drizzle-orm";
-import * as schema from "./schema";
+import * as schema from "./tables";
 
 // Declaración de relaciones (soft relations) para Drizzle Relational Queries.
 // Las FK reales viven en ./schema; esto solo habilita db.query.* con `with`.

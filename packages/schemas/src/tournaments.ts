@@ -8,7 +8,7 @@ import {
   tournamentEditions,
   tournamentStages,
   stageGroups,
-} from "@sports/db/schema";
+} from "../../db/src/tables";
 
 export const selectTournamentSchema = createSelectSchema(tournaments);
 export const insertTournamentSchema = createInsertSchema(tournaments);

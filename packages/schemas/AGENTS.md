@@ -1,5 +1,7 @@
 # AGENTS.md - @sports/schemas
 
+> TODO: Actualizar esquemas a nuevas tablas
+
 Package de esquemas de validación en tiempo de ejecución, DTOs (Data Transfer Objects) e inferencia de tipos TypeScript compartidos utilizando **TypeBox** (a través de `drizzle-orm/typebox-legacy` y `elysia`).
 
 ---

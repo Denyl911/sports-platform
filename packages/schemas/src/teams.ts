@@ -10,7 +10,7 @@ import {
   players,
   stageTeamRegistrations,
   tournamentRosters,
-} from "@sports/db/schema";
+} from "../../db/src/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)

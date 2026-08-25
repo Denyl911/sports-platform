@@ -38,7 +38,7 @@ Package de persistencia, definición de esquemas y migraciones de base de datos 
 packages/db/
 ├── drizzle/                    # Archivos SQL generados automáticamente por drizzle-kit
 ├── src/
-│   ├── schema/                 # Definición modular de esquemas
+│   ├── tables/                 # Definición modular de tablas
 │   │   ├── enums.ts            # stageTypeEnum, matchStatusEnum, etc.
 │   │   ├── sports.ts
 │   │   ├── venues.ts
