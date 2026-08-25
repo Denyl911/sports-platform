@@ -1,7 +1,7 @@
 import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
 import { tournamentMembers, users } from "@sports/db/tables";
@@ -15,15 +15,13 @@ export const updateUserSchema = createUpdateSchema(users);
 
 // Esquema de inserción interno: el hash lo genera la API, nunca llega del cliente
 export const insertUserRecordSchema = createInsertSchema(users, {
-  passwordHash: t.String({ minLength: 20 }),
+	passwordHash: t.String({ minLength: 20 }),
 });
 
-export const selectTournamentMemberSchema = createSelectSchema(
-  tournamentMembers
-);
-export const insertTournamentMemberSchema = createInsertSchema(
-  tournamentMembers
-);
+export const selectTournamentMemberSchema =
+	createSelectSchema(tournamentMembers);
+export const insertTournamentMemberSchema =
+	createInsertSchema(tournamentMembers);
 
 // ==========================================
 // 2. DTOs PARA ENDPOINTS Y FORMULARIOS
@@ -31,74 +29,75 @@ export const insertTournamentMemberSchema = createInsertSchema(
 
 // Parámetros de ruta: /users/:id
 export const userIdParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 export const tournamentMemberParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 
 // Registro público/API: recibe password en claro, la API genera el hash
 export const userCreateSchema = t.Object({
-  email: t.String({ format: "email", maxLength: 255 }),
-  password: t.String({ minLength: 8, maxLength: 72 }),
-  fullName: t.String({ minLength: 1, maxLength: 120 }),
-  role: t.Optional(
-    t.Union([
-      t.Literal("super_admin"),
-      t.Literal("admin"),
-      t.Literal("organizer"),
-      t.Literal("referee"),
-      t.Literal("statistician"),
-      t.Literal("viewer_staff"),
-    ])
-  ),
+	email: t.String({ format: "email", maxLength: 255 }),
+	password: t.String({ minLength: 8, maxLength: 72 }),
+	fullName: t.String({ minLength: 1, maxLength: 120 }),
+	role: t.Optional(
+		t.Union([
+			t.Literal("super_admin"),
+			t.Literal("admin"),
+			t.Literal("organizer"),
+			t.Literal("referee"),
+			t.Literal("statistician"),
+			t.Literal("viewer_staff"),
+		]),
+	),
 });
 
 // Login con password local (futuro OAuth: se añadirán DTOs propios)
 export const userLoginSchema = t.Object({
-  email: t.String({ format: "email" }),
-  password: t.String({ minLength: 1 }),
+	email: t.String({ format: "email" }),
+	password: t.String({ minLength: 1 }),
 });
 
 // Cambio de contraseña autenticado
 export const userChangePasswordSchema = t.Object({
-  currentPassword: t.String({ minLength: 1 }),
-  newPassword: t.String({ minLength: 8, maxLength: 72 }),
+	currentPassword: t.String({ minLength: 1 }),
+	newPassword: t.String({ minLength: 8, maxLength: 72 }),
 });
 
 // Query params para filtros: /users?role=...&isActive=...
 export const userFilterQuerySchema = t.Object({
-  role: t.Optional(
-    t.Union([
-      t.Literal("super_admin"),
-      t.Literal("admin"),
-      t.Literal("organizer"),
-      t.Literal("referee"),
-      t.Literal("statistician"),
-      t.Literal("viewer_staff"),
-    ])
-  ),
-  isActive: t.Optional(t.Boolean()),
-  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 20 })),
-  offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
+	role: t.Optional(
+		t.Union([
+			t.Literal("super_admin"),
+			t.Literal("admin"),
+			t.Literal("organizer"),
+			t.Literal("referee"),
+			t.Literal("statistician"),
+			t.Literal("viewer_staff"),
+		]),
+	),
+	isActive: t.Optional(t.Boolean()),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 20 })),
+	offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
 });
 
 // Asignar un rol a un usuario dentro de un torneo
-export const addTournamentMemberSchema = t.Pick(
-  insertTournamentMemberSchema,
-  ["tournamentId", "userId", "role"]
-);
+export const addTournamentMemberSchema = t.Pick(insertTournamentMemberSchema, [
+	"tournamentId",
+	"userId",
+	"role",
+]);
 
 // Query params: /tournaments/:id/members
 export const tournamentMembersFilterQuerySchema = t.Object({
-  role: t.Optional(
-    t.Union([
-      t.Literal("organizer"),
-      t.Literal("referee"),
-      t.Literal("statistician"),
-      t.Literal("viewer_staff"),
-    ])
-  ),
+	role: t.Optional(
+		t.Union([
+			t.Literal("organizer"),
+			t.Literal("referee"),
+			t.Literal("statistician"),
+			t.Literal("viewer_staff"),
+		]),
+	),
 });
 
 // ==========================================

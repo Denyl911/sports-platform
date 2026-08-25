@@ -1,7 +1,7 @@
 import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
 import { sportEventTypes, sports, venues } from "@sports/db/tables";
@@ -12,9 +12,11 @@ import { sportEventTypes, sports, venues } from "@sports/db/tables";
 
 export const selectSportSchema = createSelectSchema(sports);
 export const insertSportSchema = createInsertSchema(sports, {
-  scoringRules: t.Optional(t.Record(t.String(), t.Number())),
+	scoringRules: t.Optional(t.Record(t.String(), t.Number())),
 });
-export const updateSportSchema = createUpdateSchema(sports);
+export const updateSportSchema = createUpdateSchema(sports, {
+	scoringRules: t.Optional(t.Record(t.String(), t.Number())),
+});
 
 export const selectVenueSchema = createSelectSchema(venues);
 export const insertVenueSchema = createInsertSchema(venues);
@@ -30,19 +32,19 @@ export const updateSportEventTypeSchema = createUpdateSchema(sportEventTypes);
 
 // Parámetros de ruta: /sports/:id (slug) | /venues/:id
 export const sportIdParamsSchema = t.Object({
-  id: t.String({ minLength: 1, maxLength: 32 }),
+	id: t.String({ minLength: 1, maxLength: 32 }),
 });
 export const venueIdParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 export const sportEventTypeParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 
 // Query params para el catálogo de eventos de un deporte
 export const sportEventTypeFilterQuerySchema = t.Object({
-  sportId: t.String({ minLength: 1, maxLength: 32 }),
-  affectsScore: t.Optional(t.Boolean()),
+	sportId: t.String({ minLength: 1, maxLength: 32 }),
+	affectsScore: t.Optional(t.Boolean()),
 });
 
 // ==========================================
@@ -58,3 +60,6 @@ export type UpdateVenue = Static<typeof updateVenueSchema>;
 export type SportEventType = Static<typeof selectSportEventTypeSchema>;
 export type InsertSportEventType = Static<typeof insertSportEventTypeSchema>;
 export type UpdateSportEventType = Static<typeof updateSportEventTypeSchema>;
+export type SportEventTypeFilterQuery = Static<
+	typeof sportEventTypeFilterQuerySchema
+>;

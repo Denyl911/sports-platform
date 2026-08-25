@@ -1,6 +1,6 @@
 {
-  "extends": "@sports/tsconfig/base.json",
-  "compilerOptions": {
-    "types": ["@types/bun"]
-  }
+	"extends": "@sports/tsconfig/base.json",
+	"compilerOptions": {
+		"types": ["@types/bun"]
+	}
 }

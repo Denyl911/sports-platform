@@ -1,21 +1,26 @@
 {
-  "name": "api",
-  "version": "0.0.1",
-  "type": "module",
-  "main": "src/index.ts",
-  "scripts": {
-    "dev": "bun --watch src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target bun"
-  },
-  "dependencies": {
-    "@elysia/cors": "^1.4.2",
-    "@elysia/jwt": "^1.4.2",
-    "@elysia/openapi": "^1.4.15",
-    "@sports/db": "*",
-    "@sports/schemas": "*",
-    "elysia": "^1.4.29"
-  },
-  "devDependencies": {
-    "@sports/tsconfig": "*"
-  }
+	"name": "api",
+	"version": "0.0.1",
+	"type": "module",
+	"main": "src/index.ts",
+	"scripts": {
+		"dev": "bun --watch src/index.ts",
+		"build": "bun build src/index.ts --outdir ./dist --target bun",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"check": "biome check --write ."
+	},
+	"dependencies": {
+		"@elysia/cors": "^1.4.2",
+		"@elysia/jwt": "^1.4.2",
+		"@elysia/openapi": "^1.4.15",
+		"@sports/db": "*",
+		"@sports/schemas": "*",
+		"drizzle-orm": "^1.0.0-rc.4",
+		"elysia": "^1.4.29",
+		"logestic": "^1.2.4"
+	},
+	"devDependencies": {
+		"@sports/tsconfig": "*"
+	}
 }

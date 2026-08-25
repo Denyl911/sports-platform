@@ -1,23 +1,25 @@
 {
-  "name": "@sports/db",
-  "version": "0.0.1",
-  "type": "module",
-  "exports": {
-    ".": "./src/index.ts",
-    "./tables": "./src/tables/index.ts"
-  },
-  "scripts": {
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "lint": "biome lint .",
-    "format": "biome format --write .",
-    "check": "biome check --write ."
-  },
-  "dependencies": {
-    "drizzle-orm": "^1.0.0-rc.4"
-  },
-  "devDependencies": {
-    "@sports/tsconfig": "*",
-    "drizzle-kit": "^1.0.0-rc.4"
-  }
+	"name": "@sports/db",
+	"version": "0.0.1",
+	"type": "module",
+	"exports": {
+		".": "./src/index.ts",
+		"./tables": "./src/tables/index.ts"
+	},
+	"scripts": {
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio",
+		"lint": "biome lint .",
+		"format": "biome format --write .",
+		"check": "biome check --write ."
+	},
+	"dependencies": {
+		"drizzle-orm": "^1.0.0-rc.4"
+	},
+	"devDependencies": {
+		"@sports/tsconfig": "*",
+		"drizzle-kit": "^1.0.0-rc.4"
+	}
 }

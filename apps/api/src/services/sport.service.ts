@@ -1,0 +1,132 @@
+import { and, asc, eq } from "drizzle-orm";
+import { db } from "@sports/db";
+import { sportEventTypes, sports } from "@sports/db/tables";
+import type {
+	InsertSport,
+	InsertSportEventType,
+	SportEventTypeFilterQuery,
+	UpdateSport,
+	UpdateSportEventType,
+} from "@sports/schemas";
+import { DomainError } from "./errors";
+
+// ==========================================
+// Deportes
+// ==========================================
+
+export async function listSports() {
+	return db.select().from(sports).orderBy(asc(sports.name));
+}
+
+export async function findSportById(id: string) {
+	const [sport] = await db
+		.select()
+		.from(sports)
+		.where(eq(sports.id, id))
+		.limit(1);
+
+	if (!sport) throw DomainError.notFound(`Sport '${id}' not found`);
+	return sport;
+}
+
+export async function createSport(data: InsertSport) {
+	const [existing] = await db
+		.select({ id: sports.id })
+		.from(sports)
+		.where(eq(sports.id, data.id))
+		.limit(1);
+
+	if (existing) throw DomainError.conflict(`Sport '${data.id}' already exists`);
+
+	const [created] = await db.insert(sports).values(data).returning();
+	return created;
+}
+
+export async function updateSport(id: string, data: UpdateSport) {
+	await findSportById(id);
+
+	const [updated] = await db
+		.update(sports)
+		.set(data)
+		.where(eq(sports.id, id))
+		.returning();
+
+	return updated;
+}
+
+export async function deleteSport(id: string) {
+	await findSportById(id);
+	await db.delete(sports).where(eq(sports.id, id));
+}
+
+// ==========================================
+// Catálogo de tipos de evento por deporte
+// ==========================================
+
+export async function listSportEventTypes(filter: SportEventTypeFilterQuery) {
+	const conditions = [eq(sportEventTypes.sportId, filter.sportId)];
+	if (filter.affectsScore !== undefined) {
+		conditions.push(eq(sportEventTypes.affectsScore, filter.affectsScore));
+	}
+
+	return db
+		.select()
+		.from(sportEventTypes)
+		.where(and(...conditions))
+		.orderBy(asc(sportEventTypes.code));
+}
+
+export async function findSportEventTypeById(id: string) {
+	const [eventType] = await db
+		.select()
+		.from(sportEventTypes)
+		.where(eq(sportEventTypes.id, id))
+		.limit(1);
+
+	if (!eventType)
+		throw DomainError.notFound(`Sport event type '${id}' not found`);
+	return eventType;
+}
+
+export async function createSportEventType(data: InsertSportEventType) {
+	await findSportById(data.sportId);
+
+	const [existing] = await db
+		.select({ id: sportEventTypes.id })
+		.from(sportEventTypes)
+		.where(
+			and(
+				eq(sportEventTypes.sportId, data.sportId),
+				eq(sportEventTypes.code, data.code),
+			),
+		)
+		.limit(1);
+
+	if (existing)
+		throw DomainError.conflict(
+			`Event type code '${data.code}' already exists for sport '${data.sportId}'`,
+		);
+
+	const [created] = await db.insert(sportEventTypes).values(data).returning();
+	return created;
+}
+
+export async function updateSportEventType(
+	id: string,
+	data: UpdateSportEventType,
+) {
+	await findSportEventTypeById(id);
+
+	const [updated] = await db
+		.update(sportEventTypes)
+		.set(data)
+		.where(eq(sportEventTypes.id, id))
+		.returning();
+
+	return updated;
+}
+
+export async function deleteSportEventType(id: string) {
+	await findSportEventTypeById(id);
+	await db.delete(sportEventTypes).where(eq(sportEventTypes.id, id));
+}

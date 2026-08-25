@@ -7,7 +7,29 @@
 	},
 	"files": {
 		"ignoreUnknown": false,
-		"includes": ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.json"],
+		"includes": [
+			"**/*.ts",
+			"**/*.tsx",
+			"**/*.js",
+			"**/*.jsx",
+			"**/*.mjs",
+			"**/*.cjs",
+			"**/*.json",
+			"**/*.jsonc",
+			"!**/dist/**",
+			"!**/.turbo/**",
+			"!**/node_modules/**",
+			"!**/.nitro/**",
+			"!**/.output/**",
+			"!**/.tanstack/**",
+			"!**/coverage/**",
+			"!.zed/**",
+			"!**/src-tauri/target/**",
+			"!**/src-tauri/gen/**",
+			"!**/drizzle/**",
+			"!**/*.gen.ts",
+			"!**/src/styles.css"
+		]
 	},
 	"formatter": {
 		"enabled": true,

@@ -1,15 +1,15 @@
 import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
 import {
-  clubs,
-  teams,
-  players,
-  stageTeamRegistrations,
-  tournamentRosters,
+	clubs,
+	teams,
+	players,
+	stageTeamRegistrations,
+	tournamentRosters,
 } from "@sports/db/tables";
 
 // ==========================================
@@ -26,23 +26,21 @@ export const updateTeamSchema = createUpdateSchema(teams);
 
 export const selectPlayerSchema = createSelectSchema(players);
 export const insertPlayerSchema = createInsertSchema(players, {
-  birthDate: t.Optional(t.String({ format: "date" })),
+	birthDate: t.Optional(t.String({ format: "date" })),
 });
 export const updatePlayerSchema = createUpdateSchema(players);
 
 export const selectStageTeamRegistrationSchema = createSelectSchema(
-  stageTeamRegistrations
+	stageTeamRegistrations,
 );
 export const insertStageTeamRegistrationSchema = createInsertSchema(
-  stageTeamRegistrations
+	stageTeamRegistrations,
 );
 
-export const selectTournamentRosterSchema = createSelectSchema(
-  tournamentRosters
-);
-export const insertTournamentRosterSchema = createInsertSchema(
-  tournamentRosters
-);
+export const selectTournamentRosterSchema =
+	createSelectSchema(tournamentRosters);
+export const insertTournamentRosterSchema =
+	createInsertSchema(tournamentRosters);
 
 // ==========================================
 // 2. DTOs PARA ENDPOINTS Y FORMULARIOS
@@ -50,37 +48,37 @@ export const insertTournamentRosterSchema = createInsertSchema(
 
 // Parámetros de ruta: /clubs/:id | /teams/:id | /players/:id
 export const clubIdParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 export const teamIdParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 export const playerIdParamsSchema = t.Object({
-  id: t.String({ format: "uuid" }),
+	id: t.String({ format: "uuid" }),
 });
 
 // Query params para filtros: /teams?clubId=...&category=...
 export const teamFilterQuerySchema = t.Object({
-  clubId: t.Optional(t.String({ format: "uuid" })),
-  category: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
+	clubId: t.Optional(t.String({ format: "uuid" })),
+	category: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
 });
 
 // Payload para registrar un equipo en una etapa (grupo opcional)
 export const registerTeamInStageSchema = t.Object({
-  stageId: t.String({ format: "uuid" }),
-  groupId: t.Optional(t.String({ format: "uuid" })),
-  teamId: t.String({ format: "uuid" }),
-  seedNumber: t.Optional(t.Integer({ minimum: 1 })),
+	stageId: t.String({ format: "uuid" }),
+	groupId: t.Optional(t.String({ format: "uuid" })),
+	teamId: t.String({ format: "uuid" }),
+	seedNumber: t.Optional(t.Integer({ minimum: 1 })),
 });
 
 // Payload para inscribir un jugador en el plantel de una edición
 export const addPlayerToRosterSchema = t.Pick(insertTournamentRosterSchema, [
-  "editionId",
-  "teamId",
-  "playerId",
-  "jerseyNumber",
-  "position",
-  "isCaptain",
+	"editionId",
+	"teamId",
+	"playerId",
+	"jerseyNumber",
+	"position",
+	"isCaptain",
 ]);
 
 // ==========================================
@@ -97,7 +95,7 @@ export type Player = Static<typeof selectPlayerSchema>;
 export type InsertPlayer = Static<typeof insertPlayerSchema>;
 export type UpdatePlayer = Static<typeof updatePlayerSchema>;
 export type StageTeamRegistration = Static<
-  typeof selectStageTeamRegistrationSchema
+	typeof selectStageTeamRegistrationSchema
 >;
 export type RegisterTeamInStage = Static<typeof registerTeamInStageSchema>;
 export type TournamentRoster = Static<typeof selectTournamentRosterSchema>;

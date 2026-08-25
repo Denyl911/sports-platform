@@ -51,3 +51,5 @@ dist-ssr
 .vinxi
 __unconfig*
 todos.json
+
+.zed

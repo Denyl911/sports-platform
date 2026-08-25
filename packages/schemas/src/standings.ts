@@ -1,7 +1,7 @@
 import {
-  createInsertSchema,
-  createSelectSchema,
-  createUpdateSchema,
+	createInsertSchema,
+	createSelectSchema,
+	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
 import { stageStandings } from "@sports/db/tables";
@@ -20,23 +20,23 @@ export const updateStageStandingSchema = createUpdateSchema(stageStandings);
 
 // Query params para consultar la tabla: /standings?groupId=...
 export const standingsFilterQuerySchema = t.Object({
-  groupId: t.String({ format: "uuid" }),
+	groupId: t.String({ format: "uuid" }),
 });
 
 // Payload para recalcular/ajustar manualmente una fila de posiciones
 export const updateStandingRowSchema = t.Partial(
-  t.Pick(updateStageStandingSchema, [
-    "played",
-    "won",
-    "drawn",
-    "lost",
-    "points",
-    "scoreFor",
-    "scoreAgainst",
-    "scoreDifference",
-    "bonusPoints",
-    "rankPosition",
-  ])
+	t.Pick(updateStageStandingSchema, [
+		"played",
+		"won",
+		"drawn",
+		"lost",
+		"points",
+		"scoreFor",
+		"scoreAgainst",
+		"scoreDifference",
+		"bonusPoints",
+		"rankPosition",
+	]),
 );
 
 // ==========================================
