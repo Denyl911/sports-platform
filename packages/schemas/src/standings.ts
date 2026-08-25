@@ -4,7 +4,7 @@ import {
   createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { stageStandings } from "../../db/src/tables";
+import { stageStandings } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)

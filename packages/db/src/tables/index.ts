@@ -15,3 +15,4 @@ export * from "./matches";
 export * from "./match-periods";
 export * from "./match-events";
 export * from "./stage-standings";
+export * from "./users";

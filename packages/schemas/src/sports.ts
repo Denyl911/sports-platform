@@ -4,7 +4,7 @@ import {
   createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { sports, venues } from "../../db/src/tables";
+import { sportEventTypes, sports, venues } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -20,6 +20,10 @@ export const selectVenueSchema = createSelectSchema(venues);
 export const insertVenueSchema = createInsertSchema(venues);
 export const updateVenueSchema = createUpdateSchema(venues);
 
+export const selectSportEventTypeSchema = createSelectSchema(sportEventTypes);
+export const insertSportEventTypeSchema = createInsertSchema(sportEventTypes);
+export const updateSportEventTypeSchema = createUpdateSchema(sportEventTypes);
+
 // ==========================================
 // 2. DTOs PARA ENDPOINTS Y FORMULARIOS
 // ==========================================
@@ -30,6 +34,15 @@ export const sportIdParamsSchema = t.Object({
 });
 export const venueIdParamsSchema = t.Object({
   id: t.String({ format: "uuid" }),
+});
+export const sportEventTypeParamsSchema = t.Object({
+  id: t.String({ format: "uuid" }),
+});
+
+// Query params para el catálogo de eventos de un deporte
+export const sportEventTypeFilterQuerySchema = t.Object({
+  sportId: t.String({ minLength: 1, maxLength: 32 }),
+  affectsScore: t.Optional(t.Boolean()),
 });
 
 // ==========================================
@@ -42,3 +55,6 @@ export type UpdateSport = Static<typeof updateSportSchema>;
 export type Venue = Static<typeof selectVenueSchema>;
 export type InsertVenue = Static<typeof insertVenueSchema>;
 export type UpdateVenue = Static<typeof updateVenueSchema>;
+export type SportEventType = Static<typeof selectSportEventTypeSchema>;
+export type InsertSportEventType = Static<typeof insertSportEventTypeSchema>;
+export type UpdateSportEventType = Static<typeof updateSportEventTypeSchema>;

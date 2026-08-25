@@ -35,3 +35,12 @@ export const matchPeriodTypeEnum = pgEnum("match_period_type", [
 ]);
 
 export const matchSlotEnum = pgEnum("match_slot", ["home", "away"]);
+
+export const userRoleEnum = pgEnum("user_role", [
+  "super_admin",
+  "admin",
+  "organizer",
+  "referee",
+  "statistician",
+  "viewer_staff",
+]);

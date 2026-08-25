@@ -4,7 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema/index.ts"
+    "./tables": "./src/tables/index.ts"
   },
   "scripts": {
     "db:generate": "drizzle-kit generate",

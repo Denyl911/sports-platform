@@ -10,7 +10,7 @@ import {
   players,
   stageTeamRegistrations,
   tournamentRosters,
-} from "../../db/src/tables";
+} from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -65,11 +65,13 @@ export const teamFilterQuerySchema = t.Object({
   category: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
 });
 
-// Payload para registrar un equipo en un grupo de fase
-export const registerTeamInGroupSchema = t.Pick(
-  insertStageTeamRegistrationSchema,
-  ["groupId", "teamId", "seedNumber"]
-);
+// Payload para registrar un equipo en una etapa (grupo opcional)
+export const registerTeamInStageSchema = t.Object({
+  stageId: t.String({ format: "uuid" }),
+  groupId: t.Optional(t.String({ format: "uuid" })),
+  teamId: t.String({ format: "uuid" }),
+  seedNumber: t.Optional(t.Integer({ minimum: 1 })),
+});
 
 // Payload para inscribir un jugador en el plantel de una edición
 export const addPlayerToRosterSchema = t.Pick(insertTournamentRosterSchema, [
@@ -97,6 +99,7 @@ export type UpdatePlayer = Static<typeof updatePlayerSchema>;
 export type StageTeamRegistration = Static<
   typeof selectStageTeamRegistrationSchema
 >;
+export type RegisterTeamInStage = Static<typeof registerTeamInStageSchema>;
 export type TournamentRoster = Static<typeof selectTournamentRosterSchema>;
 export type AddPlayerToRoster = Static<typeof addPlayerToRosterSchema>;
 export type TeamFilterQuery = Static<typeof teamFilterQuerySchema>;

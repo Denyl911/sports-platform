@@ -4,7 +4,7 @@ import {
   createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from 'elysia'
-import { matches, matchPeriods, matchEvents } from "../../db/src/tables";
+import { matches, matchEvents, matchPeriods } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -38,8 +38,9 @@ export const matchIdParamsSchema = t.Object({
   id: t.String({ format: "uuid" }),
 });
 
-// Query params para filtros: /matches?groupId=...&status=...
+// Query params para filtros: /matches?stageId=...&groupId=...&status=...
 export const matchFilterQuerySchema = t.Object({
+  stageId: t.Optional(t.String({ format: "uuid" })),
   groupId: t.Optional(t.String({ format: "uuid" })),
   status: t.Optional(
     t.Union([
@@ -56,11 +57,12 @@ export const matchFilterQuerySchema = t.Object({
 });
 
 // Payload específico para actualizar marcador en vivo
-export const updateMatchScoreSchema = t.Pick(insertMatchSchema, [
-  "homeScore",
-  "awayScore",
-  "status",
-]);
+export const updateMatchScoreSchema = t.Object({
+  homeScore: t.Integer({ minimum: 0 }),
+  awayScore: t.Integer({ minimum: 0 }),
+  status: insertMatchSchema.status,
+  winnerTeamId: t.Optional(t.String({ format: "uuid" })),
+});
 
 // Payload para registrar un evento en tiempo real
 export const recordLiveEventSchema = t.Object({
