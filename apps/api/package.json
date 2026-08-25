@@ -1,0 +1,21 @@
+{
+  "name": "api",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir ./dist --target bun"
+  },
+  "dependencies": {
+    "@elysia/cors": "^1.4.2",
+    "@elysia/jwt": "^1.4.2",
+    "@elysia/openapi": "^1.4.15",
+    "@sports/db": "*",
+    "@sports/schemas": "*",
+    "elysia": "^1.4.29"
+  },
+  "devDependencies": {
+    "@sports/tsconfig": "*"
+  }
+}

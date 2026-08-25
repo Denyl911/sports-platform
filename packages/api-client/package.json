@@ -1,0 +1,17 @@
+{
+  "name": "@sports/api-client",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@elysiajs/eden": "^1.2.0",
+    "@tanstack/react-query": "^5.60.0",
+    "api": "*"
+  },
+  "devDependencies": {
+    "@sports/tsconfig": "*",
+    "typescript": "^5.7.0"
+  }
+}

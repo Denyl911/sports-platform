@@ -1,0 +1,23 @@
+{
+  "name": "@sports/db",
+  "version": "0.0.1",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write ."
+  },
+  "dependencies": {
+    "drizzle-orm": "^1.0.0-rc.4"
+  },
+  "devDependencies": {
+    "@sports/tsconfig": "*",
+    "drizzle-kit": "^1.0.0-rc.4"
+  }
+}

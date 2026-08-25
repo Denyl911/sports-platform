@@ -1,0 +1,18 @@
+{
+  "name": "@sports/schemas",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@sports/db": "*",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "elysia": "^1.4.29"
+  },
+  "devDependencies": {
+    "@sports/tsconfig": "*"
+  }
+}
