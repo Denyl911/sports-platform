@@ -1,5 +1,6 @@
 export * from "./enums";
 export * from "./sports";
+export * from "./sport-event-types";
 export * from "./venues";
 export * from "./tournaments";
 export * from "./tournament-editions";

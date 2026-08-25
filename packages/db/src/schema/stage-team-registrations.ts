@@ -1,23 +1,34 @@
-
-import { uuid, integer } from "drizzle-orm/pg-core/columns";
+import { sql } from "drizzle-orm";
+import { integer, uuid } from "drizzle-orm/pg-core/columns";
 import { pgTable } from "drizzle-orm/pg-core/table";
+import { check } from "drizzle-orm/pg-core/checks";
+import { unique } from "drizzle-orm/pg-core/unique-constraint";
+import { index, uniqueIndex } from "drizzle-orm/pg-core/indexes";
+import { tournamentStages } from "./tournament-stages";
 import { stageGroups } from "./stage-groups";
 import { teams } from "./teams";
-import { unique } from "drizzle-orm/pg-core/unique-constraint";
 
 export const stageTeamRegistrations = pgTable(
   "stage_team_registrations",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    groupId: uuid("group_id")
-      .references(() => stageGroups.id, { onDelete: "cascade" })
+    stageId: uuid("stage_id")
+      .references(() => tournamentStages.id, { onDelete: "cascade" })
       .notNull(),
+    groupId: uuid("group_id")
+      .references(() => stageGroups.id, { onDelete: "cascade" }),
     teamId: uuid("team_id")
       .references(() => teams.id, { onDelete: "cascade" })
       .notNull(),
     seedNumber: integer("seed_number"),
   },
   (t) => [
-    unique("stage_team_unique").on(t.groupId, t.teamId),
+    unique("stage_team_unique").on(t.stageId, t.teamId),
+    uniqueIndex("group_team_unique")
+      .on(t.groupId, t.teamId)
+      .where(sql`${t.groupId} IS NOT NULL`),
+    check("seed_number_positive", sql`${t.seedNumber} > 0`),
+    // Índices de consulta
+    index("stage_team_registrations_team_id_idx").on(t.teamId),
   ]
 );

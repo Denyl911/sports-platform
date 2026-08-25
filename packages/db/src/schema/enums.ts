@@ -16,3 +16,22 @@ export const matchStatusEnum = pgEnum("match_status", [
   "cancelled",
   "walkover",
 ]);
+
+export const editionStatusEnum = pgEnum("edition_status", [
+  "draft",
+  "registration",
+  "in_progress",
+  "finished",
+  "archived",
+  "cancelled",
+]);
+
+export const matchPeriodTypeEnum = pgEnum("match_period_type", [
+  "regular",
+  "overtime",
+  "extra_time",
+  "penalties",
+  "break",
+]);
+
+export const matchSlotEnum = pgEnum("match_slot", ["home", "away"]);

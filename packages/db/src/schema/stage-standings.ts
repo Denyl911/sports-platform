@@ -1,9 +1,10 @@
-
-import { uuid, integer, timestamp } from "drizzle-orm/pg-core/columns";
+import { sql } from "drizzle-orm";
+import { integer, timestamp, uuid } from "drizzle-orm/pg-core/columns";
 import { pgTable } from "drizzle-orm/pg-core/table";
+import { unique } from "drizzle-orm/pg-core/unique-constraint";
+import { check } from "drizzle-orm/pg-core/checks";
 import { stageGroups } from "./stage-groups";
 import { teams } from "./teams";
-import { unique } from "drizzle-orm/pg-core/unique-constraint";
 
 export const stageStandings = pgTable(
   "stage_standings",
@@ -25,7 +26,10 @@ export const stageStandings = pgTable(
 
     scoreFor: integer("score_for").default(0).notNull(),
     scoreAgainst: integer("score_against").default(0).notNull(),
-    scoreDifference: integer("score_difference").default(0).notNull(),
+    // Columna generada: siempre consistente con score_for - score_against
+    scoreDifference: integer("score_difference")
+      .generatedAlwaysAs(sql`score_for - score_against`)
+      .notNull(),
 
     bonusPoints: integer("bonus_points").default(0).notNull(),
     rankPosition: integer("rank_position"),
@@ -34,5 +38,7 @@ export const stageStandings = pgTable(
   },
   (t) => [
     unique("stage_team_standings_unique").on(t.groupId, t.teamId),
+    check("standing_counts_non_negative", sql`${t.played} >= 0 AND ${t.won} >= 0 AND ${t.drawn} >= 0 AND ${t.lost} >= 0`),
+    check("rank_position_positive", sql`${t.rankPosition} IS NULL OR ${t.rankPosition} > 0`),
   ]
 );
