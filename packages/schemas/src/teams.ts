@@ -41,6 +41,8 @@ export const selectTournamentRosterSchema =
 	createSelectSchema(tournamentRosters);
 export const insertTournamentRosterSchema =
 	createInsertSchema(tournamentRosters);
+export const updateTournamentRosterSchema =
+	createUpdateSchema(tournamentRosters);
 
 // ==========================================
 // 2. DTOs PARA ENDPOINTS Y FORMULARIOS
@@ -99,5 +101,8 @@ export type StageTeamRegistration = Static<
 >;
 export type RegisterTeamInStage = Static<typeof registerTeamInStageSchema>;
 export type TournamentRoster = Static<typeof selectTournamentRosterSchema>;
+export type UpdateTournamentRoster = Static<
+	typeof updateTournamentRosterSchema
+>;
 export type AddPlayerToRoster = Static<typeof addPlayerToRosterSchema>;
 export type TeamFilterQuery = Static<typeof teamFilterQuerySchema>;
