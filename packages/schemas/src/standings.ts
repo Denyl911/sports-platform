@@ -24,19 +24,19 @@ export const standingsFilterQuerySchema = t.Object({
 });
 
 // Payload para recalcular/ajustar manualmente una fila de posiciones
+// (scoreDifference es columna generada en DB: no se ajusta manualmente)
 export const updateStandingRowSchema = t.Partial(
-	t.Pick(updateStageStandingSchema, [
-		"played",
-		"won",
-		"drawn",
-		"lost",
-		"points",
-		"scoreFor",
-		"scoreAgainst",
-		"scoreDifference",
-		"bonusPoints",
-		"rankPosition",
-	]),
+  t.Pick(updateStageStandingSchema, [
+    "played",
+    "won",
+    "drawn",
+    "lost",
+    "points",
+    "scoreFor",
+    "scoreAgainst",
+    "bonusPoints",
+    "rankPosition",
+  ])
 );
 
 // ==========================================
