@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { count, and, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { sportEventTypes, sports } from "@sports/db/tables";
 import type {
@@ -17,7 +17,7 @@ import { DomainError } from "./errors";
 export async function listSports() {
 	const [items, totalRows] = await Promise.all([
 		db.select().from(sports).orderBy(asc(sports.name)),
-		db.select({ count: sql<number>`count(*)::int` }).from(sports),
+		db.select({ count: count() }).from(sports),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };
@@ -82,7 +82,7 @@ export async function listSportEventTypes(filter: SportEventTypeFilterQuery) {
 			.where(where)
 			.orderBy(asc(sportEventTypes.code)),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(sportEventTypes)
 			.where(where),
 	]);

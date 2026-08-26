@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
+import { count, and, asc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@sports/db";
 import { stageTeamRegistrations, teams } from "@sports/db/tables";
 import type { RegisterTeamInStage } from "@sports/schemas";
@@ -23,7 +23,7 @@ export async function listRegistrationsByStage(stageId: string) {
 			.where(where)
 			.orderBy(...orderBy),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(stageTeamRegistrations)
 			.where(where),
 	]);
@@ -49,7 +49,7 @@ export async function listRegistrationsByGroup(groupId: string) {
 			.where(where)
 			.orderBy(...orderBy),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(stageTeamRegistrations)
 			.where(where),
 	]);

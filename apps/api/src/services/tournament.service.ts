@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { count, desc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { sports, tournaments } from "@sports/db/tables";
 import type { InsertTournament, UpdateTournament } from "@sports/schemas";
@@ -14,7 +14,7 @@ export async function listTournaments(sportId?: string) {
 			.where(where)
 			.orderBy(desc(tournaments.createdAt)),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(tournaments)
 			.where(where),
 	]);

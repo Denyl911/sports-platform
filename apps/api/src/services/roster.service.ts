@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { count, and, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	players,
@@ -34,7 +34,7 @@ export async function listRoster(editionId: string, teamId: string) {
 			.where(where)
 			.orderBy(...orderBy),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(tournamentRosters)
 			.where(where),
 	]);

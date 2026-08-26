@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { count, and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matches,
@@ -42,7 +42,7 @@ export async function getStandings(groupId: string) {
 			.where(where)
 			.orderBy(...orderBy),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(stageStandings)
 			.where(where),
 	]);

@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { count, and, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	stageGroups,
@@ -28,7 +28,7 @@ export async function listStagesByEdition(editionId: string) {
 			.where(where)
 			.orderBy(asc(tournamentStages.sequenceOrder)),
 		db
-			.select({ count: sql<number>`count(*)::int` })
+			.select({ count: count() })
 			.from(tournamentStages)
 			.where(where),
 	]);
@@ -98,7 +98,7 @@ export async function listGroupsByStage(stageId: string) {
 	const where = eq(stageGroups.stageId, stageId);
 	const [items, totalRows] = await Promise.all([
 		db.select().from(stageGroups).where(where).orderBy(asc(stageGroups.name)),
-		db.select({ count: sql<number>`count(*)::int` }).from(stageGroups).where(where),
+		db.select({ count: count() }).from(stageGroups).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, ne, sql } from "drizzle-orm";
+import { count, and, asc, eq, ilike, ne } from "drizzle-orm";
 import { db } from "@sports/db";
 import { players } from "@sports/db/tables";
 import type { InsertPlayer, UpdatePlayer } from "@sports/schemas";
@@ -13,7 +13,7 @@ export async function listPlayers(search?: string) {
 			.from(players)
 			.where(where)
 			.orderBy(asc(players.lastName), asc(players.firstName)),
-		db.select({ count: sql<number>`count(*)::int` }).from(players).where(where),
+		db.select({ count: count() }).from(players).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

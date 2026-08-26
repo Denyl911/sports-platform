@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { count, and, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { tournamentMembers, tournaments, users } from "@sports/db/tables";
 import type {
@@ -42,7 +42,7 @@ export async function listUsers(filter: UserFilterQuery) {
 			.orderBy(asc(users.fullName))
 			.limit(filter.limit ?? 20)
 			.offset(filter.offset ?? 0),
-		db.select({ count: sql<number>`count(*)::int` }).from(users).where(where),
+		db.select({ count: count() }).from(users).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

@@ -1,4 +1,4 @@
-import { and, asc, eq, getColumns, sql } from "drizzle-orm";
+import { count, and, asc, eq, getColumns, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matchEvents,
@@ -113,7 +113,7 @@ export async function listMatches(
 
 	const totalQuery = needsScopeJoin
 		? db
-				.select({ count: sql<number>`count(*)::int` })
+				.select({ count: count() })
 				.from(matches)
 				.innerJoin(
 					tournamentStages,
@@ -124,7 +124,7 @@ export async function listMatches(
 					eq(tournamentStages.editionId, tournamentEditions.id),
 				)
 				.where(where)
-		: db.select({ count: sql<number>`count(*)::int` }).from(matches).where(where);
+		: db.select({ count: count() }).from(matches).where(where);
 
 	const [items, totalRows] = await Promise.all([itemsQuery, totalQuery]);
 	return { items, total: totalRows[0]?.count ?? 0 };
