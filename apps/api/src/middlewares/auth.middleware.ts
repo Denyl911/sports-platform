@@ -1,49 +1,63 @@
-import { Elysia } from "elysia";
-import { accessTokenJwt, type AccessTokenPayload } from "../lib/jwt";
+import { Elysia, t } from "elysia";
+import { eq } from "drizzle-orm";
+import { db } from "@sports/db";
+import { users } from "@sports/db/tables";
+import { accessTokenJwt } from "../lib/jwt";
 import { DomainError } from "../services/errors";
 
-export interface Requester {
-	id: string;
-	role: string;
-}
+// Usuario autenticado sin el hash de contraseña
+export type AuthUser = Omit<typeof users.$inferSelect, "passwordHash">;
 
-function extractBearerToken(headers: Record<string, string | undefined>) {
-	const header = headers.authorization;
-	if (!header?.startsWith("Bearer ")) return null;
-	return header.slice(7);
-}
+// Guard de autenticación activable por ruta con `auth: true`.
+// Consulta la DB en cada request: rol siempre fresco y valida isActive.
+export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
+  .use(accessTokenJwt)
+  .macro({
+    auth: {
+      headers: t.Object({
+        authorization: t.String({ description: "Bearer token" }),
+      }),
+      async resolve({ accessToken, headers }: any) {
+        const { authorization } = headers;
+        if (!authorization?.startsWith("Bearer ")) {
+          throw DomainError.unauthorized("Token requerido");
+        }
 
-async function verifyAccessToken(
-	verify: (token: string) => Promise<unknown>,
-	headers: Record<string, string | undefined>,
-): Promise<Requester | null> {
-	const token = extractBearerToken(headers);
-	if (!token) return null;
+        const token = authorization.slice(7);
+        const payload = (await accessToken.verify(token).catch(() => null)) as {
+          sub?: string;
+          role?: string;
+        } | null;
 
-	const payload = await verify(token).catch(() => null);
-	if (!payload || typeof payload !== "object") return null;
+        if (!payload?.sub) {
+          throw DomainError.unauthorized("Token inválido");
+        }
 
-	const claims = payload as AccessTokenPayload;
-	if (!claims.sub || !claims.role) return null;
+        const [user] = await db
+          .select({
+            id: users.id,
+            email: users.email,
+            fullName: users.fullName,
+            role: users.role,
+            isActive: users.isActive,
+          })
+          .from(users)
+          .where(eq(users.id, payload.sub))
+          .limit(1);
 
-	return { id: claims.sub, role: claims.role };
-}
+        if (!user) {
+          throw DomainError.unauthorized("Usuario no encontrado");
+        }
 
-// Guard obligatorio: lanza 401 si no hay token válido
-export const authGuard = new Elysia({ name: "auth-guard" })
-	.use(accessTokenJwt)
-	.derive(async ({ headers, accessToken }) => {
-		const requester = await verifyAccessToken(
-			(t) => accessToken.verify(t),
-			headers,
-		);
-		if (!requester) throw DomainError.unauthorized("Authentication required");
-		return { requester };
-	});
+        if (!user.isActive) {
+          throw DomainError.unauthorized("Usuario desactivado");
+        }
 
-// Derivación opcional: expone `requester` solo si hay token válido
-export const optionalAuth = new Elysia({ name: "optional-auth" })
-	.use(accessTokenJwt)
-	.derive(async ({ headers, accessToken }) => ({
-		requester: await verifyAccessToken((t) => accessToken.verify(t), headers),
-	}));
+        return {
+          user,
+          userId: user.id,
+          userRole: user.role,
+        };
+      },
+    },
+  });
