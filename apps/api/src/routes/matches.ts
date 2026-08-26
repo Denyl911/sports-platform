@@ -7,7 +7,10 @@ import {
 	recordLiveEventSchema,
 } from "@sports/schemas";
 
-export const matchesRoutes = new Elysia({ prefix: "/matches" })
+export const matchesRoutes = new Elysia({
+	prefix: "/matches",
+	tags: ["Matches"],
+})
 	.get(
 		"/",
 		async ({ query }) => {
