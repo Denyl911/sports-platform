@@ -1,4 +1,4 @@
-import { count, and, asc, eq, getColumns, sql } from "drizzle-orm";
+import { count, and, asc, eq, getTableColumns, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matchEvents,
@@ -24,6 +24,7 @@ import { recalculateGroupStandings } from "./standings.service";
 import { findGroupById, findStageById } from "./stage.service";
 import { findTeamById } from "./team.service";
 import { findVenueById } from "./venue.service";
+import { publishGroup, publishMatch } from "../lib/live";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -81,7 +82,7 @@ export async function listMatches(
 
 	const itemsQuery = needsScopeJoin
 		? db
-				.select({ ...getColumns(matches) })
+				.select({ ...getTableColumns(matches) })
 				.from(matches)
 				.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
 				.innerJoin(
@@ -308,6 +309,7 @@ export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
 	});
 
 	await recalculateStandingsIfFinished(id);
+	publishMatch(id, { type: "score", matchId: id, payload: updated });
 	return updated;
 }
 
@@ -381,6 +383,7 @@ export async function recordLiveEvent(
 	});
 
 	await recalculateStandingsIfFinished(matchId);
+	publishMatch(matchId, { type: "event", matchId, payload: event });
 	return event;
 }
 

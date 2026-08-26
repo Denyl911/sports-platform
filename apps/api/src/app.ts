@@ -18,10 +18,15 @@ import { teamsRoutes } from "./routes/teams";
 import cors from "@elysia/cors";
 import openapi from "@elysia/openapi";
 import { resolveCorsOrigins } from "./lib/config";
+import { liveRoutes } from "./routes/live";
 
 // Instancia de la API sin listener: consumible por `treaty(app)` en tests
 // y por src/index.ts al desplegar.
-export const app = new Elysia()
+export const app = new Elysia({
+	websocket: {
+		idleTimeout: 30,
+	},
+})
 	// Logestic desactivado: ensucia la salida de `bun test`
 	// .use(Logestic.preset("fancy"))
 	.use(cors({ origin: resolveCorsOrigins() }))
@@ -54,6 +59,7 @@ export const app = new Elysia()
 	.use(usersRoutes)
 	.use(membershipItemRoutes)
 	.use(matchesRoutes)
+	.use(liveRoutes)
 	.get("/", () => "Hello Elysia");
 
 // Contrato de tipos para Eden Treaty en todo el monorepo

@@ -13,6 +13,7 @@ import {
 } from "@sports/db/tables";
 import type { UpdateStandingRow } from "@sports/schemas";
 import { DomainError } from "./errors";
+import { publishGroup } from "../lib/live";
 import { findGroupById } from "./stage.service";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -52,7 +53,7 @@ export async function getStandings(groupId: string) {
 // ==========================================
 
 export async function recalculateGroupStandings(groupId: string) {
-	return db.transaction(async (tx) => {
+	const standings = await db.transaction(async (tx) => {
 		await findGroupById(groupId);
 		const rules = await getScoringRules(tx, groupId);
 
@@ -190,6 +191,9 @@ export async function recalculateGroupStandings(groupId: string) {
 				desc(stageStandings.scoreFor),
 			);
 	});
+
+	publishGroup(groupId, { type: "standing", groupId, payload: standings });
+	return standings;
 }
 
 // ==========================================
