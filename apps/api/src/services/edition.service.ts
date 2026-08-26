@@ -1,10 +1,10 @@
-import { count, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
-import { tournaments, tournamentEditions } from "@sports/db/tables";
+import { tournamentEditions, tournaments } from "@sports/db/tables";
 import type {
 	InsertTournamentEdition,
 	UpdateTournamentEdition,
 } from "@sports/schemas";
+import { asc, count, eq } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // Transiciones válidas de estado de una edición

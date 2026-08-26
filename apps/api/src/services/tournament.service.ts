@@ -1,7 +1,7 @@
-import { count, desc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { sports, tournaments } from "@sports/db/tables";
 import type { InsertTournament, UpdateTournament } from "@sports/schemas";
+import { count, desc, eq } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 export async function listTournaments(sportId?: string) {

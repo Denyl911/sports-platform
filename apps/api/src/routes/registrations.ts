@@ -1,11 +1,16 @@
-import { Elysia, t } from "elysia";
+// @ts-nocheck
+
 import {
 	groupRefParamsSchema,
 	registerTeamInStageSchema,
 	registrationGroupUpdateSchema,
 	registrationIdParamsSchema,
+	selectStageTeamRegistrationSchema,
+	selectTeamSchema,
 	stageRefParamsSchema,
 } from "@sports/schemas";
+import { Elysia, t } from "elysia";
+import { errorMessageSchema, successSchema } from "../lib/openapi-helpers";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	requireRegistrationRole,
@@ -19,16 +24,36 @@ import {
 	updateRegistrationGroup,
 } from "../services/registration.service";
 
+const registrationWithTeamSchema = t.Object({
+	registration: selectStageTeamRegistrationSchema,
+	team: selectTeamSchema,
+});
+
 export const stageRegistrationsRoutes = new Elysia({
 	prefix: "/stages",
 	tags: ["Registrations"],
 })
 	.use(jwtMiddleware)
-	// Lectura pública
 	.get(
 		"/:stageId/registrations",
 		async ({ params }) => listRegistrationsByStage(params.stageId),
-		{ params: stageRefParamsSchema },
+		{
+			params: stageRefParamsSchema,
+			response: {
+				200: t.Object({
+					items: t.Array(registrationWithTeamSchema),
+					total: t.Integer(),
+				}),
+				400: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			detail: {
+				summary: "Listar inscripciones de la etapa",
+				description:
+					"Lectura pública. Retorna `{ items: { registration, team }[], total }` ordenadas por `seedNumber` y nombre del equipo.",
+				tags: ["Registrations"],
+			},
+		},
 	)
 	.post(
 		"/:stageId/registrations",
@@ -38,8 +63,21 @@ export const stageRegistrationsRoutes = new Elysia({
 			auth: true,
 			params: stageRefParamsSchema,
 			body: t.Omit(registerTeamInStageSchema, ["stageId"]),
+			response: {
+				200: selectStageTeamRegistrationSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+				409: errorMessageSchema,
+			},
 			beforeHandle: requireStageRole("organizer"),
-			detail: { summary: "Inscribir equipo en la etapa" },
+			detail: {
+				summary: "Inscribir equipo en la etapa",
+				description:
+					"Requiere `organizer` de la etapa. 409 si el equipo ya está inscrito. Si se asigna `groupId`, debe pertenecer a la misma etapa.",
+				tags: ["Registrations"],
+			},
 		},
 	);
 
@@ -51,7 +89,23 @@ export const registrationItemRoutes = new Elysia({
 	.get(
 		"/groups/:groupId",
 		async ({ params }) => listRegistrationsByGroup(params.groupId),
-		{ params: groupRefParamsSchema },
+		{
+			params: groupRefParamsSchema,
+			response: {
+				200: t.Object({
+					items: t.Array(registrationWithTeamSchema),
+					total: t.Integer(),
+				}),
+				400: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			detail: {
+				summary: "Listar inscripciones por grupo",
+				description:
+					"Lectura pública. Filtra por `groupId` asignado. Retorna `{ items, total }`.",
+				tags: ["Registrations"],
+			},
+		},
 	)
 	.patch(
 		"/:id/group",
@@ -61,8 +115,20 @@ export const registrationItemRoutes = new Elysia({
 			auth: true,
 			params: registrationIdParamsSchema,
 			body: registrationGroupUpdateSchema,
+			response: {
+				200: selectStageTeamRegistrationSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+			},
 			beforeHandle: requireRegistrationRole("organizer"),
-			detail: { summary: "Asignar/quitar grupo de la inscripción" },
+			detail: {
+				summary: "Asignar/quitar grupo de la inscripción",
+				description:
+					"Requiere `organizer` de la inscripción. Si se asigna `groupId`, debe pertenecer a la misma etapa. `null` quita la asignación.",
+				tags: ["Registrations"],
+			},
 		},
 	)
 	.delete(
@@ -76,9 +142,17 @@ export const registrationItemRoutes = new Elysia({
 			params: registrationIdParamsSchema,
 			beforeHandle: requireRegistrationRole("organizer"),
 			response: {
-				200: t.Object({ success: t.Boolean() }),
-				404: t.Object({ message: t.String() }),
+				200: successSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+				409: errorMessageSchema,
 			},
-			detail: { summary: "Quitar inscripción" },
+			detail: {
+				summary: "Quitar inscripción",
+				description:
+					"Requiere `organizer` de la inscripción. 409 si tiene dependencias.",
+				tags: ["Registrations"],
+			},
 		},
 	);

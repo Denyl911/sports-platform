@@ -1,9 +1,8 @@
-import { count, and, asc, eq, getTableColumns, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matchEvents,
-	matchPeriods,
 	matches,
+	matchPeriods,
 	sportEventTypes,
 	stageTeamRegistrations,
 	tournamentEditions,
@@ -18,13 +17,14 @@ import type {
 	UpdateMatchInfo,
 	UpdateMatchScore,
 } from "@sports/schemas";
+import { and, asc, count, eq, getColumns, sql } from "drizzle-orm";
+import { publishMatch } from "../lib/live";
 import { DomainError } from "./errors";
 import { getStageTournamentId } from "./scoped-ids.service";
-import { recalculateGroupStandings } from "./standings.service";
 import { findGroupById, findStageById } from "./stage.service";
+import { recalculateGroupStandings } from "./standings.service";
 import { findTeamById } from "./team.service";
 import { findVenueById } from "./venue.service";
-import { publishGroup, publishMatch } from "../lib/live";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -82,7 +82,7 @@ export async function listMatches(
 
 	const itemsQuery = needsScopeJoin
 		? db
-				.select({ ...getTableColumns(matches) })
+				.select({ ...getColumns(matches) })
 				.from(matches)
 				.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
 				.innerJoin(

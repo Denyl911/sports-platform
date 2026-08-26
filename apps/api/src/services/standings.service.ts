@@ -1,4 +1,3 @@
-import { count, and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matches,
@@ -12,8 +11,9 @@ import {
 	tournaments,
 } from "@sports/db/tables";
 import type { UpdateStandingRow } from "@sports/schemas";
-import { DomainError } from "./errors";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { publishGroup } from "../lib/live";
+import { DomainError } from "./errors";
 import { findGroupById } from "./stage.service";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

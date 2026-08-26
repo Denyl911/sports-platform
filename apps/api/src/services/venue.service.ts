@@ -1,7 +1,7 @@
-import { count, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { venues } from "@sports/db/tables";
 import type { InsertVenue, UpdateVenue } from "@sports/schemas";
+import { asc, count, eq } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 export async function listVenues() {

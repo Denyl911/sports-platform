@@ -1,4 +1,3 @@
-import { count, and, asc, eq, ilike } from "drizzle-orm";
 import { db } from "@sports/db";
 import { clubs, teams } from "@sports/db/tables";
 import type {
@@ -9,6 +8,7 @@ import type {
 	UpdateClub,
 	UpdateTeam,
 } from "@sports/schemas";
+import { and, asc, count, eq, ilike } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================

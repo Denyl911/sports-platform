@@ -1,24 +1,25 @@
+import {
+	matchIdParamsSchema,
+	recordLiveEventSchema,
+	updateMatchScoreSchema,
+} from "@sports/schemas";
 import { Elysia, t } from "elysia";
 import { accessTokenJwt } from "../lib/jwt";
 import {
-	publishGroup,
-	publishMatch,
 	subscribeGroup,
 	subscribeMatch,
 	unsubscribeGroup,
 	unsubscribeMatch,
 } from "../lib/live";
 import { DomainError } from "../services/errors";
+import {
+	findMatchById,
+	recordLiveEvent,
+	updateMatchScore,
+} from "../services/match.service";
 import { getMatchTournamentId } from "../services/scoped-ids.service";
-import { recordLiveEvent, updateMatchScore } from "../services/match.service";
-import { findMatchById } from "../services/match.service";
 import { findGroupById } from "../services/stage.service";
 import { findTournamentMembership } from "../services/user.service";
-import {
-	matchIdParamsSchema,
-	recordLiveEventSchema,
-	updateMatchScoreSchema,
-} from "@sports/schemas";
 
 // Helper: verifica token opcional del query y retorna payload o null
 async function verifyToken(
@@ -47,7 +48,7 @@ async function assertRefereeForMatch(
 	if (userRole === "super_admin" || userRole === "admin") return;
 	const tournamentId = await getMatchTournamentId(matchId);
 	const membership = await findTournamentMembership(tournamentId, userId);
-	if (!membership || membership.role !== "referee") {
+	if (membership?.role !== "referee") {
 		throw DomainError.forbidden(
 			"You need referee role in this tournament to write live events",
 		);
@@ -71,13 +72,23 @@ const matchMessageSchema = t.Union([
 
 export const liveRoutes = new Elysia({ tags: ["Live"] })
 	.use(accessTokenJwt)
-	// Canal por partido: lectura pública, escritura solo referee del torneo
 	.ws("/matches/:id/live", {
 		params: matchIdParamsSchema,
 		query: t.Object({
-			token: t.Optional(t.String()),
+			token: t.Optional(
+				t.String({
+					description:
+						"Access token opcional; requerido solo para enviar score/event (referee)",
+				}),
+			),
 		}),
 		body: matchMessageSchema,
+		detail: {
+			summary: "WebSocket en vivo del partido",
+			description:
+				'Canal `match:{id}`. Lectura pública: cualquier cliente suscrito recibe `{ type: "score" | "event" }` emitidos tras `PATCH /matches/:id/score` y `POST /matches/:id/events`, más `{ type: "connected" }` al suscribirse. Escritura vía mensaje `{"type":"score","payload":UpdateMatchScore}` o `{"type":"event","payload":RecordLiveEvent}` requiere `?token=<accessToken>` de un `referee` del torneo (o `admin`/`super_admin`). Ver `README.md` para ejemplos con `new WebSocket("ws://host/matches/:id/live?token=...")`.',
+			tags: ["Live"],
+		},
 		async beforeHandle({ params, query, accessToken, set }) {
 			// Valida existencia del partido antes del upgrade
 			try {
@@ -167,12 +178,19 @@ export const liveRoutes = new Elysia({ tags: ["Live"] })
 			}
 		},
 	})
-	// Canal por grupo: tabla de posiciones en vivo (solo lectura/broadcast)
 	.ws("/groups/:groupId/live", {
 		params: t.Object({ groupId: t.String({ format: "uuid" }) }),
 		query: t.Object({
-			token: t.Optional(t.String()),
+			token: t.Optional(
+				t.String({ description: "Opcional, no requerido para lectura" }),
+			),
 		}),
+		detail: {
+			summary: "WebSocket de standings del grupo",
+			description:
+				'Canal `group:{groupId}`. Solo lectura: emite `{ type: "standing", groupId, payload: Standing[] }` tras cada `POST /groups/:groupId/standings/recalculate` (disparado automáticamente al finalizar un partido con grupo). Suscripción pública vía `ws://host/groups/:groupId/live`.',
+			tags: ["Live"],
+		},
 		async beforeHandle({ params, set }) {
 			try {
 				await findGroupById(params.groupId);

@@ -1,7 +1,7 @@
-import { count, and, asc, eq, isNotNull } from "drizzle-orm";
 import { db } from "@sports/db";
 import { stageTeamRegistrations, teams } from "@sports/db/tables";
 import type { RegisterTeamInStage } from "@sports/schemas";
+import { and, asc, count, eq, isNotNull } from "drizzle-orm";
 import { DomainError } from "./errors";
 import { findGroupById, findStageById } from "./stage.service";
 import { findTeamById } from "./team.service";

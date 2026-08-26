@@ -1,4 +1,3 @@
-import { count, and, asc, eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	players,
@@ -10,6 +9,7 @@ import type {
 	AddPlayerToRoster,
 	UpdateTournamentRoster,
 } from "@sports/schemas";
+import { and, asc, count, eq } from "drizzle-orm";
 import { DomainError } from "./errors";
 import { findPlayerById } from "./player.service";
 import { findTeamById } from "./team.service";

@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matches,
@@ -10,6 +9,7 @@ import {
 	tournamentStages,
 	tournaments,
 } from "@sports/db/tables";
+import { eq } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // Resuelve el torneo al que pertenece un partido (para guards RBAC)

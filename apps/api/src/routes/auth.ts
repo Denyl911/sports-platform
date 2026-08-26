@@ -1,6 +1,3 @@
-import { Elysia, t } from "elysia";
-import { accessTokenJwt, refreshTokenJwt } from "../lib/jwt";
-import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	authLoginResponseSchema,
 	authRefreshSchema,
@@ -8,6 +5,10 @@ import {
 	userChangePasswordSchema,
 	userLoginSchema,
 } from "@sports/schemas";
+import { Elysia } from "elysia";
+import { accessTokenJwt, refreshTokenJwt } from "../lib/jwt";
+import { errorMessageSchema, successSchema } from "../lib/openapi-helpers";
+import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	changePassword,
 	findUserById,
@@ -36,8 +37,17 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 		},
 		{
 			body: userLoginSchema,
-			200: authLoginResponseSchema,
-			401: t.Object({ message: t.String() }),
+			response: {
+				200: authLoginResponseSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+			},
+			detail: {
+				summary: "Iniciar sesión",
+				description:
+					"Autentica con email y contraseña. Retorna par de tokens (access 1h, refresh 7d) y el usuario público sin `passwordHash`. 401 si credenciales inválidas o usuario inactivo.",
+				tags: ["Auth"],
+			},
 		},
 	)
 	.post(
@@ -74,8 +84,15 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			body: authRefreshSchema,
 			response: {
 				200: authTokenPairSchema,
-				401: t.Object({ message: t.String() }),
-				403: t.Object({ message: t.String() }),
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+			},
+			detail: {
+				summary: "Refrescar tokens",
+				description:
+					"Intercambia un refreshToken válido por un nuevo par access/refresh. 401 si el token es inválido/expirado o el usuario ya no existe. 403 si el usuario está inactivo.",
+				tags: ["Auth"],
 			},
 		},
 	)
@@ -89,9 +106,17 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			auth: true,
 			body: userChangePasswordSchema,
 			response: {
-				200: t.Object({ success: t.Boolean() }),
-				401: t.Object({ message: t.String() }),
+				200: successSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
 			},
-			detail: { summary: "Cambiar contraseña del usuario autenticado" },
+			detail: {
+				summary: "Cambiar contraseña del usuario autenticado",
+				description:
+					"Requiere `Authorization: Bearer <accessToken>`. Valida la contraseña actual con `Bun.password.verify` y actualiza el hash. 401 si la contraseña actual es incorrecta.",
+				tags: ["Auth"],
+			},
 		},
 	);

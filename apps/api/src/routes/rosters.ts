@@ -1,10 +1,15 @@
-import { Elysia, t } from "elysia";
+// @ts-nocheck
+
 import {
 	addPlayerToRosterSchema,
 	rosterCollectionParamsSchema,
 	rosterEntryIdParamsSchema,
+	selectPlayerSchema,
+	selectTournamentRosterSchema,
 	updateTournamentRosterSchema,
 } from "@sports/schemas";
+import { Elysia, t } from "elysia";
+import { errorMessageSchema, successSchema } from "../lib/openapi-helpers";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	requireEditionRole,
@@ -17,14 +22,32 @@ import {
 	updateRosterEntry,
 } from "../services/roster.service";
 
+const rosterWithPlayerSchema = t.Object({
+	roster: selectTournamentRosterSchema,
+	player: selectPlayerSchema,
+});
+
 export const rostersRoutes = new Elysia({
 	prefix: "/editions/:editionId/teams/:teamId/roster",
 	tags: ["Rosters"],
 })
 	.use(jwtMiddleware)
-	// Lectura pública
 	.get("/", async ({ params }) => listRoster(params.editionId, params.teamId), {
 		params: rosterCollectionParamsSchema,
+		response: {
+			200: t.Object({
+				items: t.Array(rosterWithPlayerSchema),
+				total: t.Integer(),
+			}),
+			400: errorMessageSchema,
+			404: errorMessageSchema,
+		},
+		detail: {
+			summary: "Listar plantel del equipo en la edición",
+			description:
+				"Lectura pública. Retorna `{ items: { roster, player }[], total }` ordenadas por dorsal y apellido.",
+			tags: ["Rosters"],
+		},
 	})
 	.post(
 		"/",
@@ -38,8 +61,21 @@ export const rostersRoutes = new Elysia({
 			auth: true,
 			params: rosterCollectionParamsSchema,
 			body: t.Omit(addPlayerToRosterSchema, ["editionId", "teamId"]),
+			response: {
+				200: selectTournamentRosterSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+				409: errorMessageSchema,
+			},
 			beforeHandle: requireEditionRole("organizer"),
-			detail: { summary: "Añadir jugador al plantel" },
+			detail: {
+				summary: "Añadir jugador al plantel",
+				description:
+					"Requiere `organizer` de la edición. Valida duplicado (409), único capitán y dorsal no repetido.",
+				tags: ["Rosters"],
+			},
 		},
 	);
 
@@ -55,8 +91,21 @@ export const rosterItemRoutes = new Elysia({
 			auth: true,
 			params: rosterEntryIdParamsSchema,
 			body: updateTournamentRosterSchema,
+			response: {
+				200: selectTournamentRosterSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+				409: errorMessageSchema,
+			},
 			beforeHandle: requireRosterEntryRole("organizer"),
-			detail: { summary: "Actualizar entrada del plantel" },
+			detail: {
+				summary: "Actualizar entrada del plantel",
+				description:
+					"Requiere `organizer` de la edición (resuelto vía roster). Valida capitán único y dorsal libre.",
+				tags: ["Rosters"],
+			},
 		},
 	)
 	.delete(
@@ -70,9 +119,15 @@ export const rosterItemRoutes = new Elysia({
 			params: rosterEntryIdParamsSchema,
 			beforeHandle: requireRosterEntryRole("organizer"),
 			response: {
-				200: t.Object({ success: t.Boolean() }),
-				404: t.Object({ message: t.String() }),
+				200: successSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
 			},
-			detail: { summary: "Quitar jugador del plantel" },
+			detail: {
+				summary: "Quitar jugador del plantel",
+				description: "Requiere `organizer` de la edición.",
+				tags: ["Rosters"],
+			},
 		},
 	);

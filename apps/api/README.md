@@ -40,6 +40,23 @@ cd ../../apps/api && bun run dev
 
 Docs interactivas: `http://localhost:3000/docs`.
 
+## WebSockets en vivo
+
+Canales `Elysia.ws` con `uWebSockets` (Bun). Lectura pública sin token; escritura solo `referee` del torneo (o `admin`/`super_admin`).
+
+- `ws://host/matches/:id/live?token=<accessToken>` — Suscripción al partido. El servidor emite `{ type: "connected" }` al abrir, luego `{ type: "score", matchId, payload: Match }` tras `PATCH /matches/:id/score` y `{ type: "event", matchId, payload: MatchEvent }` tras `POST /matches/:id/events` (también `{ type: "standing" }` indirecto al recalcular grupo). Mensajes del cliente `{"type":"score","payload":UpdateMatchScore}` o `{"type":"event","payload":RecordLiveEvent}` requieren `?token` de `referee`; `{"type":"ping"}` responde `pong`.
+- `ws://host/groups/:groupId/live` — Solo lectura. Emite `{ type: "standing", groupId, payload: Standing[] }` tras `POST /groups/:groupId/standings/recalculate` (disparado automáticamente al finalizar un partido con grupo).
+
+Ejemplo navegador:
+
+```js
+const ws = new WebSocket(`ws://localhost:3000/matches/${id}/live`);
+ws.onmessage = e => console.log(JSON.parse(e.data));
+// Para escribir como árbitro:
+const ws2 = new WebSocket(`ws://localhost:3000/matches/${id}/live?token=${accessToken}`);
+ws2.onopen = () => ws2.send(JSON.stringify({ type: "event", payload: { teamId, periodNumber: 1, minuteOrSecond: 10, eventType: "goal" } }));
+```
+
 ## Testing
 
 Los tests usan **`treaty(app)`** de Eden sobre la instancia de Elysia directamente (sin red) contra una base de datos efímera `sports_platform_test`, creada en la misma instancia de Postgres.

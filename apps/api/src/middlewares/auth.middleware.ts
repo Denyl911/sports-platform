@@ -1,7 +1,7 @@
-import { Elysia, t } from "elysia";
-import { eq } from "drizzle-orm";
 import { db } from "@sports/db";
 import { users } from "@sports/db/tables";
+import { eq } from "drizzle-orm";
+import { Elysia, t } from "elysia";
 import { accessTokenJwt } from "../lib/jwt";
 import { DomainError } from "../services/errors";
 

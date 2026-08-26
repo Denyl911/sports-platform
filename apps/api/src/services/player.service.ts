@@ -1,7 +1,7 @@
-import { count, and, asc, eq, ilike, ne } from "drizzle-orm";
 import { db } from "@sports/db";
 import { players } from "@sports/db/tables";
 import type { InsertPlayer, UpdatePlayer } from "@sports/schemas";
+import { and, asc, count, eq, ilike, ne } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 export async function listPlayers(search?: string) {
