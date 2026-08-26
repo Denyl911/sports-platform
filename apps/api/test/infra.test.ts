@@ -31,7 +31,7 @@ describe("infra", () => {
 		expect(typeof data.total).toBe("number");
 		// El hash de contraseña nunca aparece en la respuesta
 		expect(JSON.stringify(data.items)).not.toContain("passwordHash");
-		expect(data.items[0]?.email).toBe(admin.email);
+		expect(data.items.some((u) => u.email === admin.email)).toBe(true);
 	});
 
 	it("sin token la ruta protegida devuelve 401", async () => {

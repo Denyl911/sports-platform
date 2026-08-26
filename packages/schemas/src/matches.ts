@@ -84,10 +84,19 @@ export const matchFilterQuerySchema = t.Object({
 });
 
 // Payload específico para actualizar marcador en vivo
+const matchStatusLiteral = t.Union([
+	t.Literal("scheduled"),
+	t.Literal("in_progress"),
+	t.Literal("paused"),
+	t.Literal("finished"),
+	t.Literal("cancelled"),
+	t.Literal("walkover"),
+]);
+
 export const updateMatchScoreSchema = t.Object({
 	homeScore: t.Integer({ minimum: 0 }),
 	awayScore: t.Integer({ minimum: 0 }),
-	status: insertMatchSchema.status,
+	status: matchStatusLiteral,
 	winnerTeamId: t.Optional(t.String({ format: "uuid" })),
 	periodNumber: t.Optional(t.Integer({ minimum: 1 })),
 	periodType: t.Optional(

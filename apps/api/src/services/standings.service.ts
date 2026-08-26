@@ -147,7 +147,7 @@ export async function recalculateGroupStandings(groupId: string) {
 					points: s.points,
 					scoreFor: s.scoreFor,
 					scoreAgainst: s.scoreAgainst,
-					rankPosition: 0,
+					// rankPosition se asigna en el pase de ranking posterior
 					updatedAt: new Date(),
 				})
 				.onConflictDoUpdate({
@@ -183,7 +183,7 @@ export async function recalculateGroupStandings(groupId: string) {
 				.where(eq(stageStandings.id, row.id));
 		}
 
-		return db
+		return tx
 			.select()
 			.from(stageStandings)
 			.where(eq(stageStandings.groupId, groupId))

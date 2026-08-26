@@ -15,7 +15,6 @@ import { tournamentsRoutes } from "./routes/tournaments";
 import { usersRoutes, membershipItemRoutes } from "./routes/users";
 import { venuesRoutes } from "./routes/venues";
 import { teamsRoutes } from "./routes/teams";
-import { Logestic } from "logestic";
 import cors from "@elysia/cors";
 import openapi from "@elysia/openapi";
 import { resolveCorsOrigins } from "./lib/config";
@@ -23,7 +22,8 @@ import { resolveCorsOrigins } from "./lib/config";
 // Instancia de la API sin listener: consumible por `treaty(app)` en tests
 // y por src/index.ts al desplegar.
 export const app = new Elysia()
-	.use(Logestic.preset("fancy"))
+	// Logestic desactivado: ensucia la salida de `bun test`
+	// .use(Logestic.preset("fancy"))
 	.use(cors({ origin: resolveCorsOrigins() }))
 	.use(
 		openapi({

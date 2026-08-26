@@ -20,9 +20,22 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
 		}
 
 		// 3. Violaciones de constraints de Postgres (race conditions / integridad referencial)
-		const pgCode =
-			(error as { code?: string }).code ??
-			((error as { cause?: { code?: string } }).cause?.code);
+		// Drizzle envuelve el error en DrizzleQueryError (cause); bun-sql expone
+		// el SQLSTATE en `errno` y otros drivers en `code`.
+		const raw = error as {
+			code?: string;
+			errno?: string;
+			cause?: { code?: string; errno?: string };
+		};
+		// El SQLSTATE son exactamente 5 dígitos: descarta códigos de driver
+		// como ERR_POSTGRES_SERVER_ERROR presentes en la misma propiedad
+		const candidates = [
+			raw.code,
+			raw.errno,
+			raw.cause?.code,
+			raw.cause?.errno,
+		];
+		const pgCode = candidates.find((c) => typeof c === "string" && /^\d{5}$/.test(c));
 		if (pgCode === "23505") {
 			set.status = 409;
 			return { message: "Resource already exists" };

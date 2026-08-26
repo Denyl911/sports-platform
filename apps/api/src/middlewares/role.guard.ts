@@ -70,11 +70,15 @@ function fromParam(
 	};
 }
 
-// Exige uno de los roles globales de la plataforma
+// Exige uno de los roles globales de la plataforma.
+// super_admin siempre pasa: es el rol máximo del enum.
 export function requireGlobalRole(...roles: GlobalRole[]) {
 	return async (rawCtx?: AuthedContext | null) => {
 		const ctx = parseAuthContext(rawCtx);
-		if (!roles.includes(ctx.userRole as GlobalRole)) {
+		if (
+			ctx.userRole !== "super_admin" &&
+			!roles.includes(ctx.userRole as GlobalRole)
+		) {
 			throw DomainError.forbidden(
 				`This action requires one of: ${roles.join(", ")}`,
 			);
