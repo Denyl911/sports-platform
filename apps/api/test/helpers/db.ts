@@ -88,14 +88,29 @@ export async function seedTournament(sportId?: string) {
 	return tournament;
 }
 
-export async function seedEdition(tournamentId: string) {
+export async function seedEdition(
+	tournamentId: string,
+	overrides: Partial<{
+		status: (typeof tournamentEditions.$inferSelect)["status"];
+		startDate: string | null;
+		endDate: string | null;
+		name: string;
+		category: string;
+	}> = {},
+) {
 	const [edition] = await db
 		.insert(tournamentEditions)
 		.values({
 			tournamentId,
-			name: `Edition ${unique()}`,
-			category: "open",
-			status: "in_progress",
+			name: overrides.name ?? `Edition ${unique()}`,
+			category: overrides.category ?? "open",
+			status: overrides.status ?? "draft",
+			...(overrides.startDate !== undefined
+				? { startDate: overrides.startDate }
+				: {}),
+			...(overrides.endDate !== undefined
+				? { endDate: overrides.endDate }
+				: {}),
 		})
 		.returning();
 	return edition;
