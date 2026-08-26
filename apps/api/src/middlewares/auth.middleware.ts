@@ -17,9 +17,7 @@ export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
 			// Header opcional: si falta, el resolve lanza 401 (no un 400 de validación)
 			headers: t.Optional(
 				t.Object({
-					authorization: t.Optional(
-						t.String({ description: "Bearer token" }),
-					),
+					authorization: t.Optional(t.String({ description: "Bearer token" })),
 				}),
 			),
 			async resolve({

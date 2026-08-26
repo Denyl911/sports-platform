@@ -41,10 +41,7 @@ export async function getStandings(groupId: string) {
 			.innerJoin(teams, eq(stageStandings.teamId, teams.id))
 			.where(where)
 			.orderBy(...orderBy),
-		db
-			.select({ count: count() })
-			.from(stageStandings)
-			.where(where),
+		db.select({ count: count() }).from(stageStandings).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

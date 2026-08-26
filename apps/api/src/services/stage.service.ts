@@ -27,10 +27,7 @@ export async function listStagesByEdition(editionId: string) {
 			.from(tournamentStages)
 			.where(where)
 			.orderBy(asc(tournamentStages.sequenceOrder)),
-		db
-			.select({ count: count() })
-			.from(tournamentStages)
-			.where(where),
+		db.select({ count: count() }).from(tournamentStages).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

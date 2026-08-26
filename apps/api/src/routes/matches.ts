@@ -8,7 +8,8 @@ import {
 	updateMatchInfoSchema,
 	recordLiveEventSchema,
 	updateMatchScoreSchema,
-} from "@sports/schemas";import { jwtMiddleware } from "../middlewares/auth.middleware";
+} from "@sports/schemas";
+import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	requireMatchRole,
 	requireTournamentRole,

@@ -6,7 +6,10 @@ import {
 	updateTournamentRosterSchema,
 } from "@sports/schemas";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
-import { requireEditionRole, requireRosterEntryRole } from "../middlewares/role.guard";
+import {
+	requireEditionRole,
+	requireRosterEntryRole,
+} from "../middlewares/role.guard";
 import {
 	addPlayerToRoster,
 	listRoster,

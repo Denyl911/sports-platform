@@ -81,10 +81,7 @@ export async function listSportEventTypes(filter: SportEventTypeFilterQuery) {
 			.from(sportEventTypes)
 			.where(where)
 			.orderBy(asc(sportEventTypes.code)),
-		db
-			.select({ count: count() })
-			.from(sportEventTypes)
-			.where(where),
+		db.select({ count: count() }).from(sportEventTypes).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

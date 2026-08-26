@@ -33,10 +33,7 @@ export async function listRoster(editionId: string, teamId: string) {
 			.innerJoin(players, eq(tournamentRosters.playerId, players.id))
 			.where(where)
 			.orderBy(...orderBy),
-		db
-			.select({ count: count() })
-			.from(tournamentRosters)
-			.where(where),
+		db.select({ count: count() }).from(tournamentRosters).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

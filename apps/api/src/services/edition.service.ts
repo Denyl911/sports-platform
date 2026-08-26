@@ -101,7 +101,9 @@ function validateDates(startDate: string | null, endDate: string | null): void {
 
 	// Validación real de fechas: inmune a formatos mixtos (date-only vs datetime)
 	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-		throw DomainError.badRequest("Invalid date format for startDate or endDate");
+		throw DomainError.badRequest(
+			"Invalid date format for startDate or endDate",
+		);
 	}
 	if (start.getTime() > end.getTime()) {
 		throw DomainError.badRequest(

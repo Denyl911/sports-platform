@@ -13,10 +13,7 @@ export async function listTournaments(sportId?: string) {
 			.from(tournaments)
 			.where(where)
 			.orderBy(desc(tournaments.createdAt)),
-		db
-			.select({ count: count() })
-			.from(tournaments)
-			.where(where),
+		db.select({ count: count() }).from(tournaments).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

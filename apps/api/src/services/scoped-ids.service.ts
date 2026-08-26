@@ -99,7 +99,8 @@ export async function getMembershipTournamentId(
 		.where(eq(tournamentMembers.id, memberId))
 		.limit(1);
 
-	if (!row) throw DomainError.notFound(`Tournament member '${memberId}' not found`);
+	if (!row)
+		throw DomainError.notFound(`Tournament member '${memberId}' not found`);
 	return row.tournamentId;
 }
 

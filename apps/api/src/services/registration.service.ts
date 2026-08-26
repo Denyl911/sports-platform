@@ -22,10 +22,7 @@ export async function listRegistrationsByStage(stageId: string) {
 			.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
 			.where(where)
 			.orderBy(...orderBy),
-		db
-			.select({ count: count() })
-			.from(stageTeamRegistrations)
-			.where(where),
+		db.select({ count: count() }).from(stageTeamRegistrations).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };
@@ -48,10 +45,7 @@ export async function listRegistrationsByGroup(groupId: string) {
 			.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
 			.where(where)
 			.orderBy(...orderBy),
-		db
-			.select({ count: count() })
-			.from(stageTeamRegistrations)
-			.where(where),
+		db.select({ count: count() }).from(stageTeamRegistrations).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

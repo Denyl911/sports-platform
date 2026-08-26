@@ -29,13 +29,10 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
 		};
 		// El SQLSTATE son exactamente 5 dígitos: descarta códigos de driver
 		// como ERR_POSTGRES_SERVER_ERROR presentes en la misma propiedad
-		const candidates = [
-			raw.code,
-			raw.errno,
-			raw.cause?.code,
-			raw.cause?.errno,
-		];
-		const pgCode = candidates.find((c) => typeof c === "string" && /^\d{5}$/.test(c));
+		const candidates = [raw.code, raw.errno, raw.cause?.code, raw.cause?.errno];
+		const pgCode = candidates.find(
+			(c) => typeof c === "string" && /^\d{5}$/.test(c),
+		);
 		if (pgCode === "23505") {
 			set.status = 409;
 			return { message: "Resource already exists" };
@@ -43,7 +40,8 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
 		if (pgCode === "23503") {
 			set.status = 409;
 			return {
-				message: "Resource is referenced by other records and cannot be modified",
+				message:
+					"Resource is referenced by other records and cannot be modified",
 			};
 		}
 

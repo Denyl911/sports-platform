@@ -83,10 +83,7 @@ export async function listMatches(
 		? db
 				.select({ ...getColumns(matches) })
 				.from(matches)
-				.innerJoin(
-					tournamentStages,
-					eq(matches.stageId, tournamentStages.id),
-				)
+				.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
 				.innerJoin(
 					tournamentEditions,
 					eq(tournamentStages.editionId, tournamentEditions.id),
@@ -115,10 +112,7 @@ export async function listMatches(
 		? db
 				.select({ count: count() })
 				.from(matches)
-				.innerJoin(
-					tournamentStages,
-					eq(matches.stageId, tournamentStages.id),
-				)
+				.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
 				.innerJoin(
 					tournamentEditions,
 					eq(tournamentStages.editionId, tournamentEditions.id),
