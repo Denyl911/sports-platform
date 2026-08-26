@@ -39,8 +39,7 @@ export async function getStandings(groupId: string) {
 			desc(stageStandings.points),
 			desc(stageStandings.scoreDifference),
 			desc(stageStandings.scoreFor),
-		);
-}
+		);}
 
 // ==========================================
 // Recálculo desde partidos finalizados
@@ -139,6 +138,7 @@ export async function recalculateGroupStandings(groupId: string) {
 					points: s.points,
 					scoreFor: s.scoreFor,
 					scoreAgainst: s.scoreAgainst,
+					rankPosition: 0,
 					updatedAt: new Date(),
 				})
 				.onConflictDoUpdate({
@@ -154,6 +154,24 @@ export async function recalculateGroupStandings(groupId: string) {
 						updatedAt: new Date(),
 					},
 				});
+		}
+
+		// Asignar posición de ranking según criterios de desempate
+		const ranked = await tx
+			.select({ id: stageStandings.id })
+			.from(stageStandings)
+			.where(eq(stageStandings.groupId, groupId))
+			.orderBy(
+				desc(stageStandings.points),
+				desc(stageStandings.scoreDifference),
+				desc(stageStandings.scoreFor),
+			);
+
+		for (const [index, row] of ranked.entries()) {
+			await tx
+				.update(stageStandings)
+				.set({ rankPosition: index + 1 })
+				.where(eq(stageStandings.id, row.id));
 		}
 
 		return db

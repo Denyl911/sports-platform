@@ -6,7 +6,7 @@ Servidor backend HTTP REST y WebSocket de alto rendimiento para la plataforma de
 
 ## 1. Propósito y Alcance de la Aplicación
 
-- **Responsabilidad principal:** Exponer endpoints RESTful, documentación OpenAPI/Swagger automática y canales WebSocket para transmisión de marcadores y eventos en tiempo real.
+- **Responsabilidad principal:** Exponer endpoints RESTful, documentación OpenAPI automática y canales WebSocket para transmisión de marcadores y eventos en tiempo real.
 - **Consumidores:** 
   - `packages/api-client` (genera el cliente tipado con Eden Treaty para `apps/web` y `apps/mobile`).
   - Clientes externos mediante REST estándar y WebSockets.
@@ -18,7 +18,7 @@ Servidor backend HTTP REST y WebSocket de alto rendimiento para la plataforma de
 
 ### Modularidad por Rutas
 - Cada recurso reside en un módulo independiente dentro de `src/routes/` (ej. `tournaments.ts`, `matches.ts`, `teams.ts`, `standings.ts`).
-- Cada submódulo debe instanciar un `new Elysia({ prefix: '/...' })` y exportarse como plugin.
+- Cada submódulo debe instanciar un `new Elysia({ prefix: '/...', tags: '...' })` y exportarse como plugin.
 - Las rutas se componen en la instancia central en `src/index.ts` usando `.use()`.
 
 ### Separación de Responsabilidades

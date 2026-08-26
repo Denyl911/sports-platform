@@ -5,23 +5,49 @@ import {
 	matchPeriods,
 	matches,
 	sportEventTypes,
+	stageTeamRegistrations,
 	tournamentEditions,
 	tournamentStages,
 	tournaments,
 } from "@sports/db/tables";
 import type {
-	InsertMatch,
+	CreateMatch,
 	MatchFilterQuery,
 	RecordLiveEvent,
-	UpdateMatch,
+	UpdateMatchInfo,
 	UpdateMatchScore,
 } from "@sports/schemas";
 import { DomainError } from "./errors";
+import { getStageTournamentId } from "./scoped-ids.service";
+import { recalculateGroupStandings } from "./standings.service";
 import { findGroupById, findStageById } from "./stage.service";
 import { findTeamById } from "./team.service";
 import { findVenueById } from "./venue.service";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Transiciones válidas de estado de un partido
+const MATCH_STATUS_TRANSITIONS: Record<string, string[]> = {
+	scheduled: ["in_progress", "cancelled", "walkover"],
+	in_progress: ["paused", "finished", "cancelled", "walkover"],
+	paused: ["in_progress", "finished", "cancelled", "walkover"],
+	finished: [],
+	cancelled: [],
+	walkover: [],
+};
+
+export function assertMatchStatusTransition(
+	current: string,
+	next: string,
+): void {
+	if (current === next) return;
+	const allowed = MATCH_STATUS_TRANSITIONS[current] ?? [];
+	if (!allowed.includes(next)) {
+		throw DomainError.badRequest(
+			`Invalid match status transition: '${current}' -> '${next}'`,
+		);
+	}
+}
 
 const MATCH_RELATIONS = {
 	periods: true,
@@ -69,8 +95,16 @@ export async function findMatchById(id: string) {
 // CRUD
 // ==========================================
 
-export async function createMatch(data: InsertMatch) {
-	await assertStageExists(data.stageId);
+export async function createMatch(data: CreateMatch) {
+	const stage = await findStageById(data.stageId);
+
+	// Integridad: la etapa debe pertenecer al torneo indicado
+	const stageTournamentId = await getStageTournamentId(stage.id);
+	if (stageTournamentId !== data.tournamentId) {
+		throw DomainError.badRequest(
+			`Stage '${data.stageId}' does not belong to tournament '${data.tournamentId}'`,
+		);
+	}
 
 	if (data.groupId) {
 		const group = await findGroupById(data.groupId);
@@ -101,16 +135,58 @@ export async function createMatch(data: InsertMatch) {
 	return created;
 }
 
-export async function updateMatch(id: string, data: UpdateMatch) {
+export async function updateMatch(id: string, data: UpdateMatchInfo) {
 	const match = await findMatchById(id);
 
-	if (data.winnerTeamId) {
-		assertWinnerIsParticipant(match, data.winnerTeamId);
+	if (data.status && data.status !== match.status) {
+		assertMatchStatusTransition(match.status, data.status);
 	}
+
+	// Cambio de participantes: deben venir juntos, existir y estar inscritos en la etapa
+	if ((data.homeTeamId !== undefined) !== (data.awayTeamId !== undefined)) {
+		throw DomainError.badRequest(
+			"Both homeTeamId and awayTeamId are required to define participants",
+		);
+	}
+
+	const finalHome = data.homeTeamId ?? match.homeTeamId;
+	const finalAway = data.awayTeamId ?? match.awayTeamId;
+
+	if (data.homeTeamId && data.awayTeamId) {
+		await findTeamById(data.homeTeamId);
+		await findTeamById(data.awayTeamId);
+		await assertTeamsRegisteredInStage(
+			match.stageId,
+			data.homeTeamId,
+			data.awayTeamId,
+		);
+	}
+
+	if (data.groupId) {
+		const group = await findGroupById(data.groupId);
+		if (group.stageId !== match.stageId) {
+			throw DomainError.badRequest(
+				`Group '${data.groupId}' does not belong to stage '${match.stageId}'`,
+			);
+		}
+	}
+
+	if (data.venueId) await findVenueById(data.venueId);
+
+	// El ganador que ya no sea participante (post-cambio de equipos) se limpia
+	const winnerInvalid =
+		match.winnerTeamId &&
+		finalHome &&
+		finalAway &&
+		match.winnerTeamId !== finalHome &&
+		match.winnerTeamId !== finalAway;
 
 	const [updated] = await db
 		.update(matches)
-		.set(toMatchRow(data))
+		.set({
+			...toMatchRow(data),
+			...(winnerInvalid ? { winnerTeamId: null } : {}),
+		})
 		.where(eq(matches.id, id))
 		.returning();
 
@@ -127,8 +203,21 @@ export async function deleteMatch(id: string) {
 // ==========================================
 
 export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
-	return db.transaction(async (tx) => {
+	const updated = await db.transaction(async (tx) => {
 		const match = await getMatchOrThrow(tx, id);
+
+		assertMatchStatusTransition(match.status, payload.status);
+
+		// Walkover exige ganador explícito
+		if (payload.status === "walkover" && !payload.winnerTeamId) {
+			throw DomainError.badRequest(
+				"winnerTeamId is required when status is 'walkover'",
+			);
+		}
+
+		if (payload.winnerTeamId) {
+			assertWinnerIsParticipant(match, payload.winnerTeamId);
+		}
 
 		// Snapshot del periodo en curso (el cliente envía el marcador acumulado vigente)
 		const [periodInfo] = await tx
@@ -137,14 +226,16 @@ export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
 			})
 			.from(matchPeriods)
 			.where(eq(matchPeriods.matchId, id));
-		const currentPeriod = Math.max(periodInfo?.maxPeriod ?? 0, 1);
+		const currentPeriod =
+			payload.periodNumber ?? Math.max(periodInfo?.maxPeriod ?? 0, 1);
+		const periodType = payload.periodType ?? "regular";
 
 		await tx
 			.insert(matchPeriods)
 			.values({
 				matchId: id,
 				periodNumber: currentPeriod,
-				periodType: "regular",
+				periodType,
 				homeScore: payload.homeScore,
 				awayScore: payload.awayScore,
 			})
@@ -159,7 +250,7 @@ export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
 
 		const winnerTeamId = resolveWinner(payload, match);
 
-		const [updated] = await tx
+		const [row] = await tx
 			.update(matches)
 			.set({
 				homeScore: payload.homeScore,
@@ -170,8 +261,11 @@ export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
 			.where(eq(matches.id, id))
 			.returning();
 
-		return updated;
+		return row;
 	});
+
+	await recalculateStandingsIfFinished(id);
+	return updated;
 }
 
 // ==========================================
@@ -182,7 +276,7 @@ export async function recordLiveEvent(
 	matchId: string,
 	payload: RecordLiveEvent,
 ) {
-	return db.transaction(async (tx) => {
+	const event = await db.transaction(async (tx) => {
 		const match = await getMatchOrThrow(tx, matchId);
 
 		if (match.status !== "in_progress") {
@@ -242,6 +336,9 @@ export async function recordLiveEvent(
 
 		return event;
 	});
+
+	await recalculateStandingsIfFinished(matchId);
+	return event;
 }
 
 // ==========================================
@@ -309,13 +406,45 @@ async function assertMatchExists(id: string) {
 	if (!match) throw DomainError.notFound(`Match '${id}' not found`);
 }
 
-async function assertStageExists(stageId: string) {
-	await findStageById(stageId);
-}
-
 async function assertParticipantTeams(homeTeamId: string, awayTeamId: string) {
 	await findTeamById(homeTeamId);
 	await findTeamById(awayTeamId);
+}
+
+async function assertTeamsRegisteredInStage(
+	stageId: string,
+	homeTeamId: string,
+	awayTeamId: string,
+) {
+	const rows = await db
+		.select({ teamId: stageTeamRegistrations.teamId })
+		.from(stageTeamRegistrations)
+		.where(eq(stageTeamRegistrations.stageId, stageId));
+
+	const registered = new Set(rows.map((r) => r.teamId));
+	for (const teamId of [homeTeamId, awayTeamId]) {
+		if (!registered.has(teamId)) {
+			throw DomainError.badRequest(
+				`Team '${teamId}' is not registered in stage '${stageId}'`,
+			);
+		}
+	}
+}
+
+// Tras finalizar un partido con grupo, sincroniza la tabla de posiciones
+async function recalculateStandingsIfFinished(matchId: string): Promise<void> {
+	const [row] = await db
+		.select({ groupId: matches.groupId, status: matches.status })
+		.from(matches)
+		.where(eq(matches.id, matchId))
+		.limit(1);
+
+	if (
+		row?.groupId &&
+		(row.status === "finished" || row.status === "walkover")
+	) {
+		await recalculateGroupStandings(row.groupId);
+	}
 }
 
 function assertWinnerIsParticipant(
@@ -333,9 +462,9 @@ function resolveWinner(
 	payload: UpdateMatchScore,
 	match: { homeTeamId: string | null; awayTeamId: string | null },
 ): string | null | undefined {
-	// Walkover: el ganador debe venir explícito en el payload
+	// Walkover: el ganador viene validado explícito en el payload
 	if (payload.status === "walkover") {
-		return payload.winnerTeamId ?? null;
+		return payload.winnerTeamId;
 	}
 
 	if (payload.status === "finished") {
@@ -400,11 +529,22 @@ async function recalculateScoreFromEvents(tx: Tx, matchId: string) {
 	const homeTotal = totals.find((t) => t.teamId === match.homeTeamId)?.total;
 	const awayTotal = totals.find((t) => t.teamId === match.awayTeamId)?.total;
 
+	// Si el partido ya terminó, el ganador se deriva del marcador recalculado
+	const winnerTeamId =
+		match.status === "finished"
+			? (homeTotal ?? 0) > (awayTotal ?? 0)
+				? match.homeTeamId
+				: (awayTotal ?? 0) > (homeTotal ?? 0)
+					? match.awayTeamId
+					: null
+			: undefined;
+
 	await tx
 		.update(matches)
 		.set({
 			homeScore: homeTotal ?? 0,
 			awayScore: awayTotal ?? 0,
+			...(winnerTeamId === undefined ? {} : { winnerTeamId }),
 		})
 		.where(eq(matches.id, matchId));
 }

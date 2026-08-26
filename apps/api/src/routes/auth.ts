@@ -1,16 +1,23 @@
 import { Elysia, t } from "elysia";
 import { accessTokenJwt, refreshTokenJwt } from "../lib/jwt";
+import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
+	authLoginResponseSchema,
 	authRefreshSchema,
 	authTokenPairSchema,
-	selectUserSchema,
+	userChangePasswordSchema,
 	userLoginSchema,
 } from "@sports/schemas";
-import { findUserById, verifyCredentials } from "../services/user.service";
+import {
+	changePassword,
+	findUserById,
+	verifyCredentials,
+} from "../services/user.service";
 
 export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 	.use(accessTokenJwt)
 	.use(refreshTokenJwt)
+	.use(jwtMiddleware)
 	.post(
 		"/login",
 		async ({ body, set, accessToken, refreshToken }) => {
@@ -29,7 +36,7 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 		},
 		{
 			body: userLoginSchema,
-			200: t.Intersect([selectUserSchema, authTokenPairSchema]),
+			200: authLoginResponseSchema,
 			401: t.Object({ message: t.String() }),
 		},
 	)
@@ -46,7 +53,13 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			}
 
 			// Rol fresco desde DB al renovar la sesión
-			const user = await findUserById((payload as { sub: string }).sub);
+			let user: Awaited<ReturnType<typeof findUserById>> | null = null;
+			try {
+				user = await findUserById((payload as { sub: string }).sub);
+			} catch {
+				set.status = 401;
+				return { message: "Invalid or expired refresh token" };
+			}
 			if (!user.isActive) {
 				set.status = 403;
 				return { message: "User is inactive" };
@@ -64,5 +77,21 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				401: t.Object({ message: t.String() }),
 				403: t.Object({ message: t.String() }),
 			},
+		},
+	)
+	.post(
+		"/change-password",
+		async ({ userId, body }) => {
+			await changePassword(userId, body.currentPassword, body.newPassword);
+			return { success: true };
+		},
+		{
+			auth: true,
+			body: userChangePasswordSchema,
+			response: {
+				200: t.Object({ success: t.Boolean() }),
+				401: t.Object({ message: t.String() }),
+			},
+			detail: { summary: "Cambiar contraseña del usuario autenticado" },
 		},
 	);

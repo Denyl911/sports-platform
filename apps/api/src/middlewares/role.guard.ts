@@ -3,6 +3,7 @@ import {
 	getEditionTournamentId,
 	getGroupTournamentId,
 	getMatchTournamentId,
+	getMembershipTournamentId,
 	getRegistrationTournamentId,
 	getStageTournamentId,
 	getStandingRowTournamentId,
@@ -109,6 +110,11 @@ export function requireRegistrationRole(...roles: TournamentScopedRole[]) {
 // Resuelve el torneo desde :id de una fila de posiciones
 export function requireStandingRowRole(...roles: TournamentScopedRole[]) {
 	return scopedRoleGuard("id", getStandingRowTournamentId, roles);
+}
+
+// Resuelve el torneo desde :memberId de una membresía
+export function requireMembershipRole(...roles: TournamentScopedRole[]) {
+	return scopedRoleGuard("memberId", getMembershipTournamentId, roles);
 }
 
 function scopedRoleGuard(

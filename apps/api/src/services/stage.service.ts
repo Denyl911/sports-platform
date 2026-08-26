@@ -41,20 +41,21 @@ export async function findStageById(id: string) {
 export async function createStage(data: InsertTournamentStage) {
 	await assertEditionExists(data.editionId);
 
+	const sequenceOrder = data.sequenceOrder ?? 1;
 	const [duplicate] = await db
 		.select({ id: tournamentStages.id })
 		.from(tournamentStages)
 		.where(
 			and(
 				eq(tournamentStages.editionId, data.editionId),
-				eq(tournamentStages.sequenceOrder, data.sequenceOrder ?? 1),
+				eq(tournamentStages.sequenceOrder, sequenceOrder),
 			),
 		)
 		.limit(1);
 
 	if (duplicate)
 		throw DomainError.conflict(
-			`Stage with sequence order '${data.sequenceOrder}' already exists in this edition`,
+			`Stage with sequence order '${sequenceOrder}' already exists in this edition`,
 		);
 
 	const [created] = await db.insert(tournamentStages).values(data).returning();

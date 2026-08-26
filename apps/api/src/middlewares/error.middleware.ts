@@ -16,13 +16,28 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
 			return { message: error.message };
 		}
 
-		// 3. Ruta inexistente
+		// 3. Violaciones de constraints de Postgres (race conditions / integridad referencial)
+		const pgCode =
+			(error as { code?: string }).code ??
+			((error as { cause?: { code?: string } }).cause?.code);
+		if (pgCode === "23505") {
+			set.status = 409;
+			return { message: "Resource already exists" };
+		}
+		if (pgCode === "23503") {
+			set.status = 409;
+			return {
+				message: "Resource is referenced by other records and cannot be modified",
+			};
+		}
+
+		// 4. Ruta inexistente
 		if (code === "NOT_FOUND") {
 			set.status = 404;
 			return { message: "Not Found" };
 		}
 
-		// 4. Fallback
+		// 5. Fallback
 		console.error("[unhandled]", error);
 		set.status = 500;
 		return { message: "Internal Server Error" };

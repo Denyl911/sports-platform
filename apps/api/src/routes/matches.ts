@@ -1,15 +1,14 @@
 import { Elysia } from "elysia";
 import {
-	insertMatchSchema,
+	createMatchSchema,
 	matchFilterQuerySchema,
 	matchIdParamsSchema,
 	matchScheduleUpdateSchema,
 	matchVenueUpdateSchema,
+	updateMatchInfoSchema,
 	recordLiveEventSchema,
-	updateMatchSchema,
 	updateMatchScoreSchema,
-} from "@sports/schemas";
-import { jwtMiddleware } from "../middlewares/auth.middleware";
+} from "@sports/schemas";import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	requireMatchRole,
 	requireTournamentRole,
@@ -45,7 +44,7 @@ export const matchesRoutes = new Elysia({
 	// ==========================================
 	.post("/", async ({ body }) => createMatch(body), {
 		auth: true,
-		body: insertMatchSchema,
+		body: createMatchSchema,
 		beforeHandle: requireTournamentRole("organizer"),
 		detail: { summary: "Crear partido" },
 	})
@@ -55,7 +54,7 @@ export const matchesRoutes = new Elysia({
 	.patch("/:id", async ({ params, body }) => updateMatch(params.id, body), {
 		auth: true,
 		params: matchIdParamsSchema,
-		body: updateMatchSchema,
+		body: updateMatchInfoSchema,
 		beforeHandle: requireMatchRole("organizer"),
 		detail: { summary: "Actualizar partido" },
 	})

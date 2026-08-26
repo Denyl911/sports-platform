@@ -13,6 +13,9 @@ import { tournamentMembers, users } from "@sports/db/tables";
 export const selectUserSchema = createSelectSchema(users);
 export const updateUserSchema = createUpdateSchema(users);
 
+// Usuario sin el hash de contraseña (para respuestas HTTP)
+export const userPublicSchema = t.Omit(selectUserSchema, ["passwordHash"]);
+
 // Esquema de inserción interno: el hash lo genera la API, nunca llega del cliente
 export const insertUserRecordSchema = createInsertSchema(users, {
 	passwordHash: t.String({ minLength: 20 }),
@@ -68,6 +71,12 @@ export const authTokenPairSchema = t.Object({
   accessToken: t.String(),
   refreshToken: t.String(),
 });
+
+// Respuesta de /auth/login: par de tokens + usuario público (sin hash)
+export const authLoginResponseSchema = t.Intersect([
+  authTokenPairSchema,
+  t.Object({ user: userPublicSchema }),
+]);
 
 // Cambio de contraseña autenticado
 export const userChangePasswordSchema = t.Object({
@@ -136,6 +145,7 @@ export type UserCreate = Static<typeof userCreateSchema>;
 export type UserLogin = Static<typeof userLoginSchema>;
 export type AuthRefresh = Static<typeof authRefreshSchema>;
 export type AuthTokenPair = Static<typeof authTokenPairSchema>;
+export type AuthLoginResponse = Static<typeof authLoginResponseSchema>;
 export type UserChangePassword = Static<typeof userChangePasswordSchema>;
 export type UserFilterQuery = Static<typeof userFilterQuerySchema>;
 export type TournamentMember = Static<typeof selectTournamentMemberSchema>;

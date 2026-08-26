@@ -16,6 +16,17 @@ export type UserPublic = Omit<typeof users.$inferSelect, "passwordHash">;
 // CRUD de usuarios
 // ==========================================
 
+// Columnas públicas de usuario: nunca exponer passwordHash
+const USER_PUBLIC_COLUMNS = {
+	id: users.id,
+	email: users.email,
+	fullName: users.fullName,
+	role: users.role,
+	isActive: users.isActive,
+	createdAt: users.createdAt,
+	updatedAt: users.updatedAt,
+} as const;
+
 export async function listUsers(filter: UserFilterQuery) {
 	const conditions = [];
 	if (filter.role) conditions.push(eq(users.role, filter.role));
@@ -23,7 +34,7 @@ export async function listUsers(filter: UserFilterQuery) {
 		conditions.push(eq(users.isActive, filter.isActive));
 
 	return db
-		.select()
+		.select(USER_PUBLIC_COLUMNS)
 		.from(users)
 		.where(conditions.length ? and(...conditions) : undefined)
 		.orderBy(asc(users.fullName))
@@ -31,9 +42,21 @@ export async function listUsers(filter: UserFilterQuery) {
 		.offset(filter.offset ?? 0);
 }
 
+// Usuario público (sin hash): para rutas HTTP y guards
 export async function findUserById(id: string) {
-	const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+	const [user] = await db
+		.select(USER_PUBLIC_COLUMNS)
+		.from(users)
+		.where(eq(users.id, id))
+		.limit(1);
 
+	if (!user) throw DomainError.notFound(`User '${id}' not found`);
+	return user;
+}
+
+// Fila completa incluyendo passwordHash: solo uso interno (login, cambio de contraseña)
+export async function findUserRecordById(id: string) {
+	const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
 	if (!user) throw DomainError.notFound(`User '${id}' not found`);
 	return user;
 }
@@ -60,7 +83,7 @@ export async function createUser(data: UserCreate) {
 			fullName: data.fullName,
 			role: data.role ?? "viewer_staff",
 		})
-		.returning();
+		.returning(USER_PUBLIC_COLUMNS);
 
 	return created;
 }
@@ -75,7 +98,7 @@ export async function updateUser(id: string, data: UpdateUser) {
 		.update(users)
 		.set(rest)
 		.where(eq(users.id, id))
-		.returning();
+		.returning(USER_PUBLIC_COLUMNS);
 
 	return updated;
 }
@@ -89,6 +112,10 @@ export async function deleteUser(id: string) {
 // Autenticación local
 // ==========================================
 
+// Hash dummy para igualar el tiempo de respuesta cuando el email no existe
+// (mitiga enumeración de usuarios por timing)
+const DUMMY_HASH = await Bun.password.hash("timing-equalizer-dummy");
+
 export async function verifyCredentials(
 	email: string,
 	password: string,
@@ -99,7 +126,10 @@ export async function verifyCredentials(
 		.where(eq(users.email, email.toLowerCase()))
 		.limit(1);
 
-	if (!user || !user.passwordHash || !user.isActive) return null;
+	if (!user || !user.passwordHash || !user.isActive) {
+		await Bun.password.verify(password, DUMMY_HASH);
+		return null;
+	}
 
 	const valid = await Bun.password.verify(password, user.passwordHash);
 	if (!valid) return null;
@@ -114,7 +144,7 @@ export async function changePassword(
 	currentPassword: string,
 	newPassword: string,
 ): Promise<void> {
-	const user = await findUserById(userId);
+	const user = await findUserRecordById(userId);
 
 	if (!user.passwordHash) {
 		throw DomainError.badRequest("User has no local password set");

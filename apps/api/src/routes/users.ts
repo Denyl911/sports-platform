@@ -9,7 +9,11 @@ import {
 	userRefParamsSchema,
 } from "@sports/schemas";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
-import { requireGlobalRole } from "../middlewares/role.guard";
+import {
+	requireGlobalRole,
+	requireMembershipRole,
+	requireTournamentRole,
+} from "../middlewares/role.guard";
 import {
 	addTournamentMember,
 	createUser,
@@ -79,7 +83,7 @@ export const usersRoutes = new Elysia({ prefix: "/users", tags: ["Users"] })
 			auth: true,
 			params: userRefParamsSchema,
 			body: t.Omit(addTournamentMemberSchema, ["userId"]),
-			beforeHandle: requireGlobalRole("admin", "organizer"),
+			beforeHandle: requireTournamentRole("organizer"),
 			detail: { summary: "Asignar rol de usuario en un torneo" },
 		},
 	);
@@ -97,7 +101,7 @@ export const membershipItemRoutes = new Elysia({
 			auth: true,
 			params: tournamentMemberRefParamsSchema,
 			body: updateTournamentMemberRoleSchema,
-			beforeHandle: requireGlobalRole("admin", "organizer"),
+			beforeHandle: requireMembershipRole("organizer"),
 			detail: { summary: "Cambiar rol de la membresía" },
 		},
 	)
@@ -110,7 +114,7 @@ export const membershipItemRoutes = new Elysia({
 		{
 			auth: true,
 			params: tournamentMemberRefParamsSchema,
-			beforeHandle: requireGlobalRole("admin", "organizer"),
+			beforeHandle: requireMembershipRole("organizer"),
 			response: {
 				200: t.Object({ success: t.Boolean() }),
 				404: t.Object({ message: t.String() }),

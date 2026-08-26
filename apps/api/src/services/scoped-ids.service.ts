@@ -6,6 +6,7 @@ import {
 	stageStandings,
 	stageTeamRegistrations,
 	tournamentEditions,
+	tournamentMembers,
 	tournamentStages,
 	tournaments,
 } from "@sports/db/tables";
@@ -86,6 +87,20 @@ export async function getRegistrationTournamentId(
 	if (!row)
 		throw DomainError.notFound(`Registration '${registrationId}' not found`);
 	return getStageTournamentId(row.stageId);
+}
+
+// Resuelve el torneo desde una membresía (tournament_members)
+export async function getMembershipTournamentId(
+	memberId: string,
+): Promise<string> {
+	const [row] = await db
+		.select({ tournamentId: tournamentMembers.tournamentId })
+		.from(tournamentMembers)
+		.where(eq(tournamentMembers.id, memberId))
+		.limit(1);
+
+	if (!row) throw DomainError.notFound(`Tournament member '${memberId}' not found`);
+	return row.tournamentId;
 }
 
 // Resuelve el torneo desde una fila de posiciones

@@ -22,6 +22,31 @@ export const insertMatchSchema = createInsertSchema(matches, {
 // Esquema de actualización parcial
 export const updateMatchSchema = createUpdateSchema(matches);
 
+// Campos administrativos que el organizer puede editar vía PATCH /matches/:id.
+// Los equipos SÍ se permiten aquí pero se validan contra las inscripciones de la etapa.
+// El marcador/estado de juego NO va aquí: se gestiona por /matches/:id/score (referee).
+export const updateMatchInfoSchema = t.Object({
+	roundNumber: t.Optional(t.Integer({ minimum: 1 })),
+	matchNumber: t.Optional(t.Union([t.Integer({ minimum: 1 }), t.Null()])),
+	groupId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	scheduledAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Null()])),
+	venueId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	homeTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	awayTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	metadata: t.Optional(t.Record(t.String(), t.Unknown())),
+	// El organizer solo puede cancelar por esta vía; el resto de transiciones
+	// pasa por el endpoint de marcador (rol referee)
+	status: t.Optional(t.Literal("cancelled")),
+});
+
+// Payload de creación: insert base + tournamentId explícito (guard RBAC e integridad etapa↔torneo)
+export const createMatchSchema = t.Intersect([
+	insertMatchSchema,
+	t.Object({
+		tournamentId: t.String({ format: "uuid" }),
+	}),
+]);
+
 // Periodos y Eventos
 export const selectMatchPeriodSchema = createSelectSchema(matchPeriods);
 export const insertMatchPeriodSchema = createInsertSchema(matchPeriods);
@@ -62,6 +87,16 @@ export const updateMatchScoreSchema = t.Object({
 	awayScore: t.Integer({ minimum: 0 }),
 	status: insertMatchSchema.status,
 	winnerTeamId: t.Optional(t.String({ format: "uuid" })),
+	periodNumber: t.Optional(t.Integer({ minimum: 1 })),
+	periodType: t.Optional(
+		t.Union([
+			t.Literal("regular"),
+			t.Literal("overtime"),
+			t.Literal("extra_time"),
+			t.Literal("penalties"),
+			t.Literal("break"),
+		]),
+	),
 });
 
 // Payload para registrar un evento en tiempo real
@@ -90,7 +125,9 @@ export const matchScheduleUpdateSchema = t.Object({
 
 export type Match = Static<typeof selectMatchSchema>;
 export type InsertMatch = Static<typeof insertMatchSchema>;
+export type CreateMatch = Static<typeof createMatchSchema>;
 export type UpdateMatch = Static<typeof updateMatchSchema>;
+export type UpdateMatchInfo = Static<typeof updateMatchInfoSchema>;
 export type UpdateMatchScore = Static<typeof updateMatchScoreSchema>;
 export type RecordLiveEvent = Static<typeof recordLiveEventSchema>;
 export type MatchVenueUpdate = Static<typeof matchVenueUpdateSchema>;
