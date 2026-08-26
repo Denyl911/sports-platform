@@ -1,4 +1,5 @@
 import { DomainError } from "../services/errors";
+import { findRosterEntryById } from "../services/roster.service";
 import {
 	getEditionTournamentId,
 	getGroupTournamentId,
@@ -8,7 +9,7 @@ import {
 	getStageTournamentId,
 	getStandingRowTournamentId,
 } from "../services/scoped-ids.service";
-import { getUserRoleInTournament } from "../services/user.service";
+import { findTournamentMembership } from "../services/user.service";
 
 // Roles globales de plataforma que pueden exigirse por completo
 type GlobalRole = "super_admin" | "admin" | "organizer";
@@ -18,43 +19,60 @@ type TournamentScopedRole =
 	| "statistician"
 	| "viewer_staff";
 
-// Contexto expuesto por el macro `auth` de jwtMiddleware
-interface AuthContext {
-	user?: { role: string; isActive?: boolean };
+/**
+ * Contexto mínimo que el macro `auth` de jwtMiddleware inyecta en el request.
+ * Los guards lo reciben tipado desde beforeHandle (sin `unknown`).
+ */
+export interface AuthedContext {
 	userId?: string;
 	userRole?: string;
+	user?: { role?: string | null };
 	params?: Record<string, string>;
 	body?: unknown;
 }
 
-function parseAuthContext(
-	ctx: unknown,
-): AuthContext & { userId: string; userRole: string; user: { role: string } } {
-	const c = (ctx ?? {}) as AuthContext;
-	if (!c.userId || !c.userRole || !c.user) {
+type ParsedContext = AuthedContext & { userId: string; userRole: string };
+
+function parseAuthContext(ctx?: AuthedContext | null): ParsedContext {
+	if (!ctx?.userId || !ctx.userRole) {
 		throw DomainError.unauthorized("Authentication required");
 	}
-	return c as AuthContext & {
-		userId: string;
-		userRole: string;
-		user: { role: string };
+	return ctx as ParsedContext;
+}
+
+// Resuelve el torneo relevante para la petición a partir del contexto tipado
+type RoleResolver = (ctx: ParsedContext) => Promise<string>;
+
+function tournamentScoped(
+	resolveTournamentId: RoleResolver,
+	roles: TournamentScopedRole[],
+) {
+	return async (rawCtx?: AuthedContext | null) => {
+		const ctx = parseAuthContext(rawCtx);
+		if (isGlobalAdmin(ctx)) return;
+
+		const tournamentId = await resolveTournamentId(ctx);
+		await assertTournamentAccess(tournamentId, ctx.userId, roles);
 	};
 }
 
-function resolveTournamentId(ctx: AuthContext): string | null {
-	const fromParams = ctx.params?.tournamentId;
-	if (fromParams) return fromParams;
-
-	if (ctx.body && typeof ctx.body === "object") {
-		const value = (ctx.body as Record<string, unknown>).tournamentId;
-		if (typeof value === "string") return value;
-	}
-	return null;
+// Resolver que toma un id desde :paramKey y lo traduce a tournamentId
+function fromParam(
+	key: string,
+	lookup: (id: string) => Promise<string>,
+): RoleResolver {
+	return async (ctx) => {
+		const id = ctx.params?.[key];
+		if (!id) {
+			throw DomainError.badRequest(`A ${key} is required for this action`);
+		}
+		return lookup(id);
+	};
 }
 
 // Exige uno de los roles globales de la plataforma
 export function requireGlobalRole(...roles: GlobalRole[]) {
-	return async (rawCtx: unknown) => {
+	return async (rawCtx?: AuthedContext | null) => {
 		const ctx = parseAuthContext(rawCtx);
 		if (!roles.includes(ctx.userRole as GlobalRole)) {
 			throw DomainError.forbidden(
@@ -65,91 +83,69 @@ export function requireGlobalRole(...roles: GlobalRole[]) {
 }
 
 // Exige una membresía con uno de los roles indicados en el torneo
+// (el torneo se resuelve desde params.tournamentId o body.tournamentId)
 export function requireTournamentRole(...roles: TournamentScopedRole[]) {
-	return async (rawCtx: unknown) => {
-		const ctx = parseAuthContext(rawCtx);
-		if (isGlobalAdmin(ctx)) return;
+	return tournamentScoped(async (ctx) => {
+		const fromParams = ctx.params?.tournamentId;
+		if (fromParams) return fromParams;
 
-		const tournamentId = resolveTournamentId(ctx);
-		if (!tournamentId) {
-			throw DomainError.badRequest(
-				"A tournamentId is required for this action",
-			);
+		if (ctx.body && typeof ctx.body === "object") {
+			const value = (ctx.body as Record<string, unknown>).tournamentId;
+			if (typeof value === "string") return value;
 		}
-
-		const result = await getUserRoleInTournament(tournamentId, ctx.userId);
-		assertTournamentAccess(result, roles);
-	};
+		throw DomainError.badRequest("A tournamentId is required for this action");
+	}, roles);
 }
 
-// Igual que requireTournamentRole pero resuelve el torneo desde :id del partido
-export function requireMatchRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("id", getMatchTournamentId, roles);
-}
+// Resuelve el torneo desde :id del partido
+export const requireMatchRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("id", getMatchTournamentId), roles);
 
 // Resuelve el torneo desde :editionId
-export function requireEditionRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("editionId", getEditionTournamentId, roles);
-}
+export const requireEditionRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("editionId", getEditionTournamentId), roles);
 
 // Resuelve el torneo desde :stageId
-export function requireStageRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("stageId", getStageTournamentId, roles);
-}
+export const requireStageRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("stageId", getStageTournamentId), roles);
 
 // Resuelve el torneo desde :groupId
-export function requireGroupRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("groupId", getGroupTournamentId, roles);
-}
+export const requireGroupRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("groupId", getGroupTournamentId), roles);
 
 // Resuelve el torneo desde :id de una inscripción
-export function requireRegistrationRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("id", getRegistrationTournamentId, roles);
-}
+export const requireRegistrationRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("id", getRegistrationTournamentId), roles);
 
 // Resuelve el torneo desde :id de una fila de posiciones
-export function requireStandingRowRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("id", getStandingRowTournamentId, roles);
-}
+export const requireStandingRowRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("id", getStandingRowTournamentId), roles);
 
 // Resuelve el torneo desde :memberId de una membresía
-export function requireMembershipRole(...roles: TournamentScopedRole[]) {
-	return scopedRoleGuard("memberId", getMembershipTournamentId, roles);
+export const requireMembershipRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("memberId", getMembershipTournamentId), roles);
+
+// Resuelve el torneo desde :id de una entrada de roster → su edición.
+// Sin mutar el contexto: el resolver lee la fila y delega al guard de edición.
+export const requireRosterEntryRole = (...roles: TournamentScopedRole[]) =>
+	tournamentScoped(fromParam("id", getRosterEntryTournamentId), roles);
+
+async function getRosterEntryTournamentId(id: string): Promise<string> {
+	const entry = await findRosterEntryById(id);
+	return getEditionTournamentId(entry.editionId);
 }
 
-function scopedRoleGuard(
-	paramKey: string,
-	resolveTournamentId: (id: string) => Promise<string>,
-	roles: TournamentScopedRole[],
-) {
-	return async (rawCtx: unknown) => {
-		const ctx = parseAuthContext(rawCtx);
-		if (isGlobalAdmin(ctx)) return;
-
-		const itemId = ctx.params?.[paramKey];
-		if (!itemId) {
-			throw DomainError.badRequest(`A ${paramKey} is required for this action`);
-		}
-
-		const tournamentId = await resolveTournamentId(itemId);
-		const result = await getUserRoleInTournament(tournamentId, ctx.userId);
-		assertTournamentAccess(result, roles);
-	};
-}
-
-function isGlobalAdmin(ctx: AuthContext): boolean {
+function isGlobalAdmin(ctx: ParsedContext): boolean {
 	return ctx.user?.role === "super_admin" || ctx.user?.role === "admin";
 }
 
-function assertTournamentAccess(
-	result: Awaited<ReturnType<typeof getUserRoleInTournament>>,
+async function assertTournamentAccess(
+	tournamentId: string,
+	userId: string,
 	roles: TournamentScopedRole[],
-): void {
-	if (
-		!result.allowed ||
-		!result.tournamentRole ||
-		!roles.includes(result.tournamentRole as TournamentScopedRole)
-	) {
+): Promise<void> {
+	const membership = await findTournamentMembership(tournamentId, userId);
+	if (!membership || !roles.includes(membership.role as TournamentScopedRole)) {
 		throw DomainError.forbidden(
 			`You need one of these roles in this tournament: ${roles.join(", ")}`,
 		);

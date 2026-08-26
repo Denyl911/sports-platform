@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike } from "drizzle-orm";
+import { and, asc, eq, ilike, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { clubs, teams } from "@sports/db/tables";
 import type {
@@ -16,7 +16,12 @@ import { DomainError } from "./errors";
 // ==========================================
 
 export async function listClubs() {
-	return db.select().from(clubs).orderBy(asc(clubs.name));
+	const [items, totalRows] = await Promise.all([
+		db.select().from(clubs).orderBy(asc(clubs.name)),
+		db.select({ count: sql<number>`count(*)::int` }).from(clubs),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findClubById(id: string): Promise<Club> {
@@ -65,12 +70,14 @@ export async function listTeams(filter: TeamFilterQuery) {
 	const conditions = [];
 	if (filter.clubId) conditions.push(eq(teams.clubId, filter.clubId));
 	if (filter.category) conditions.push(ilike(teams.category, filter.category));
+	const where = conditions.length ? and(...conditions) : undefined;
 
-	return db
-		.select()
-		.from(teams)
-		.where(conditions.length ? and(...conditions) : undefined)
-		.orderBy(asc(teams.name));
+	const [items, totalRows] = await Promise.all([
+		db.select().from(teams).where(where).orderBy(asc(teams.name)),
+		db.select({ count: sql<number>`count(*)::int` }).from(teams).where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findTeamById(id: string) {

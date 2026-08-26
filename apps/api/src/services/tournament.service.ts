@@ -1,13 +1,25 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { sports, tournaments } from "@sports/db/tables";
 import type { InsertTournament, UpdateTournament } from "@sports/schemas";
 import { DomainError } from "./errors";
 
 export async function listTournaments(sportId?: string) {
-	const query = db.select().from(tournaments).$dynamic();
-	if (sportId) query.where(eq(tournaments.sportId, sportId));
-	return query.orderBy(desc(tournaments.createdAt));
+	const where = sportId ? eq(tournaments.sportId, sportId) : undefined;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select()
+			.from(tournaments)
+			.where(where)
+			.orderBy(desc(tournaments.createdAt)),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(tournaments)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findTournamentById(id: string) {

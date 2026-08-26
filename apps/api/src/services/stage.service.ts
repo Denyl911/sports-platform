@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	stageGroups,
@@ -20,11 +20,20 @@ import { DomainError } from "./errors";
 export async function listStagesByEdition(editionId: string) {
 	await assertEditionExists(editionId);
 
-	return db
-		.select()
-		.from(tournamentStages)
-		.where(eq(tournamentStages.editionId, editionId))
-		.orderBy(asc(tournamentStages.sequenceOrder));
+	const where = eq(tournamentStages.editionId, editionId);
+	const [items, totalRows] = await Promise.all([
+		db
+			.select()
+			.from(tournamentStages)
+			.where(where)
+			.orderBy(asc(tournamentStages.sequenceOrder)),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(tournamentStages)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findStageById(id: string) {
@@ -86,11 +95,13 @@ export async function deleteStage(id: string) {
 export async function listGroupsByStage(stageId: string) {
 	await findStageById(stageId);
 
-	return db
-		.select()
-		.from(stageGroups)
-		.where(eq(stageGroups.stageId, stageId))
-		.orderBy(asc(stageGroups.name));
+	const where = eq(stageGroups.stageId, stageId);
+	const [items, totalRows] = await Promise.all([
+		db.select().from(stageGroups).where(where).orderBy(asc(stageGroups.name)),
+		db.select({ count: sql<number>`count(*)::int` }).from(stageGroups).where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findGroupById(id: string) {

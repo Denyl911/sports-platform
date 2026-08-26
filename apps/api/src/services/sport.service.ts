@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { sportEventTypes, sports } from "@sports/db/tables";
 import type {
@@ -15,7 +15,12 @@ import { DomainError } from "./errors";
 // ==========================================
 
 export async function listSports() {
-	return db.select().from(sports).orderBy(asc(sports.name));
+	const [items, totalRows] = await Promise.all([
+		db.select().from(sports).orderBy(asc(sports.name)),
+		db.select({ count: sql<number>`count(*)::int` }).from(sports),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findSportById(id: string) {
@@ -68,12 +73,21 @@ export async function listSportEventTypes(filter: SportEventTypeFilterQuery) {
 	if (filter.affectsScore !== undefined) {
 		conditions.push(eq(sportEventTypes.affectsScore, filter.affectsScore));
 	}
+	const where = and(...conditions);
 
-	return db
-		.select()
-		.from(sportEventTypes)
-		.where(and(...conditions))
-		.orderBy(asc(sportEventTypes.code));
+	const [items, totalRows] = await Promise.all([
+		db
+			.select()
+			.from(sportEventTypes)
+			.where(where)
+			.orderBy(asc(sportEventTypes.code)),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(sportEventTypes)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findSportEventTypeById(id: string) {

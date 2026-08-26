@@ -1,4 +1,4 @@
-import { and, asc, eq, isNotNull } from "drizzle-orm";
+import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { stageTeamRegistrations, teams } from "@sports/db/tables";
 import type { RegisterTeamInStage } from "@sports/schemas";
@@ -9,32 +9,52 @@ import { findTeamById } from "./team.service";
 export async function listRegistrationsByStage(stageId: string) {
 	await findStageById(stageId);
 
-	return db
-		.select({
-			registration: stageTeamRegistrations,
-			team: teams,
-		})
-		.from(stageTeamRegistrations)
-		.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
-		.where(eq(stageTeamRegistrations.stageId, stageId))
-		.orderBy(asc(stageTeamRegistrations.seedNumber), asc(teams.name));
+	const where = eq(stageTeamRegistrations.stageId, stageId);
+	const orderBy = [
+		asc(stageTeamRegistrations.seedNumber),
+		asc(teams.name),
+	] as const;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select({ registration: stageTeamRegistrations, team: teams })
+			.from(stageTeamRegistrations)
+			.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
+			.where(where)
+			.orderBy(...orderBy),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(stageTeamRegistrations)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function listRegistrationsByGroup(groupId: string) {
-	return db
-		.select({
-			registration: stageTeamRegistrations,
-			team: teams,
-		})
-		.from(stageTeamRegistrations)
-		.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
-		.where(
-			and(
-				eq(stageTeamRegistrations.groupId, groupId),
-				isNotNull(stageTeamRegistrations.groupId),
-			),
-		)
-		.orderBy(asc(stageTeamRegistrations.seedNumber), asc(teams.name));
+	const where = and(
+		eq(stageTeamRegistrations.groupId, groupId),
+		isNotNull(stageTeamRegistrations.groupId),
+	);
+	const orderBy = [
+		asc(stageTeamRegistrations.seedNumber),
+		asc(teams.name),
+	] as const;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select({ registration: stageTeamRegistrations, team: teams })
+			.from(stageTeamRegistrations)
+			.innerJoin(teams, eq(stageTeamRegistrations.teamId, teams.id))
+			.where(where)
+			.orderBy(...orderBy),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(stageTeamRegistrations)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findRegistrationById(id: string) {

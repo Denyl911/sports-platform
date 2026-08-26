@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, getColumns, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matchEvents,
@@ -13,6 +13,7 @@ import {
 import type {
 	CreateMatch,
 	MatchFilterQuery,
+	PaginatedResponse,
 	RecordLiveEvent,
 	UpdateMatchInfo,
 	UpdateMatchScore,
@@ -62,23 +63,71 @@ const MATCH_RELATIONS = {
 // Consultas
 // ==========================================
 
-export async function listMatches(filter: MatchFilterQuery) {
+export async function listMatches(
+	filter: MatchFilterQuery,
+): Promise<PaginatedResponse<typeof matches.$inferSelect>> {
 	const conditions = [];
 	if (filter.stageId) conditions.push(eq(matches.stageId, filter.stageId));
 	if (filter.groupId) conditions.push(eq(matches.groupId, filter.groupId));
 	if (filter.status) conditions.push(eq(matches.status, filter.status));
+	// Scope por edición o torneo: join con la cadena de padres
+	if (filter.editionId)
+		conditions.push(eq(tournamentStages.editionId, filter.editionId));
+	if (filter.tournamentId)
+		conditions.push(eq(tournamentEditions.tournamentId, filter.tournamentId));
 
-	return db
-		.select()
-		.from(matches)
-		.where(conditions.length ? and(...conditions) : undefined)
-		.orderBy(
-			asc(matches.roundNumber),
-			asc(matches.matchNumber),
-			asc(matches.scheduledAt),
-		)
-		.limit(filter.limit ?? 20)
-		.offset(filter.offset ?? 0);
+	const where = conditions.length ? and(...conditions) : undefined;
+	const needsScopeJoin = Boolean(filter.editionId || filter.tournamentId);
+
+	const itemsQuery = needsScopeJoin
+		? db
+				.select({ ...getColumns(matches) })
+				.from(matches)
+				.innerJoin(
+					tournamentStages,
+					eq(matches.stageId, tournamentStages.id),
+				)
+				.innerJoin(
+					tournamentEditions,
+					eq(tournamentStages.editionId, tournamentEditions.id),
+				)
+				.where(where)
+				.orderBy(
+					asc(matches.roundNumber),
+					asc(matches.matchNumber),
+					asc(matches.scheduledAt),
+				)
+				.limit(filter.limit ?? 20)
+				.offset(filter.offset ?? 0)
+		: db
+				.select()
+				.from(matches)
+				.where(where)
+				.orderBy(
+					asc(matches.roundNumber),
+					asc(matches.matchNumber),
+					asc(matches.scheduledAt),
+				)
+				.limit(filter.limit ?? 20)
+				.offset(filter.offset ?? 0);
+
+	const totalQuery = needsScopeJoin
+		? db
+				.select({ count: sql<number>`count(*)::int` })
+				.from(matches)
+				.innerJoin(
+					tournamentStages,
+					eq(matches.stageId, tournamentStages.id),
+				)
+				.innerJoin(
+					tournamentEditions,
+					eq(tournamentStages.editionId, tournamentEditions.id),
+				)
+				.where(where)
+		: db.select({ count: sql<number>`count(*)::int` }).from(matches).where(where);
+
+	const [items, totalRows] = await Promise.all([itemsQuery, totalQuery]);
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findMatchById(id: string) {

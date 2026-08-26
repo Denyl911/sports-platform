@@ -1,11 +1,16 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { venues } from "@sports/db/tables";
 import type { InsertVenue, UpdateVenue } from "@sports/schemas";
 import { DomainError } from "./errors";
 
 export async function listVenues() {
-	return db.select().from(venues).orderBy(asc(venues.name));
+	const [items, totalRows] = await Promise.all([
+		db.select().from(venues).orderBy(asc(venues.name)),
+		db.select({ count: sql<number>`count(*)::int` }).from(venues),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findVenueById(id: string) {

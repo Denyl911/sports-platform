@@ -1,13 +1,22 @@
-import { and, asc, eq, ilike, ne } from "drizzle-orm";
+import { and, asc, eq, ilike, ne, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { players } from "@sports/db/tables";
 import type { InsertPlayer, UpdatePlayer } from "@sports/schemas";
 import { DomainError } from "./errors";
 
 export async function listPlayers(search?: string) {
-	const query = db.select().from(players).$dynamic();
-	if (search) query.where(ilike(players.lastName, `%${search}%`));
-	return query.orderBy(asc(players.lastName), asc(players.firstName));
+	const where = search ? ilike(players.lastName, `%${search}%`) : undefined;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select()
+			.from(players)
+			.where(where)
+			.orderBy(asc(players.lastName), asc(players.firstName)),
+		db.select({ count: sql<number>`count(*)::int` }).from(players).where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findPlayerById(id: string) {

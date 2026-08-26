@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	matches,
@@ -26,20 +26,29 @@ const DEFAULT_POINTS = { win: 3, draw: 1, loss: 0 };
 export async function getStandings(groupId: string) {
 	await findGroupById(groupId);
 
-	return db
-		.select({
-			standing: stageStandings,
-			team: teams,
-		})
-		.from(stageStandings)
-		.innerJoin(teams, eq(stageStandings.teamId, teams.id))
-		.where(eq(stageStandings.groupId, groupId))
-		.orderBy(
-			asc(stageStandings.rankPosition),
-			desc(stageStandings.points),
-			desc(stageStandings.scoreDifference),
-			desc(stageStandings.scoreFor),
-		);}
+	const where = eq(stageStandings.groupId, groupId);
+	const orderBy = [
+		asc(stageStandings.rankPosition),
+		desc(stageStandings.points),
+		desc(stageStandings.scoreDifference),
+		desc(stageStandings.scoreFor),
+	] as const;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select({ standing: stageStandings, team: teams })
+			.from(stageStandings)
+			.innerJoin(teams, eq(stageStandings.teamId, teams.id))
+			.where(where)
+			.orderBy(...orderBy),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(stageStandings)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
+}
 
 // ==========================================
 // Recálculo desde partidos finalizados

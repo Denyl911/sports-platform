@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import {
 	players,
@@ -17,20 +17,29 @@ import { findTeamById } from "./team.service";
 export async function listRoster(editionId: string, teamId: string) {
 	await assertTeamExists(teamId);
 
-	return db
-		.select({
-			roster: tournamentRosters,
-			player: players,
-		})
-		.from(tournamentRosters)
-		.innerJoin(players, eq(tournamentRosters.playerId, players.id))
-		.where(
-			and(
-				eq(tournamentRosters.editionId, editionId),
-				eq(tournamentRosters.teamId, teamId),
-			),
-		)
-		.orderBy(asc(tournamentRosters.jerseyNumber), asc(players.lastName));
+	const where = and(
+		eq(tournamentRosters.editionId, editionId),
+		eq(tournamentRosters.teamId, teamId),
+	);
+	const orderBy = [
+		asc(tournamentRosters.jerseyNumber),
+		asc(players.lastName),
+	] as const;
+
+	const [items, totalRows] = await Promise.all([
+		db
+			.select({ roster: tournamentRosters, player: players })
+			.from(tournamentRosters)
+			.innerJoin(players, eq(tournamentRosters.playerId, players.id))
+			.where(where)
+			.orderBy(...orderBy),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(tournamentRosters)
+			.where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findRosterEntryById(id: string) {

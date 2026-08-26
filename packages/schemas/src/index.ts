@@ -1,4 +1,5 @@
 // Exportación de todos los esquemas y tipos
+export * from "./common";
 export * from "./sports";
 export * from "./tournaments";
 export * from "./teams";

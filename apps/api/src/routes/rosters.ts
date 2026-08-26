@@ -6,29 +6,13 @@ import {
 	updateTournamentRosterSchema,
 } from "@sports/schemas";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
-import { requireEditionRole } from "../middlewares/role.guard";
+import { requireEditionRole, requireRosterEntryRole } from "../middlewares/role.guard";
 import {
 	addPlayerToRoster,
-	findRosterEntryById,
 	listRoster,
 	removePlayerFromRoster,
 	updateRosterEntry,
 } from "../services/roster.service";
-
-// Resuelve el editionId desde la fila de roster y delega al guard de edición
-function requireRosterRole(
-	...roles: Parameters<typeof requireEditionRole>
-): (ctx: unknown) => Promise<void> {
-	const inner = requireEditionRole(...roles);
-	return async (ctx: unknown) => {
-		const params = (ctx as { params?: Record<string, string> })?.params;
-		if (params?.id) {
-			const entry = await findRosterEntryById(params.id);
-			params.editionId = entry.editionId;
-		}
-		await inner(ctx);
-	};
-}
 
 export const rostersRoutes = new Elysia({
 	prefix: "/editions/:editionId/teams/:teamId/roster",
@@ -68,7 +52,7 @@ export const rosterItemRoutes = new Elysia({
 			auth: true,
 			params: rosterEntryIdParamsSchema,
 			body: updateTournamentRosterSchema,
-			beforeHandle: requireRosterRole("organizer"),
+			beforeHandle: requireRosterEntryRole("organizer"),
 			detail: { summary: "Actualizar entrada del plantel" },
 		},
 	)
@@ -81,7 +65,7 @@ export const rosterItemRoutes = new Elysia({
 		{
 			auth: true,
 			params: rosterEntryIdParamsSchema,
-			beforeHandle: requireRosterRole("organizer"),
+			beforeHandle: requireRosterEntryRole("organizer"),
 			response: {
 				200: t.Object({ success: t.Boolean() }),
 				404: t.Object({ message: t.String() }),

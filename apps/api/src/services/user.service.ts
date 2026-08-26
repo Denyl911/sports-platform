@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { tournamentMembers, tournaments, users } from "@sports/db/tables";
 import type {
@@ -32,14 +32,20 @@ export async function listUsers(filter: UserFilterQuery) {
 	if (filter.role) conditions.push(eq(users.role, filter.role));
 	if (filter.isActive !== undefined)
 		conditions.push(eq(users.isActive, filter.isActive));
+	const where = conditions.length ? and(...conditions) : undefined;
 
-	return db
-		.select(USER_PUBLIC_COLUMNS)
-		.from(users)
-		.where(conditions.length ? and(...conditions) : undefined)
-		.orderBy(asc(users.fullName))
-		.limit(filter.limit ?? 20)
-		.offset(filter.offset ?? 0);
+	const [items, totalRows] = await Promise.all([
+		db
+			.select(USER_PUBLIC_COLUMNS)
+			.from(users)
+			.where(where)
+			.orderBy(asc(users.fullName))
+			.limit(filter.limit ?? 20)
+			.offset(filter.offset ?? 0),
+		db.select({ count: sql<number>`count(*)::int` }).from(users).where(where),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 // Usuario público (sin hash): para rutas HTTP y guards
@@ -237,27 +243,14 @@ export async function removeTournamentMember(memberId: string) {
 }
 
 /**
- * Función clave para los guards RBAC:
- * resuelve el rol efectivo del usuario en un torneo.
- * Los roles globales super_admin/admin siempre tienen acceso;
- * el resto depende de la membresía específica del torneo.
+ * Membresía de un usuario en un torneo (o null si no existe).
+ * El check de roles globales vive en el guard, que ya recibe el usuario fresco
+ * del macro `auth`; aquí solo se consulta la membresía.
  */
-export async function getUserRoleInTournament(
+export async function findTournamentMembership(
 	tournamentId: string,
 	userId: string,
-): Promise<{
-	allowed: boolean;
-	globalRole?: string;
-	tournamentRole?: string | null;
-}> {
-	const user = await findUserById(userId);
-
-	if (!user.isActive) return { allowed: false, globalRole: user.role };
-
-	if (user.role === "super_admin" || user.role === "admin") {
-		return { allowed: true, globalRole: user.role };
-	}
-
+): Promise<{ role: string } | null> {
 	const [membership] = await db
 		.select({ role: tournamentMembers.role })
 		.from(tournamentMembers)
@@ -269,11 +262,7 @@ export async function getUserRoleInTournament(
 		)
 		.limit(1);
 
-	return {
-		allowed: Boolean(membership),
-		globalRole: user.role,
-		tournamentRole: membership?.role ?? null,
-	};
+	return membership ?? null;
 }
 
 // ==========================================

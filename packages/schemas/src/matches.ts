@@ -67,6 +67,8 @@ export const matchIdParamsSchema = t.Object({
 export const matchFilterQuerySchema = t.Object({
 	stageId: t.Optional(t.String({ format: "uuid" })),
 	groupId: t.Optional(t.String({ format: "uuid" })),
+	tournamentId: t.Optional(t.String({ format: "uuid" })),
+	editionId: t.Optional(t.String({ format: "uuid" })),
 	status: t.Optional(
 		t.Union([
 			t.Literal("scheduled"),

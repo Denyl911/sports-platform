@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@sports/db";
 import { tournaments, tournamentEditions } from "@sports/db/tables";
 import type {
@@ -20,11 +20,19 @@ const EDITION_STATUS_TRANSITIONS: Record<string, string[]> = {
 export async function listEditionsByTournament(tournamentId: string) {
 	await assertTournamentExists(tournamentId);
 
-	return db
-		.select()
-		.from(tournamentEditions)
-		.where(eq(tournamentEditions.tournamentId, tournamentId))
-		.orderBy(asc(tournamentEditions.startDate));
+	const [items, totalRows] = await Promise.all([
+		db
+			.select()
+			.from(tournamentEditions)
+			.where(eq(tournamentEditions.tournamentId, tournamentId))
+			.orderBy(asc(tournamentEditions.startDate)),
+		db
+			.select({ count: sql<number>`count(*)::int` })
+			.from(tournamentEditions)
+			.where(eq(tournamentEditions.tournamentId, tournamentId)),
+	]);
+
+	return { items, total: totalRows[0]?.count ?? 0 };
 }
 
 export async function findEditionById(id: string) {
@@ -86,7 +94,16 @@ async function assertTournamentExists(tournamentId: string) {
 }
 
 function validateDates(startDate: string | null, endDate: string | null): void {
-	if (startDate && endDate && startDate > endDate) {
+	if (!startDate || !endDate) return;
+
+	const start = new Date(startDate);
+	const end = new Date(endDate);
+
+	// Validación real de fechas: inmune a formatos mixtos (date-only vs datetime)
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+		throw DomainError.badRequest("Invalid date format for startDate or endDate");
+	}
+	if (start.getTime() > end.getTime()) {
 		throw DomainError.badRequest(
 			"startDate must be before or equal to endDate",
 		);
