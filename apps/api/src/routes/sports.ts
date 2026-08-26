@@ -16,7 +16,6 @@ import {
 	deleteSport,
 	deleteSportEventType,
 	findSportById,
-	findSportEventTypeById,
 	listSportEventTypes,
 	listSports,
 	updateSport,

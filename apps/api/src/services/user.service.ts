@@ -132,7 +132,7 @@ export async function verifyCredentials(
 		.where(eq(users.email, email.toLowerCase()))
 		.limit(1);
 
-	if (!user || !user.passwordHash || !user.isActive) {
+	if (!user?.passwordHash || !user.isActive) {
 		await Bun.password.verify(password, DUMMY_HASH);
 		return null;
 	}

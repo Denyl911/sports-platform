@@ -1,15 +1,11 @@
-import { Elysia, t } from "elysia";
 import {
-	editionIdParamsSchema,
-	groupIdParamsSchema,
+	editionRefParamsSchema,
 	groupRefParamsSchema,
 	insertStageGroupSchema,
 	insertTournamentEditionSchema,
 	insertTournamentSchema,
 	insertTournamentStageSchema,
-	stageIdParamsSchema,
 	stageRefParamsSchema,
-	editionRefParamsSchema,
 	tournamentFilterQuerySchema,
 	tournamentRefParamsSchema,
 	updateStageGroupSchema,
@@ -17,6 +13,7 @@ import {
 	updateTournamentSchema,
 	updateTournamentStageSchema,
 } from "@sports/schemas";
+import { Elysia, t } from "elysia";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	requireEditionRole,

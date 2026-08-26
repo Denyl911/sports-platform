@@ -101,7 +101,7 @@ export async function recalculateGroupStandings(groupId: string) {
 			.select({ teamId: stageTeamRegistrations.teamId })
 			.from(stageTeamRegistrations)
 			.where(eq(stageTeamRegistrations.groupId, groupId));
-		registrations.forEach((r) => ensureRow(r.teamId));
+		for (const r of registrations) ensureRow(r.teamId);
 
 		for (const m of groupMatches) {
 			if (!m.homeTeamId || !m.awayTeamId) continue;

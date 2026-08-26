@@ -10,7 +10,7 @@ Servidor backend HTTP REST y WebSocket de alto rendimiento para la plataforma de
 - **Consumidores:** 
   - `packages/api-client` (genera el cliente tipado con Eden Treaty para `apps/web` y `apps/mobile`).
   - Clientes externos mediante REST estándar y WebSockets.
-- **Punto de exportación crítico:** `export type App = typeof app;` en `src/index.ts` es el contrato de tipos fundamental para todo el monorepo.
+- **Punto de exportación crítico:** `export type App = typeof app;` en `src/app.ts` es el contrato de tipos fundamental para todo el monorepo.
 
 ---
 
@@ -19,7 +19,7 @@ Servidor backend HTTP REST y WebSocket de alto rendimiento para la plataforma de
 ### Modularidad por Rutas
 - Cada recurso reside en un módulo independiente dentro de `src/routes/` (ej. `tournaments.ts`, `matches.ts`, `teams.ts`, `standings.ts`).
 - Cada submódulo debe instanciar un `new Elysia({ prefix: '/...', tags: '...' })` y exportarse como plugin.
-- Las rutas se componen en la instancia central en `src/index.ts` usando `.use()`.
+- Las rutas se componen en la instancia central en `src/app.ts` usando `.use()`. `src/index.ts` es solo el entrypoint que ejecuta `app.listen(resolvePort())`.
 
 ### Separación de Responsabilidades
 1. **Rutas (`src/routes/`):** Declaración de endpoints, inyección de esquemas de validación (`params`, `query`, `body`, `response`), middleware de autenticación y mapeo de respuestas HTTP.
@@ -37,31 +37,51 @@ Servidor backend HTTP REST y WebSocket de alto rendimiento para la plataforma de
 ```text
 apps/api/
 ├── src/
-│   ├── lib/                     # Configuración de librerías, plugins de Elysia y clientes
-│   │   ├── jwt.ts               # Setup y configuración de @elysiajs/jwt
-│   │   └── ws.ts                # Helpers y utilidades de publicación WebSocket
+│   ├── lib/                     # Configuración de librerías y helpers
+│   │   ├── jwt.ts               # Setup y configuración de @elysia/jwt (fail-fast en producción)
+│   │   ├── config.ts            # resolvePort / resolveCorsOrigins (testeables)
+│   │   └── ws.ts                # Helpers y utilidades de publicación WebSocket (futuro)
 │   │
 │   ├── middlewares/             # Guards, macros, hooks globales y control de acceso
-│   │   ├── auth.middleware.ts   # Verificación de sesión/token y derivación de usuario
-│   │   ├── error.middleware.ts  # Manejador global de excepciones y respuestas HTTP de error
-│   │   └── role.guard.ts        # Guardias de autorización para administradores / árbitros
+│   │   ├── auth.middleware.ts   # Macro `auth`: verificación de token y derivación de usuario
+│   │   ├── error.middleware.ts  # Manejador global de errores (DomainError, VALIDATION, PG 23503/23505)
+│   │   └── role.guard.ts        # Guards RBAC: globalRole + roles scoped por torneo
 │   │
 │   ├── routes/                  # Controladores y endpoints REST agrupados por dominio
-│   │   ├── auth.ts              # /auth (login, registro, refresh)
-│   │   ├── tournaments.ts       # /tournaments (CRUD, etapas, grupos)
-│   │   ├── teams.ts             # /teams (clubes, plantillas, jugadores)
-│   │   ├── matches.ts           # /matches (calendario, actualización de marcador)
-│   │   ├── standings.ts         # /standings (clasificación por grupo)
-│   │   └── ws.ts                # Endpoints de conexión WebSocket
+│   │   ├── auth.ts              # /auth (login, refresh, change-password)
+│   │   ├── tournaments.ts       # /tournaments (CRUD, ediciones, etapas, grupos)
+│   │   ├── teams.ts             # /teams (CRUD)
+│   │   ├── matches.ts           # /matches (calendario, marcador en vivo, eventos)
+│   │   └── ...                  # clubs, players, venues, sports, users, rosters, registrations, standings
 │   │
 │   ├── services/                # Lógica de negocio y consultas de base de datos
-│   │   ├── tournament.service.ts
-│   │   ├── match.service.ts
-│   │   └── standings.service.ts
 │   │
-│   ├── utils/                   # Funciones utilitarias puras y helpers
-│   │   └── date-formatter.ts
-│   │
-│   └── index.ts                 # Instancia principal de Elysia y export de `App`
+│   ├── app.ts                   # Instancia principal SIN listener + export de `App`
+│   └── index.ts                 # Entrypoint: app.listen(resolvePort())
+├── test/                        # Suites bun:test + treaty(app) — ver sección Testing
+├── bunfig.toml                  # preload de test/setup.ts
 ├── package.json
 └── tsconfig.json
+```
+
+## 4. Testing
+
+Suite completa con `bun:test` + `treaty(app)` (Eden Treaty sobre la instancia, sin red). Ver `README.md` para el setup de la DB de pruebas.
+
+### Comandos
+- `bun test` — todas las suites.
+- `bun run test:types` — type-safety end-to-end del contrato Eden (`tsc --noEmit`).
+- `bunx turbo test --filter=api` / `bun run test` (raíz) — vía turbo.
+
+### Convenciones obligatorias
+- **Aislamiento:** cada suite usa `beforeEach(resetDb)` (`reset()` de drizzle-seed → TRUNCATE CASCADE). DB efímera `sports_platform_test`, forzada por el preload `test/setup.ts`.
+- **Datos:** factories deterministas de `test/helpers/db.ts` (`seedUser({role})`, `seedTournament()`, `seedMatch()`...). Nada de datos aleatorios para RBAC.
+- **Auth:** firmar tokens directamente con `helpers/auth.ts::authHeaders(user)`; los flujos login/refresh se prueban E2E aparte.
+- **Params de ruta con sintaxis de llamada:** `api.matches({ id }).score.patch(...)` — NO indexado (`api.matches[id]` rompe el tipado).
+- **Trampas de Eden Treaty:** en `.delete()/.post()` sin body, un único objeto como primer argumento se interpreta como *data*, no como config. Usar `.delete(undefined, { headers })`.
+
+### Lecciones aprendidas (no regresar)
+- Hooks de plugins requieren `{ as: "global" }` para aplicar a las rutas del app principal (`error.middleware.ts`).
+- El SQLSTATE de bun-sql está en `errno`; Drizzle envuelve el error en `DrizzleQueryError.cause`. El middleware lo detecta por formato `\d{5}`.
+- No reutilizar propiedades de `createInsertSchema` como valores de esquema (crashea `mapSchema` de Elysia); declarar literales inline.
+- Dentro de una transacción Drizzle, leer SIEMPRE con `tx`, nunca con `db`.

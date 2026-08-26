@@ -22,7 +22,13 @@ export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
 					),
 				}),
 			),
-			async resolve({ accessToken, headers }: any) {
+			async resolve({
+				accessToken,
+				headers,
+			}: {
+				accessToken: { verify(token: string): Promise<unknown> };
+				headers?: Record<string, string | undefined>;
+			}) {
 				const authorization = headers?.authorization;
 				if (!authorization?.startsWith("Bearer ")) {
 					throw DomainError.unauthorized("Token requerido");
