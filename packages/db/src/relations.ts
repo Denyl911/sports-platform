@@ -65,7 +65,6 @@ export const relations = defineRelations(schema, (r) => ({
 		club: r.one.clubs({
 			from: r.teams.clubId,
 			to: r.clubs.id,
-			alias: "club",
 		}),
 		registrations: r.many.stageTeamRegistrations(),
 		rosters: r.many.tournamentRosters(),
@@ -109,7 +108,6 @@ export const relations = defineRelations(schema, (r) => ({
 		group: r.one.stageGroups({
 			from: r.stageTeamRegistrations.groupId,
 			to: r.stageGroups.id,
-			alias: "group",
 		}),
 		team: r.one.teams({
 			from: r.stageTeamRegistrations.teamId,
@@ -140,7 +138,6 @@ export const relations = defineRelations(schema, (r) => ({
 		group: r.one.stageGroups({
 			from: r.matches.groupId,
 			to: r.stageGroups.id,
-			alias: "group",
 		}),
 		venue: r.one.venues({
 			from: r.matches.venueId,

@@ -54,8 +54,19 @@ export const userCreateSchema = t.Object({
 
 // Login con password local (futuro OAuth: se añadirán DTOs propios)
 export const userLoginSchema = t.Object({
-	email: t.String({ format: "email" }),
-	password: t.String({ minLength: 1 }),
+  email: t.String({ format: "email" }),
+  password: t.String({ minLength: 1 }),
+});
+
+// Refresh de tokens
+export const authRefreshSchema = t.Object({
+  refreshToken: t.String({ minLength: 1 }),
+});
+
+// Par de tokens emitidos (access corto + refresh largo)
+export const authTokenPairSchema = t.Object({
+  accessToken: t.String(),
+  refreshToken: t.String(),
 });
 
 // Cambio de contraseña autenticado
@@ -109,6 +120,8 @@ export type UpdateUser = Static<typeof updateUserSchema>;
 export type InsertUserRecord = Static<typeof insertUserRecordSchema>;
 export type UserCreate = Static<typeof userCreateSchema>;
 export type UserLogin = Static<typeof userLoginSchema>;
+export type AuthRefresh = Static<typeof authRefreshSchema>;
+export type AuthTokenPair = Static<typeof authTokenPairSchema>;
 export type UserChangePassword = Static<typeof userChangePasswordSchema>;
 export type UserFilterQuery = Static<typeof userFilterQuerySchema>;
 export type TournamentMember = Static<typeof selectTournamentMemberSchema>;

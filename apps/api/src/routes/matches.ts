@@ -1,48 +1,47 @@
 import { Elysia } from "elysia";
 import {
-	selectMatchSchema,
-	matchIdParamsSchema,
 	matchFilterQuerySchema,
-	updateMatchScoreSchema,
+	matchIdParamsSchema,
 	recordLiveEventSchema,
+	updateMatchScoreSchema,
 } from "@sports/schemas";
+import { authGuard } from "../middlewares/auth.middleware";
+import { requireMatchRole } from "../middlewares/role.guard";
+import {
+	findMatchById,
+	listMatches,
+	recordLiveEvent,
+	updateMatchScore,
+} from "../services/match.service";
 
 export const matchesRoutes = new Elysia({
 	prefix: "/matches",
 	tags: ["Matches"],
 })
-	.get(
-		"/",
-		async ({ query }) => {
-			// query viene tipado como MatchFilterQuery
-			return [];
-		},
-		{
-			query: matchFilterQuerySchema,
-		},
-	)
+	// Lectura pública (sitio SSR)
+	.get("/", async ({ query }) => listMatches(query), {
+		query: matchFilterQuerySchema,
+	})
+	.get("/:id", async ({ params }) => findMatchById(params.id), {
+		params: matchIdParamsSchema,
+	})
+	.use(authGuard)
+	// Escritura: requiere rol referee (o superior) del torneo del partido
 	.patch(
 		"/:id/score",
-		async ({ params, body }) => {
-			// params.id es UUID y body es { homeScore, awayScore, status }
-			return { success: true };
-		},
+		async ({ params, body }) => updateMatchScore(params.id, body),
 		{
 			params: matchIdParamsSchema,
 			body: updateMatchScoreSchema,
-			response: {
-				//200: selectMatchSchema,
-			},
+			beforeHandle: requireMatchRole("referee"),
 		},
 	)
 	.post(
 		"/:id/events",
-		async ({ params, body }) => {
-			// Registrar gol/falta en vivo y emitir por WebSocket
-			return { eventId: "..." };
-		},
+		async ({ params, body }) => recordLiveEvent(params.id, body),
 		{
 			params: matchIdParamsSchema,
 			body: recordLiveEventSchema,
+			beforeHandle: requireMatchRole("referee"),
 		},
 	);
