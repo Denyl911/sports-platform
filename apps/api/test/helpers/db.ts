@@ -2,32 +2,42 @@ import { db } from "@sports/db";
 import {
 	clubs,
 	matches,
+	players,
 	sportEventTypes,
 	sports,
 	stageGroups,
+	stageStandings,
 	stageTeamRegistrations,
 	teams,
 	tournamentEditions,
 	tournamentMembers,
+	tournamentRosters,
 	tournamentStages,
 	tournaments,
 	users,
+	venues,
 } from "@sports/db/tables";
 import { and, eq, sql } from "drizzle-orm";
 import { reset } from "drizzle-seed";
 
-// Limpia las tablas base (TRUNCATE ... CASCADE vía drizzle-seed:
-// el cascade vacía también standings, rosters, matches, etc.)
+// Limpia las tablas base (TRUNCATE ... CASCADE vía drizzle-seed)
 export async function resetDb() {
 	await reset(db, {
 		users,
 		sports,
+		venues,
+		clubs,
+		teams,
+		players,
+		sportEventTypes,
 		tournaments,
 		tournamentEditions,
 		tournamentStages,
 		stageGroups,
-		clubs,
-		teams,
+		stageTeamRegistrations,
+		tournamentRosters,
+		matches,
+		stageStandings,
 	});
 }
 
@@ -215,6 +225,68 @@ export async function seedEventType(
 		})
 		.returning();
 	return eventType;
+}
+
+export async function seedPlayer(
+	overrides: Partial<{
+		firstName: string;
+		lastName: string;
+		birthDate: string | null;
+		idCardNumber: string | null;
+	}> = {},
+) {
+	const [player] = await db
+		.insert(players)
+		.values({
+			firstName: overrides.firstName ?? `First${unique()}`,
+			lastName: overrides.lastName ?? `Last${unique()}`,
+			birthDate: overrides.birthDate ?? null,
+			idCardNumber: overrides.idCardNumber ?? `ID-${unique()}`,
+		})
+		.returning();
+	return player;
+}
+
+export async function seedVenue(
+	overrides: Partial<{
+		name: string;
+		address: string;
+		fieldCount: number;
+	}> = {},
+) {
+	const [venue] = await db
+		.insert(venues)
+		.values({
+			name: overrides.name ?? `Venue ${unique()}`,
+			address: overrides.address ?? null,
+			fieldCount: overrides.fieldCount ?? 1,
+		})
+		.returning();
+	return venue;
+}
+
+export async function seedRoster(
+	editionId: string,
+	teamId: string,
+	playerId: string,
+	overrides: Partial<{
+		jerseyNumber: number | null;
+		position: string | null;
+		isCaptain: boolean;
+	}> = {},
+) {
+	const [entry] = await db
+		.insert(tournamentRosters)
+		.values({
+			editionId,
+			teamId,
+			playerId,
+			jerseyNumber: overrides.jerseyNumber ?? null,
+			position: overrides.position ?? null,
+			isCaptain: overrides.isCaptain ?? false,
+		})
+		.returning();
+	return entry;
 }
 
 type MatchRow = typeof matches.$inferSelect;

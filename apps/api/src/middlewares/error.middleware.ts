@@ -44,6 +44,15 @@ export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
 					"Resource is referenced by other records and cannot be modified",
 			};
 		}
+		if (pgCode === "23514") {
+			set.status = 400;
+			return {
+				message:
+					(error as { cause?: { message?: string } }).cause?.message ??
+					(error as { message?: string }).message ??
+					"Check constraint violation",
+			};
+		}
 
 		// 4. Ruta inexistente
 		if (code === "NOT_FOUND") {
