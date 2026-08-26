@@ -157,10 +157,24 @@ export async function addTournamentMember(data: AddTournamentMember) {
 	return created;
 }
 
+// Roles válidos dentro de un torneo (los globales no se asignan por membresía)
+const TOURNAMENT_SCOPED_ROLES = new Set([
+	"organizer",
+	"referee",
+	"statistician",
+	"viewer_staff",
+]);
+
 export async function updateTournamentMemberRole(
 	memberId: string,
-	role: "organizer" | "referee" | "statistician" | "viewer_staff",
+	role: string,
 ) {
+	if (!TOURNAMENT_SCOPED_ROLES.has(role)) {
+		throw DomainError.badRequest(
+			`Role '${role}' is not valid for a tournament member`,
+		);
+	}
+
 	const [member] = await db
 		.select()
 		.from(tournamentMembers)
@@ -172,7 +186,7 @@ export async function updateTournamentMemberRole(
 
 	const [updated] = await db
 		.update(tournamentMembers)
-		.set({ role })
+		.set({ role: role as (typeof tournamentMembers.$inferSelect)["role"] })
 		.where(eq(tournamentMembers.id, memberId))
 		.returning();
 

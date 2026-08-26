@@ -11,53 +11,53 @@ export type AuthUser = Omit<typeof users.$inferSelect, "passwordHash">;
 // Guard de autenticación activable por ruta con `auth: true`.
 // Consulta la DB en cada request: rol siempre fresco y valida isActive.
 export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
-  .use(accessTokenJwt)
-  .macro({
-    auth: {
-      headers: t.Object({
-        authorization: t.String({ description: "Bearer token" }),
-      }),
-      async resolve({ accessToken, headers }: any) {
-        const { authorization } = headers;
-        if (!authorization?.startsWith("Bearer ")) {
-          throw DomainError.unauthorized("Token requerido");
-        }
+	.use(accessTokenJwt)
+	.macro({
+		auth: {
+			headers: t.Object({
+				authorization: t.String({ description: "Bearer token" }),
+			}),
+			async resolve({ accessToken, headers }: any) {
+				const { authorization } = headers;
+				if (!authorization?.startsWith("Bearer ")) {
+					throw DomainError.unauthorized("Token requerido");
+				}
 
-        const token = authorization.slice(7);
-        const payload = (await accessToken.verify(token).catch(() => null)) as {
-          sub?: string;
-          role?: string;
-        } | null;
+				const token = authorization.slice(7);
+				const payload = (await accessToken.verify(token).catch(() => null)) as {
+					sub?: string;
+					role?: string;
+				} | null;
 
-        if (!payload?.sub) {
-          throw DomainError.unauthorized("Token inválido");
-        }
+				if (!payload?.sub) {
+					throw DomainError.unauthorized("Token inválido");
+				}
 
-        const [user] = await db
-          .select({
-            id: users.id,
-            email: users.email,
-            fullName: users.fullName,
-            role: users.role,
-            isActive: users.isActive,
-          })
-          .from(users)
-          .where(eq(users.id, payload.sub))
-          .limit(1);
+				const [user] = await db
+					.select({
+						id: users.id,
+						email: users.email,
+						fullName: users.fullName,
+						role: users.role,
+						isActive: users.isActive,
+					})
+					.from(users)
+					.where(eq(users.id, payload.sub))
+					.limit(1);
 
-        if (!user) {
-          throw DomainError.unauthorized("Usuario no encontrado");
-        }
+				if (!user) {
+					throw DomainError.unauthorized("Usuario no encontrado");
+				}
 
-        if (!user.isActive) {
-          throw DomainError.unauthorized("Usuario desactivado");
-        }
+				if (!user.isActive) {
+					throw DomainError.unauthorized("Usuario desactivado");
+				}
 
-        return {
-          user,
-          userId: user.id,
-          userRole: user.role,
-        };
-      },
-    },
-  });
+				return {
+					user,
+					userId: user.id,
+					userRole: user.role,
+				};
+			},
+		},
+	});

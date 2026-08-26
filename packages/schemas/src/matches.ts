@@ -76,6 +76,14 @@ export const recordLiveEventSchema = t.Object({
 	metadata: t.Optional(t.Record(t.String(), t.Unknown())),
 });
 
+// Payloads para programación y sede
+export const matchVenueUpdateSchema = t.Object({
+	venueId: t.String({ format: "uuid" }),
+});
+export const matchScheduleUpdateSchema = t.Object({
+	scheduledAt: t.String({ format: "date-time" }),
+});
+
 // ==========================================
 // 3. TIPOS TYPESCRIPT INFERIDOS
 // ==========================================
@@ -85,4 +93,6 @@ export type InsertMatch = Static<typeof insertMatchSchema>;
 export type UpdateMatch = Static<typeof updateMatchSchema>;
 export type UpdateMatchScore = Static<typeof updateMatchScoreSchema>;
 export type RecordLiveEvent = Static<typeof recordLiveEventSchema>;
+export type MatchVenueUpdate = Static<typeof matchVenueUpdateSchema>;
+export type MatchScheduleUpdate = Static<typeof matchScheduleUpdateSchema>;
 export type MatchFilterQuery = Static<typeof matchFilterQuerySchema>;

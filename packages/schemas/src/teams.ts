@@ -65,6 +65,27 @@ export const teamFilterQuerySchema = t.Object({
 	category: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
 });
 
+// Query params para búsqueda de jugadores: /players?search=...
+export const playerSearchQuerySchema = t.Object({
+	search: t.Optional(t.String({ minLength: 1, maxLength: 60 })),
+});
+
+// Parámetro de ruta: /rosters/:entryId
+export const rosterEntryIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+
+// Parámetros de ruta de la colección: /editions/:editionId/teams/:teamId/roster
+export const rosterCollectionParamsSchema = t.Object({
+	editionId: t.String({ format: "uuid" }),
+	teamId: t.String({ format: "uuid" }),
+});
+
+// Payload para asignar/quitar grupo de una inscripción
+export const registrationGroupUpdateSchema = t.Object({
+	groupId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+});
+
 // Payload para registrar un equipo en una etapa (grupo opcional)
 export const registerTeamInStageSchema = t.Object({
 	stageId: t.String({ format: "uuid" }),

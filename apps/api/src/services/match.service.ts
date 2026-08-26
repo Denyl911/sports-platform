@@ -372,24 +372,6 @@ async function getMatchSportId(tx: Tx, matchId: string): Promise<string> {
 	return row.sportId;
 }
 
-// Resuelve el torneo al que pertenece un partido (para guards RBAC)
-export async function getMatchTournamentId(matchId: string): Promise<string> {
-	const [row] = await db
-		.select({ tournamentId: tournaments.id })
-		.from(matches)
-		.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
-		.innerJoin(
-			tournamentEditions,
-			eq(tournamentStages.editionId, tournamentEditions.id),
-		)
-		.innerJoin(tournaments, eq(tournamentEditions.tournamentId, tournaments.id))
-		.where(eq(matches.id, matchId))
-		.limit(1);
-
-	if (!row) throw DomainError.notFound(`Match '${matchId}' not found`);
-	return row.tournamentId;
-}
-
 async function recalculateScoreFromEvents(tx: Tx, matchId: string) {
 	const match = await getMatchOrThrow(tx, matchId);
 	const sportId = await getMatchSportId(tx, matchId);

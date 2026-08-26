@@ -38,7 +38,7 @@ export const venueIdParamsSchema = t.Object({
 	id: t.String({ format: "uuid" }),
 });
 export const sportEventTypeParamsSchema = t.Object({
-	id: t.String({ format: "uuid" }),
+	eventTypeId: t.String({ format: "uuid" }),
 });
 
 // Query params para el catálogo de eventos de un deporte

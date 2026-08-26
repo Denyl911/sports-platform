@@ -3,6 +3,7 @@ import { accessTokenJwt, refreshTokenJwt } from "../lib/jwt";
 import {
 	authRefreshSchema,
 	authTokenPairSchema,
+	selectUserSchema,
 	userLoginSchema,
 } from "@sports/schemas";
 import { findUserById, verifyCredentials } from "../services/user.service";
@@ -28,6 +29,8 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 		},
 		{
 			body: userLoginSchema,
+			200: t.Intersect([selectUserSchema, authTokenPairSchema]),
+			401: t.Object({ message: t.String() }),
 		},
 	)
 	.post(

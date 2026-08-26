@@ -99,6 +99,20 @@ export const addTournamentMemberSchema = t.Pick(insertTournamentMemberSchema, [
 	"role",
 ]);
 
+// Parámetros para rutas de membresías
+export const tournamentMemberRefParamsSchema = t.Object({
+	memberId: t.String({ format: "uuid" }),
+});
+export const userRefParamsSchema = t.Object({
+	userId: t.String({ format: "uuid" }),
+});
+
+// Cambiar el rol de una membresía
+export const updateTournamentMemberRoleSchema = t.Pick(
+	insertTournamentMemberSchema,
+	["role"],
+);
+
 // Query params: /tournaments/:id/members
 export const tournamentMembersFilterQuerySchema = t.Object({
 	role: t.Optional(
@@ -126,3 +140,6 @@ export type UserChangePassword = Static<typeof userChangePasswordSchema>;
 export type UserFilterQuery = Static<typeof userFilterQuerySchema>;
 export type TournamentMember = Static<typeof selectTournamentMemberSchema>;
 export type AddTournamentMember = Static<typeof addTournamentMemberSchema>;
+export type UpdateTournamentMemberRole = Static<
+  typeof updateTournamentMemberRoleSchema
+>;

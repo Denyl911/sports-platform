@@ -30,6 +30,45 @@ export const selectStageGroupSchema = createSelectSchema(stageGroups);
 export const insertStageGroupSchema = createInsertSchema(stageGroups);
 export const updateStageGroupSchema = createUpdateSchema(stageGroups);
 
+// ==========================================
+// DTOs PARA ENDPOINTS Y FORMULARIOS
+// ==========================================
+
+export const tournamentIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+export const editionIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+export const stageIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+export const groupIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+export const registrationIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+
+// Referencias para rutas anidadas (la clave del param coincide con el nombre del recurso)
+export const tournamentRefParamsSchema = t.Object({
+	tournamentId: t.String({ format: "uuid" }),
+});
+export const editionRefParamsSchema = t.Object({
+	editionId: t.String({ format: "uuid" }),
+});
+export const stageRefParamsSchema = t.Object({
+	stageId: t.String({ format: "uuid" }),
+});
+export const groupRefParamsSchema = t.Object({
+	groupId: t.String({ format: "uuid" }),
+});
+
+// Query params para filtros: /tournaments?sportId=...
+export const tournamentFilterQuerySchema = t.Object({
+	sportId: t.Optional(t.String({ minLength: 1, maxLength: 32 })),
+});
+
 export type Tournament = Static<typeof selectTournamentSchema>;
 export type InsertTournament = Static<typeof insertTournamentSchema>;
 export type UpdateTournament = Static<typeof updateTournamentSchema>;

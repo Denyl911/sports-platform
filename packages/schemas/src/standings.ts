@@ -23,6 +23,11 @@ export const standingsFilterQuerySchema = t.Object({
 	groupId: t.String({ format: "uuid" }),
 });
 
+// Parámetros de ruta: /standings/:rowId
+export const standingRowIdParamsSchema = t.Object({
+	id: t.String({ format: "uuid" }),
+});
+
 // Payload para recalcular/ajustar manualmente una fila de posiciones
 // (scoreDifference es columna generada en DB: no se ajusta manualmente)
 export const updateStandingRowSchema = t.Partial(
