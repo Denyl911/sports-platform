@@ -316,3 +316,76 @@ describe("matches - eventos y PATCH info", () => {
 		expect(status).toBe(400);
 	});
 });
+
+describe("matches P4 - GET :id (pública)", () => {
+	beforeEach(async () => {
+		await resetDb();
+	});
+
+	it("GET /matches/:id pública 200 con relaciones", async () => {
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		const match = await seedMatch(stage.id);
+
+		const res = await api.matches({ id: match.id }).get();
+		expect(res.status).toBe(200);
+		expect(res.data?.id).toBe(match.id);
+		expect(res.data?.stageId).toBe(stage.id);
+		// findMatchById incluye relaciones (periods, events) cuando existen
+		expect(res.data).toBeDefined();
+	});
+});
+
+describe("matches P4 - DELETE (organizer)", () => {
+	beforeEach(async () => {
+		await resetDb();
+	});
+
+	it("DELETE /matches/:id 200 con organizer y 404 después", async () => {
+		const organizer = await seedUser({ role: "viewer_staff" });
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		await seedMember(tournament.id, organizer.id, "organizer");
+		const match = await seedMatch(stage.id);
+
+		const del = await api.matches({ id: match.id }).delete(undefined, {
+			headers: await authHeaders(organizer),
+		});
+		expect(del.status).toBe(200);
+		expect(del.data?.success).toBe(true);
+
+		const after = await api.matches({ id: match.id }).get();
+		expect(after.status).toBe(404);
+	});
+});
+
+describe("matches P4 - PATCH schedule (organizer)", () => {
+	beforeEach(async () => {
+		await resetDb();
+	});
+
+	it("PATCH /matches/:id/schedule 200 persiste ISO", async () => {
+		const organizer = await seedUser({ role: "viewer_staff" });
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		await seedMember(tournament.id, organizer.id, "organizer");
+		const match = await seedMatch(stage.id);
+
+		const iso = new Date(Date.now() + 86400000).toISOString();
+		const res = await api
+			.matches({ id: match.id })
+			.schedule.patch({ scheduledAt: iso } as never, {
+				headers: await authHeaders(organizer),
+			});
+		expect(res.status).toBe(200);
+		expect(
+			new Date(
+				(res.data as unknown as { scheduledAt: string }).scheduledAt,
+			).toISOString(),
+		).toBe(iso);
+		expect(res.data?.id).toBe(match.id);
+	});
+});

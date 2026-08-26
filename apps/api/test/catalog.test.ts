@@ -148,13 +148,11 @@ describe("catalog - clubs (CRUD, unique, RBAC)", () => {
 		if (!club) throw new Error("no club");
 		await seedTeam();
 		const { teams } = await import("@sports/db/tables");
-		await db
-			.insert(teams)
-			.values({
-				clubId: club.id,
-				name: `Team ${Date.now()}`,
-				category: "open",
-			});
+		await db.insert(teams).values({
+			clubId: club.id,
+			name: `Team ${Date.now()}`,
+			category: "open",
+		});
 
 		const delOkWithTeam = await api
 			.clubs({ id: club.id })
@@ -648,5 +646,41 @@ describe("catalog - match eventType desconocido -> 400 (obligatorio)", () => {
 		void del;
 		void sportEventTypes;
 		void eq;
+	});
+});
+
+describe("catalog-get P4 - GET :id públicos", () => {
+	beforeEach(async () => {
+		await resetDb();
+	});
+
+	it("GET /players/:id pública 200", async () => {
+		const player = await seedPlayer({
+			firstName: "Lionel",
+			lastName: "Messi",
+			birthDate: "1987-06-24",
+		});
+		const res = await api.players({ id: player.id }).get();
+		expect(res.status).toBe(200);
+		expect(res.data?.id).toBe(player.id);
+		expect(res.data?.firstName).toBe("Lionel");
+		expect(res.data?.lastName).toBe("Messi");
+	});
+
+	it("GET /venues/:id pública 200", async () => {
+		const venue = await seedVenue({ name: "Estadio Test", fieldCount: 2 });
+		const res = await api.venues({ id: venue.id }).get();
+		expect(res.status).toBe(200);
+		expect(res.data?.id).toBe(venue.id);
+		expect(res.data?.name).toBe("Estadio Test");
+		expect(res.data?.fieldCount).toBe(2);
+	});
+
+	it("GET /sports/:id pública 200", async () => {
+		const sport = await seedSport("football-p4");
+		const res = await api.sports({ id: sport.id }).get();
+		expect(res.status).toBe(200);
+		expect(res.data?.id).toBe(sport.id);
+		expect(res.data?.name).toBe(sport.name);
 	});
 });
