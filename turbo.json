@@ -19,6 +19,11 @@
 		"check-types": {
 			"dependsOn": ["^check-types"]
 		},
+		"test": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", "bunfig.toml", "test/**"],
+			"cache": false
+		},
 		"dev": {
 			"cache": false,
 			"persistent": true

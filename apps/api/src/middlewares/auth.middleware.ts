@@ -14,11 +14,16 @@ export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
 	.use(accessTokenJwt)
 	.macro({
 		auth: {
-			headers: t.Object({
-				authorization: t.String({ description: "Bearer token" }),
-			}),
+			// Header opcional: si falta, el resolve lanza 401 (no un 400 de validación)
+			headers: t.Optional(
+				t.Object({
+					authorization: t.Optional(
+						t.String({ description: "Bearer token" }),
+					),
+				}),
+			),
 			async resolve({ accessToken, headers }: any) {
-				const { authorization } = headers;
+				const authorization = headers?.authorization;
 				if (!authorization?.startsWith("Bearer ")) {
 					throw DomainError.unauthorized("Token requerido");
 				}

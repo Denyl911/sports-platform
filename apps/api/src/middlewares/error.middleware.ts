@@ -2,7 +2,10 @@ import { Elysia } from "elysia";
 import { DomainError } from "../services/errors";
 
 // Traduce errores de dominio a respuestas HTTP. Debe registrarse ANTES de las rutas.
+// `as: "global"` es obligatorio: sin él el hook queda scopped al plugin
+// y las rutas del app principal no lo recibirían.
 export const errorMiddleware = new Elysia({ name: "error-middleware" }).onError(
+	{ as: "global" },
 	({ code, error, set }) => {
 		// 1. Errores de dominio lanzados por los services
 		if (error instanceof DomainError) {
