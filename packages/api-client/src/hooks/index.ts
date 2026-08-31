@@ -27,3 +27,9 @@ export * from "./venues";
 export * from "./users";
 export * from "./registrations";
 export * from "./rosters";
+// Live — Fase 2 (re-export para `import { useMatchLive } from "@sports/api-client/hooks"`)
+export * from "../live/useMatchLive";
+export * from "../live/useGroupLive";
+export * from "../live/types";
+export * from "../live/url";
+export * from "../live/socket";

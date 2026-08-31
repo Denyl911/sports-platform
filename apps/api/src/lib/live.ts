@@ -6,6 +6,8 @@ export type LiveMessage =
 	| { type: "event"; matchId: string; payload: unknown }
 	| { type: "standing"; groupId: string; payload: unknown }
 	| { type: "connected"; channel: string }
+	| { type: "ack"; action: string; data?: unknown }
+	| { type: "pong" }
 	| { type: "error"; message: string };
 
 // Mapas en memoria: topic → Set de sockets
