@@ -78,15 +78,19 @@ export const liveRoutes = new Elysia({ tags: ["Live"] })
 			token: t.Optional(
 				t.String({
 					description:
-						"Access token opcional; requerido solo para enviar score/event (referee)",
+						"Access token opcional; requerido solo para enviar score/event (referee). Preferir header Authorization.",
 				}),
 			),
+		}),
+		headers: t.Object({
+			authorization: t.Optional(t.String({ description: "Bearer token" })),
+			"sec-websocket-protocol": t.Optional(t.String()),
 		}),
 		body: matchMessageSchema,
 		detail: {
 			summary: "WebSocket en vivo del partido",
 			description:
-				'Canal `match:{id}`. Lectura pública: cualquier cliente suscrito recibe `{ type: "score" | "event" }` emitidos tras `PATCH /matches/:id/score` y `POST /matches/:id/events`, más `{ type: "connected" }` al suscribirse. Escritura vía mensaje `{"type":"score","payload":UpdateMatchScore}` o `{"type":"event","payload":RecordLiveEvent}` requiere `?token=<accessToken>` de un `referee` del torneo (o `admin`/`super_admin`). Ver `README.md` para ejemplos con `new WebSocket("ws://host/matches/:id/live?token=...")`.',
+				'Canal `match:{id}`. Lectura pública: cualquier cliente suscrito recibe `{ type: "score" | "event" }` emitidos tras `PATCH /matches/:id/score` y `POST /matches/:id/events`, más `{ type: "connected" }` al suscribirse. Escritura vía mensaje `{"type":"score","payload":UpdateMatchScore}` o `{"type":"event","payload":RecordLiveEvent}` requiere `Authorization: Bearer <accessToken>` o `Sec-WebSocket-Protocol: <token>` o `?token=<accessToken>` de un `referee` del torneo (o `admin`/`super_admin`). Ver `README.md` para ejemplos con `new WebSocket("ws://host/matches/:id/live", { headers: { Authorization: "Bearer ..." } })` o `new WebSocket("ws://host/matches/:id/live", [token])`.',
 			tags: ["Live"],
 		},
 		async beforeHandle({ params, query, accessToken, set }) {
@@ -124,11 +128,19 @@ export const liveRoutes = new Elysia({ tags: ["Live"] })
 		},
 		async message(ws, body) {
 			const { id: matchId } = ws.data.params as { id: string };
-			const { token } = ws.data.query as { token?: string };
 			const rawWs = ws as unknown as import("bun").ServerWebSocket<unknown>;
 			const accessToken = (
 				ws.data as { accessToken?: { verify(t: string): Promise<unknown> } }
 			).accessToken;
+			// Token puede venir por Authorization header, Sec-WebSocket-Protocol o query ?token= (fallback)
+			const headers = (ws.data.headers ?? {}) as Record<string, string | undefined>;
+			const query = (ws.data.query ?? {}) as { token?: string };
+			let token: string | undefined;
+			const authHeader = headers.authorization ?? headers.Authorization;
+			if (authHeader?.startsWith("Bearer ")) token = authHeader.slice(7);
+			else if (headers["sec-websocket-protocol"]) token = headers["sec-websocket-protocol"];
+			else if (headers["Sec-WebSocket-Protocol"]) token = headers["Sec-WebSocket-Protocol"];
+			else token = query.token;
 
 			if (!accessToken) {
 				rawWs.send(
@@ -184,6 +196,10 @@ export const liveRoutes = new Elysia({ tags: ["Live"] })
 			token: t.Optional(
 				t.String({ description: "Opcional, no requerido para lectura" }),
 			),
+		}),
+		headers: t.Object({
+			authorization: t.Optional(t.String()),
+			"sec-websocket-protocol": t.Optional(t.String()),
 		}),
 		detail: {
 			summary: "WebSocket de standings del grupo",
