@@ -3,15 +3,19 @@
 	"version": "0.0.1",
 	"type": "module",
 	"exports": {
-		".": "./src/index.ts"
+		".": "./src/index.ts",
+		"./hooks": "./src/hooks/index.ts"
 	},
 	"dependencies": {
-		"@elysiajs/eden": "^1.2.0",
-		"@tanstack/react-query": "^5.60.0",
-		"api": "*"
+		"@elysia/eden": "^1.4.10",
+		"@sports/schemas": "*",
+		"@tanstack/react-query": "^5.102.8"
+	},
+	"peerDependencies": {
+		"react": "^19.0.0"
 	},
 	"devDependencies": {
 		"@sports/tsconfig": "*",
-		"typescript": "^5.7.0"
+		"api": "workspace:*"
 	}
 }
