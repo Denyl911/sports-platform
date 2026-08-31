@@ -133,13 +133,18 @@ export const liveRoutes = new Elysia({ tags: ["Live"] })
 				ws.data as { accessToken?: { verify(t: string): Promise<unknown> } }
 			).accessToken;
 			// Token puede venir por Authorization header, Sec-WebSocket-Protocol o query ?token= (fallback)
-			const headers = (ws.data.headers ?? {}) as Record<string, string | undefined>;
+			const headers = (ws.data.headers ?? {}) as Record<
+				string,
+				string | undefined
+			>;
 			const query = (ws.data.query ?? {}) as { token?: string };
 			let token: string | undefined;
 			const authHeader = headers.authorization ?? headers.Authorization;
 			if (authHeader?.startsWith("Bearer ")) token = authHeader.slice(7);
-			else if (headers["sec-websocket-protocol"]) token = headers["sec-websocket-protocol"];
-			else if (headers["Sec-WebSocket-Protocol"]) token = headers["Sec-WebSocket-Protocol"];
+			else if (headers["sec-websocket-protocol"])
+				token = headers["sec-websocket-protocol"];
+			else if (headers["Sec-WebSocket-Protocol"])
+				token = headers["Sec-WebSocket-Protocol"];
 			else token = query.token;
 
 			if (!accessToken) {

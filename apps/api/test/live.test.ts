@@ -1,4 +1,11 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "bun:test";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+} from "bun:test";
 import { treaty } from "@elysia/eden";
 import { app } from "../src/app";
 import { _clearAll } from "../src/lib/live";
@@ -100,7 +107,10 @@ describe("live - WS /matches/:id/live", () => {
 		const match = await seedMatch(stage.id);
 
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live`));
-		const msg = await waitForMessage(ws, (d: unknown) => (d as { type: string }).type === "connected");
+		const msg = await waitForMessage(
+			ws,
+			(d: unknown) => (d as { type: string }).type === "connected",
+		);
 		expect((msg as { type: string }).type).toBe("connected");
 		expect((msg as { channel: string }).channel).toBe(`match:${match.id}`);
 		ws.close();
@@ -124,19 +134,38 @@ describe("live - WS /matches/:id/live", () => {
 		const reader = new WebSocket(wsUrl(`/matches/${match.id}/live`));
 
 		await Promise.all([
-			waitForMessage(writer, (d) => (d as { type: string }).type === "connected"),
-			waitForMessage(reader, (d) => (d as { type: string }).type === "connected"),
+			waitForMessage(
+				writer,
+				(d) => (d as { type: string }).type === "connected",
+			),
+			waitForMessage(
+				reader,
+				(d) => (d as { type: string }).type === "connected",
+			),
 		]);
 
-		const readerPromise = waitForMessage(reader, (d) => (d as { type: string }).type === "score");
-		writer.send(JSON.stringify({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } }));
+		const readerPromise = waitForMessage(
+			reader,
+			(d) => (d as { type: string }).type === "score",
+		);
+		writer.send(
+			JSON.stringify({
+				type: "score",
+				payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+			}),
+		);
 
-		const ack = await waitForMessage(writer, (d) => (d as { type: string }).type === "ack");
+		const ack = await waitForMessage(
+			writer,
+			(d) => (d as { type: string }).type === "ack",
+		);
 		expect((ack as { action: string }).action).toBe("score");
 
 		const broadcast = await readerPromise;
 		expect((broadcast as { type: string }).type).toBe("score");
-		expect((broadcast as { payload: { homeScore: number } }).payload.homeScore).toBe(1);
+		expect(
+			(broadcast as { payload: { homeScore: number } }).payload.homeScore,
+		).toBe(1);
 
 		writer.close();
 		reader.close();
@@ -153,16 +182,26 @@ describe("live - WS /matches/:id/live", () => {
 		await seedMember(tournament.id, referee.id, "referee");
 		const teamA = await seedTeam();
 		const teamB = await seedTeam();
-		const match = await seedMatch(stage.id, { homeTeamId: teamA.id, awayTeamId: teamB.id, status: "in_progress" });
+		const match = await seedMatch(stage.id, {
+			homeTeamId: teamA.id,
+			awayTeamId: teamB.id,
+			status: "in_progress",
+		});
 
 		const token = await signToken(referee.id, referee.role);
 		// Usar Sec-WebSocket-Protocol como subprotocolo
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live`), token);
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
 		// Evento requiere teamId válido, pero probamos que el canal acepta el mensaje (puede ser 400 por validación de negocio, pero no 403 de auth)
 		ws.send(JSON.stringify({ type: "ping" }));
-		const pong = await waitForMessage(ws, (d) => (d as { type: string }).type === "pong");
+		const pong = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "pong",
+		);
 		expect((pong as { type: string }).type).toBe("pong");
 
 		ws.close();
@@ -181,10 +220,21 @@ describe("live - WS /matches/:id/live", () => {
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live`), {
 			headers: { Authorization: `Bearer ${token}` },
 		} as any);
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		ws.send(JSON.stringify({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } }));
-		const err = await waitForMessage(ws, (d) => (d as { type: string }).type === "error");
+		ws.send(
+			JSON.stringify({
+				type: "score",
+				payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+			}),
+		);
+		const err = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toContain("referee");
 
 		ws.close();
@@ -202,10 +252,21 @@ describe("live - WS /matches/:id/live", () => {
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live`), {
 			headers: { Authorization: `Bearer ${token}` },
 		} as any);
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		ws.send(JSON.stringify({ type: "score", payload: { homeScore: 2, awayScore: 0, status: "in_progress" } }));
-		const ack = await waitForMessage(ws, (d) => (d as { type: string }).type === "ack");
+		ws.send(
+			JSON.stringify({
+				type: "score",
+				payload: { homeScore: 2, awayScore: 0, status: "in_progress" },
+			}),
+		);
+		const ack = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "ack",
+		);
 		expect((ack as { action: string }).action).toBe("score");
 
 		ws.close();
@@ -219,10 +280,21 @@ describe("live - WS /matches/:id/live", () => {
 		const match = await seedMatch(stage.id);
 
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live`));
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		ws.send(JSON.stringify({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } }));
-		const err = await waitForMessage(ws, (d) => (d as { type: string }).type === "error");
+		ws.send(
+			JSON.stringify({
+				type: "score",
+				payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+			}),
+		);
+		const err = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toContain("Token requerido");
 
 		ws.close();
@@ -239,10 +311,21 @@ describe("live - WS /matches/:id/live", () => {
 
 		const token = await signToken(referee.id, referee.role);
 		const ws = new WebSocket(wsUrl(`/matches/${match.id}/live?token=${token}`));
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		ws.send(JSON.stringify({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } }));
-		const ack = await waitForMessage(ws, (d) => (d as { type: string }).type === "ack");
+		ws.send(
+			JSON.stringify({
+				type: "score",
+				payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+			}),
+		);
+		const ack = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "ack",
+		);
 		expect((ack as { action: string }).action).toBe("score");
 
 		ws.close();
@@ -262,16 +345,27 @@ describe("live - WS /groups/:groupId/live (solo lectura)", () => {
 		const team = await seedTeam();
 		const { stageTeamRegistrations } = await import("@sports/db/tables");
 		const { db } = await import("@sports/db");
-		await db.insert(stageTeamRegistrations).values({ stageId: stage.id, groupId: group.id, teamId: team.id }).onConflictDoNothing();
+		await db
+			.insert(stageTeamRegistrations)
+			.values({ stageId: stage.id, groupId: group.id, teamId: team.id })
+			.onConflictDoNothing();
 
 		const ws = new WebSocket(wsUrl(`/groups/${group.id}/live`));
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		const standingPromise = waitForMessage(ws, (d) => (d as { type: string }).type === "standing");
+		const standingPromise = waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "standing",
+		);
 		// Disparar recálculo vía REST (debe hacer publishGroup)
-		const calc = await treaty(app).groups({ groupId: group.id }).standings.recalculate.post(undefined, {
-			headers: await authHeaders(statistician),
-		});
+		const calc = await treaty(app)
+			.groups({ groupId: group.id })
+			.standings.recalculate.post(undefined, {
+				headers: await authHeaders(statistician),
+			});
 		expect(calc.status).toBe(200);
 
 		const standing = await standingPromise;
@@ -289,10 +383,16 @@ describe("live - WS /groups/:groupId/live (solo lectura)", () => {
 		const group = await seedGroup(stage.id);
 
 		const ws = new WebSocket(wsUrl(`/groups/${group.id}/live`));
-		await waitForMessage(ws, (d) => (d as { type: string }).type === "connected");
+		await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
 		ws.send(JSON.stringify({ type: "ping" }));
-		const err = await waitForMessage(ws, (d) => (d as { type: string }).type === "error");
+		const err = await waitForMessage(
+			ws,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toBe("Read-only channel");
 
 		ws.close();
@@ -304,10 +404,15 @@ describe("live - WS /groups/:groupId/live (solo lectura)", () => {
 		const ws = new WebSocket(wsUrl(`/groups/${ghost}/live`));
 		// Elysia debería rechazar el upgrade con 404; el cliente ve error/close
 		const result = await Promise.race([
-			waitForMessage(ws, (d) => (d as { type: string }).type === "connected").then(() => "connected" as const),
+			waitForMessage(
+				ws,
+				(d) => (d as { type: string }).type === "connected",
+			).then(() => "connected" as const),
 			new Promise<string>((resolve) => {
 				ws.addEventListener("error", () => resolve("error"));
-				ws.addEventListener("close", () => setTimeout(() => resolve("close"), 200));
+				ws.addEventListener("close", () =>
+					setTimeout(() => resolve("close"), 200),
+				);
 			}),
 		]);
 		// No debe llegar a connected

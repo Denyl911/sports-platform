@@ -59,14 +59,12 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 			[
 				"POST /matches/:id/events",
 				() =>
-					api
-						.matches({ id: BAD_UUID })
-						.events.post({
-							teamId: GHOST_UUID,
-							periodNumber: 1,
-							minuteOrSecond: 0,
-							eventType: "goal",
-						} as never),
+					api.matches({ id: BAD_UUID }).events.post({
+						teamId: GHOST_UUID,
+						periodNumber: 1,
+						minuteOrSecond: 0,
+						eventType: "goal",
+					} as never),
 			],
 			["GET /teams/:id", () => api.teams({ id: BAD_UUID }).get()],
 			[
@@ -89,11 +87,9 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 			[
 				"GET /sports/:id/event-types (id largo 33)",
 				() =>
-					api
-						.sports({ id: "a".repeat(33) as never })
-						["event-types"].get({
-							query: { sportId: "a".repeat(33) } as never,
-						}),
+					api.sports({ id: "a".repeat(33) as never })["event-types"].get({
+						query: { sportId: "a".repeat(33) } as never,
+					}),
 			],
 			[
 				"GET /groups/:groupId/standings",
@@ -366,16 +362,14 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 					const match = await seedMatch(stage.id);
 					const referee = await seedUser({ role: "viewer_staff" });
 					await seedMember(tournament.id, referee.id, "referee");
-					return api
-						.matches({ id: match.id })
-						.score.patch(
-							{
-								homeScore: 0,
-								awayScore: 0,
-								status: "bad_status" as never,
-							} as never,
-							{ headers: await authHeaders(referee) },
-						);
+					return api.matches({ id: match.id }).score.patch(
+						{
+							homeScore: 0,
+							awayScore: 0,
+							status: "bad_status" as never,
+						} as never,
+						{ headers: await authHeaders(referee) },
+					);
 				},
 			],
 			[
@@ -401,17 +395,15 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 					const match = await seedMatch(stage.id, { status: "in_progress" });
 					const referee = await seedUser({ role: "viewer_staff" });
 					await seedMember(tournament.id, referee.id, "referee");
-					return api
-						.matches({ id: match.id })
-						.events.post(
-							{
-								teamId: match.homeTeamId!,
-								periodNumber: 1,
-								minuteOrSecond: 0,
-								eventType: "x",
-							} as never,
-							{ headers: await authHeaders(referee) },
-						);
+					return api.matches({ id: match.id }).events.post(
+						{
+							teamId: match.homeTeamId!,
+							periodNumber: 1,
+							minuteOrSecond: 0,
+							eventType: "x",
+						} as never,
+						{ headers: await authHeaders(referee) },
+					);
 				},
 			],
 		])("%s", async (_name, fn) => {
