@@ -1,20 +1,21 @@
 // @ts-nocheck
-import { useEffect, useRef, useState, useCallback } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { matchKeys, standingKeys } from "../queryKeys";
 import { createMatchSocket, type ManagedSocket } from "./socket";
 import type {
-	UseMatchLiveOptions,
-	LiveStatus,
+	LiveAckMessage,
+	LiveConnectedMessage,
+	LiveErrorMessage,
+	LiveEventMessage,
 	LiveMessage,
 	LiveScoreMessage,
-	LiveEventMessage,
-	LiveAckMessage,
-	LiveErrorMessage,
-	LiveConnectedMessage,
-	LiveSendScorePayload,
 	LiveSendEventPayload,
+	LiveSendScorePayload,
+	LiveStatus,
+	UseMatchLiveOptions,
 } from "./types";
-import { matchKeys, standingKeys } from "../queryKeys";
 
 /**
  * Hook live para un partido: `ws://host/matches/:id/live`
@@ -142,21 +143,15 @@ export function useMatchLive(
 		// Para simplicidad, reconecta si getToken cambia (token rotado)
 	}, [matchId, shouldConnect, heartbeatInterval, baseUrl, handleMessage]);
 
-	const sendScore = useCallback(
-		(payload: LiveSendScorePayload) => {
-			if (!socketRef.current) throw new Error("Socket not initialized");
-			socketRef.current.send({ type: "score", payload });
-		},
-		[],
-	);
+	const sendScore = useCallback((payload: LiveSendScorePayload) => {
+		if (!socketRef.current) throw new Error("Socket not initialized");
+		socketRef.current.send({ type: "score", payload });
+	}, []);
 
-	const sendEvent = useCallback(
-		(payload: LiveSendEventPayload) => {
-			if (!socketRef.current) throw new Error("Socket not initialized");
-			socketRef.current.send({ type: "event", payload });
-		},
-		[],
-	);
+	const sendEvent = useCallback((payload: LiveSendEventPayload) => {
+		if (!socketRef.current) throw new Error("Socket not initialized");
+		socketRef.current.send({ type: "event", payload });
+	}, []);
 
 	const reconnect = useCallback(() => {
 		socketRef.current?.reconnect();

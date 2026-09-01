@@ -1,10 +1,10 @@
 // @ts-nocheck
 import {
+	type UseMutationOptions,
 	useMutation,
 	useQueryClient,
-	type UseMutationOptions,
 } from "@tanstack/react-query";
-import { unwrap, type ApiClient } from "../client";
+import { type ApiClient, unwrap } from "../client";
 
 // ---------------------------------------------------------------------------
 // Tipos inferidos del treaty (auth)
@@ -24,16 +24,12 @@ type ChangePasswordBody = { currentPassword: string; newPassword: string };
  */
 export function useLogin(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, LoginBody>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, LoginBody>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: LoginBody) =>
-			unwrap(client.auth.login.post(body)),
-		...(options as unknown as object ?? {} as object),
+		mutationFn: (body: LoginBody) => unwrap(client.auth.login.post(body)),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (...args) => {
 			// invalida me si existe
 			qc.invalidateQueries({ queryKey: ["auth"] });
@@ -47,15 +43,11 @@ export function useLogin(
  */
 export function useRefresh(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, RefreshBody>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, RefreshBody>, "mutationFn">,
 ) {
 	return useMutation({
-		mutationFn: (body: RefreshBody) =>
-			unwrap(client.auth.refresh.post(body)),
-		...(options as unknown as object ?? {} as object),
+		mutationFn: (body: RefreshBody) => unwrap(client.auth.refresh.post(body)),
+		...((options as unknown as object) ?? ({} as object)),
 	});
 }
 
@@ -71,8 +63,14 @@ export function useChangePassword(
 ) {
 	return useMutation({
 		mutationFn: (body: ChangePasswordBody) =>
-			// @ts-ignore treaty auth:true ya inyecta header via client
-			unwrap((client.auth as unknown as { "change-password": { post: (b: unknown) => Promise<never> } })["change-password"].post(body)),
-		...(options as unknown as object ?? {} as object),
+			// @ts-expect-error treaty auth:true ya inyecta header via client
+			unwrap(
+				(
+					client.auth as unknown as {
+						"change-password": { post: (b: unknown) => Promise<never> };
+					}
+				)["change-password"].post(body),
+			),
+		...((options as unknown as object) ?? ({} as object)),
 	});
 }

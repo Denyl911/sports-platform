@@ -1,4 +1,11 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "bun:test";
+import {
+	afterAll,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+} from "bun:test";
 import { treaty } from "@elysia/eden";
 import { app } from "api/src/app";
 import { _clearAll } from "api/src/lib/live";
@@ -16,12 +23,15 @@ import {
 } from "api/test/helpers/db";
 
 import { createApiClient, unwrap } from "../src/client";
-import { getMatchLiveUrl, getGroupLiveUrl, wsUrlFromBase } from "../src/live/url";
-import { createMatchSocket, createGroupSocket } from "../src/live/socket";
-
-// Re-export smoke test: hooks deben ser importables desde ambos barrels
-import { useMatchLive, useGroupLive } from "../src/live";
 import * as hooks from "../src/hooks";
+// Re-export smoke test: hooks deben ser importables desde ambos barrels
+import { useGroupLive, useMatchLive } from "../src/live";
+import { createGroupSocket, createMatchSocket } from "../src/live/socket";
+import {
+	getGroupLiveUrl,
+	getMatchLiveUrl,
+	wsUrlFromBase,
+} from "../src/live/url";
 
 // ---------------------------------------------------------------------------
 // Helpers de WS (ManagedSocket harness)
@@ -37,7 +47,10 @@ function waitForMessage(
 ): Promise<unknown> {
 	// Helper genérico para raw WebSocket (usado en algunos tests de compatibilidad)
 	return new Promise((resolve, reject) => {
-		const timer = setTimeout(() => reject(new Error("timeout waiting for ws message")), timeoutMs);
+		const timer = setTimeout(
+			() => reject(new Error("timeout waiting for ws message")),
+			timeoutMs,
+		);
 		const handler = (event: MessageEvent) => {
 			try {
 				const data = JSON.parse(event.data as string);
@@ -126,8 +139,14 @@ describe("api-client live - url helpers", () => {
 	});
 
 	it("wsUrlFromBase añade ?token= url-encoded (vía principal)", () => {
-		const url = wsUrlFromBase("http://localhost:3000", "/matches/123/live", "jwt.abc/def+xyz");
-		expect(url).toBe("ws://localhost:3000/matches/123/live?token=jwt.abc%2Fdef%2Bxyz");
+		const url = wsUrlFromBase(
+			"http://localhost:3000",
+			"/matches/123/live",
+			"jwt.abc/def+xyz",
+		);
+		expect(url).toBe(
+			"ws://localhost:3000/matches/123/live?token=jwt.abc%2Fdef%2Bxyz",
+		);
 	});
 
 	it("getMatchLiveUrl / getGroupLiveUrl usan resolveBaseUrl + token", () => {
@@ -194,7 +213,9 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			(d) => (d as { type: string }).type === "connected",
 		);
 		expect((connected as { type: string }).type).toBe("connected");
-		expect((connected as { channel: string }).channel).toBe(`match:${match.id}`);
+		expect((connected as { channel: string }).channel).toBe(
+			`match:${match.id}`,
+		);
 		socket.close();
 		await new Promise((r) => setTimeout(r, 100));
 	});
@@ -221,19 +242,36 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			onMessage: (m) => readerMsgs.push(m),
 		});
 
-		await waitForManagedMessage(writerMsgs, (d) => (d as { type: string }).type === "connected");
-		await waitForManagedMessage(readerMsgs, (d) => (d as { type: string }).type === "connected");
+		await waitForManagedMessage(
+			writerMsgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
+		await waitForManagedMessage(
+			readerMsgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		const ackPromise = waitForManagedMessage(writerMsgs, (d) => (d as { type: string }).type === "ack");
-		const broadcastPromise = waitForManagedMessage(readerMsgs, (d) => (d as { type: string }).type === "score");
+		const ackPromise = waitForManagedMessage(
+			writerMsgs,
+			(d) => (d as { type: string }).type === "ack",
+		);
+		const broadcastPromise = waitForManagedMessage(
+			readerMsgs,
+			(d) => (d as { type: string }).type === "score",
+		);
 
-		writer.send({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } });
+		writer.send({
+			type: "score",
+			payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+		});
 
 		const ack = await ackPromise;
 		expect((ack as { action: string }).action).toBe("score");
 		const broadcast = await broadcastPromise;
 		expect((broadcast as { type: string }).type).toBe("score");
-		expect((broadcast as { payload: { homeScore: number } }).payload.homeScore).toBe(1);
+		expect(
+			(broadcast as { payload: { homeScore: number } }).payload.homeScore,
+		).toBe(1);
 
 		writer.close();
 		reader.close();
@@ -256,10 +294,16 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
 		// ping/pong heartbeat (20s) no debe interferir con ping manual
 		socket.send({ type: "ping" });
-		const pong = await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "pong");
+		const pong = await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "pong",
+		);
 		expect((pong as { type: string }).type).toBe("pong");
 
 		socket.close();
@@ -282,9 +326,18 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
-		socket.send({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } });
-		const err = await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "error");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
+		socket.send({
+			type: "score",
+			payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+		});
+		const err = await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toContain("referee");
 
 		socket.close();
@@ -306,9 +359,18 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
-		socket.send({ type: "score", payload: { homeScore: 2, awayScore: 0, status: "in_progress" } });
-		const ack = await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "ack");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
+		socket.send({
+			type: "score",
+			payload: { homeScore: 2, awayScore: 0, status: "in_progress" },
+		});
+		const ack = await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "ack",
+		);
 		expect((ack as { action: string }).action).toBe("score");
 
 		socket.close();
@@ -327,9 +389,18 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
-		socket.send({ type: "score", payload: { homeScore: 1, awayScore: 0, status: "in_progress" } });
-		const err = await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "error");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
+		socket.send({
+			type: "score",
+			payload: { homeScore: 1, awayScore: 0, status: "in_progress" },
+		});
+		const err = await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toContain("Token requerido");
 
 		socket.close();
@@ -352,7 +423,7 @@ describe("api-client live - WS /matches/:id/live via ManagedSocket", () => {
 			const timer = setTimeout(() => reject(new Error("timeout")), 3000);
 			ws.addEventListener("message", (e) => {
 				try {
-					const data = JSON.parse((e.data as string));
+					const data = JSON.parse(e.data as string);
 					if (data.type === "connected") {
 						clearTimeout(timer);
 						resolve(data);
@@ -375,9 +446,14 @@ describe("api-client live - WS /groups/:groupId/live (solo lectura) via ManagedS
 		const group = await seedGroup(stage.id);
 		await seedMember(tournament.id, statistician.id, "statistician");
 		const team = await seedTeam();
-		const { stageTeamRegistrations } = await import("../../../packages/db/src/tables");
+		const { stageTeamRegistrations } = await import(
+			"../../../packages/db/src/tables"
+		);
 		const { db } = await import("../../../packages/db/src/index");
-		await db.insert(stageTeamRegistrations).values({ stageId: stage.id, groupId: group.id, teamId: team.id }).onConflictDoNothing();
+		await db
+			.insert(stageTeamRegistrations)
+			.values({ stageId: stage.id, groupId: group.id, teamId: team.id })
+			.onConflictDoNothing();
 
 		const msgs: unknown[] = [];
 		const socket = createGroupSocket(group.id, {
@@ -385,12 +461,20 @@ describe("api-client live - WS /groups/:groupId/live (solo lectura) via ManagedS
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
 
-		const standingPromise = waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "standing");
-		const calc = await treaty(app).groups({ groupId: group.id }).standings.recalculate.post(undefined, {
-			headers: await authHeaders(statistician),
-		});
+		const standingPromise = waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "standing",
+		);
+		const calc = await treaty(app)
+			.groups({ groupId: group.id })
+			.standings.recalculate.post(undefined, {
+				headers: await authHeaders(statistician),
+			});
 		expect(calc.status).toBe(200);
 
 		const standing = await standingPromise;
@@ -413,9 +497,15 @@ describe("api-client live - WS /groups/:groupId/live (solo lectura) via ManagedS
 			onMessage: (m) => msgs.push(m),
 		});
 
-		await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "connected");
+		await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "connected",
+		);
 		socket.send({ type: "ping" } as never);
-		const err = await waitForManagedMessage(msgs, (d) => (d as { type: string }).type === "error");
+		const err = await waitForManagedMessage(
+			msgs,
+			(d) => (d as { type: string }).type === "error",
+		);
 		expect((err as { message: string }).message).toBe("Read-only channel");
 
 		socket.close();
@@ -430,18 +520,22 @@ describe("api-client live - WS /groups/:groupId/live (solo lectura) via ManagedS
 			new Promise<string>((resolve) => {
 				ws.addEventListener("message", (e) => {
 					try {
-						const d = JSON.parse((e.data as string));
+						const d = JSON.parse(e.data as string);
 						if (d.type === "connected") resolve("connected");
 					} catch {}
 				});
 			}),
 			new Promise<string>((resolve) => {
 				ws.addEventListener("error", () => resolve("error"));
-				ws.addEventListener("close", () => setTimeout(() => resolve("close"), 200));
+				ws.addEventListener("close", () =>
+					setTimeout(() => resolve("close"), 200),
+				);
 			}),
 		]);
 		expect(result).not.toBe("connected");
-		try { ws.close(); } catch {}
+		try {
+			ws.close();
+		} catch {}
 		await new Promise((r) => setTimeout(r, 100));
 	});
 });

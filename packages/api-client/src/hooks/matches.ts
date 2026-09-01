@@ -1,12 +1,12 @@
 // @ts-nocheck
 import {
+	type UseMutationOptions,
+	type UseQueryOptions,
 	useMutation,
 	useQuery,
 	useQueryClient,
-	type UseMutationOptions,
-	type UseQueryOptions,
 } from "@tanstack/react-query";
-import { unwrap, type ApiClient } from "../client";
+import { type ApiClient, unwrap } from "../client";
 import { queryKeys } from "../queryKeys";
 
 // ---------------------------------------------------------------------------
@@ -16,33 +16,39 @@ import { queryKeys } from "../queryKeys";
 export function useMatches(
 	client: ApiClient,
 	filters?: Record<string, unknown>,
-	options?: Omit<UseQueryOptions<unknown, Error, unknown, readonly unknown[]>, "queryKey" | "queryFn">,
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
 ) {
 	return useQuery({
 		queryKey: queryKeys.matches.list(filters),
 		queryFn: () =>
 			unwrap(
-				// @ts-ignore treaty query
+				// @ts-expect-error treaty query
 				client.matches.get({ query: (filters ?? {}) as never }),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 	});
 }
 
 export function useMatch(
 	client: ApiClient,
 	id: string,
-	options?: Omit<UseQueryOptions<unknown, Error, unknown, readonly unknown[]>, "queryKey" | "queryFn">,
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
 ) {
 	return useQuery({
 		queryKey: queryKeys.matches.detail(id),
 		queryFn: () =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).get(),
 			),
 		enabled: !!id && options?.enabled !== false,
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 	});
 }
 
@@ -61,7 +67,7 @@ export function useCreateMatch(
 	return useMutation({
 		mutationFn: (body: Record<string, unknown>) =>
 			unwrap(client.matches.post(body as never)),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (...args) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			options?.onSuccess?.(...args);
@@ -84,38 +90,35 @@ export function useUpdateMatch(
 	return useMutation({
 		mutationFn: ({ id, body }) =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).patch(body as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, ...rest) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			(options?.onSuccess as never)?.(data, vars, ...rest);
 		},
-	});;
+	});
 }
 
 export function useDeleteMatch(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, string>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, string>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
 			unwrap(
-				// @ts-ignore Eden delete
+				// @ts-expect-error Eden delete
 				client.matches({ id }).delete(undefined as never, undefined as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (...args) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			options?.onSuccess?.(...args);
 		},
-	});;
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -125,11 +128,7 @@ export function useDeleteMatch(
 export function useAssignVenue(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; venueId: string }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; venueId: string }>,
 		"mutationFn"
 	>,
 ) {
@@ -137,25 +136,21 @@ export function useAssignVenue(
 	return useMutation({
 		mutationFn: ({ id, venueId }) =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).venue.patch({ venueId } as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, ...rest) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			(options?.onSuccess as never)?.(data, vars, ...rest);
 		},
-	});;
+	});
 }
 
 export function useScheduleMatch(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; scheduledAt: string }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; scheduledAt: string }>,
 		"mutationFn"
 	>,
 ) {
@@ -163,15 +158,15 @@ export function useScheduleMatch(
 	return useMutation({
 		mutationFn: ({ id, scheduledAt }) =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).schedule.patch({ scheduledAt } as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, ...rest) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			(options?.onSuccess as never)?.(data, vars, ...rest);
 		},
-	});;
+	});
 }
 
 // ---------------------------------------------------------------------------
@@ -194,10 +189,10 @@ export function useUpdateMatchScore(
 	return useMutation({
 		mutationFn: ({ id, body }) =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).score.patch(body as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, ...rest) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.lists() });
@@ -205,7 +200,7 @@ export function useUpdateMatchScore(
 			qc.invalidateQueries({ queryKey: queryKeys.standings.all() });
 			(options?.onSuccess as never)?.(data, vars, ...rest);
 		},
-	});;
+	});
 }
 
 export function useRecordLiveEvent(
@@ -223,14 +218,14 @@ export function useRecordLiveEvent(
 	return useMutation({
 		mutationFn: ({ id, body }) =>
 			unwrap(
-				// @ts-ignore
+				// @ts-expect-error
 				client.matches({ id }).events.post(body as never),
 			),
-		...(options as unknown as object ?? {} as object),
+		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, ...rest) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			qc.invalidateQueries({ queryKey: queryKeys.standings.all() });
 			(options?.onSuccess as never)?.(data, vars, ...rest);
 		},
-	});;
+	});
 }

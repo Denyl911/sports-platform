@@ -1,8 +1,7 @@
 import { treaty } from "@elysia/eden";
-import { resolveBaseUrl } from "./config";
-
 // peerDependency ligera: `api` es `apps/api` vía `workspace:*` (devDependency).
 import type { App } from "api/src/app";
+import { resolveBaseUrl } from "./config";
 
 // ---------------------------------------------------------------------------
 // Tipos & errores
@@ -46,13 +45,19 @@ export interface ApiClientOptions {
 	/** URL base del API. Si es función, se evalúa lazy (útil para SSR). */
 	baseUrl?: string | (() => string);
 	/** Retorna el accessToken actual (localStorage, cookie, secure-store). Soporta async. */
-	getToken?: () => string | null | undefined | Promise<string | null | undefined>;
+	getToken?: () =>
+		| string
+		| null
+		| undefined
+		| Promise<string | null | undefined>;
 	/** Fetch custom (SSR `fetch` de Nitro, Tauri, etc.) */
 	fetch?: typeof fetch;
 	/** Callback cliente para 401 (ej. refresh o redirect a /login). Se ejecuta en `onResponse`. */
 	onUnauthorized?: (response: Response) => void | Promise<void>;
 	/** Headers extra estáticos o dinámicos (se mezclan con Authorization). */
-	headers?: Record<string, string> | (() => Record<string, string> | Promise<Record<string, string>>);
+	headers?:
+		| Record<string, string>
+		| (() => Record<string, string> | Promise<Record<string, string>>);
 }
 
 // ---------------------------------------------------------------------------
@@ -165,7 +170,12 @@ export async function unwrap<T>(
  */
 export async function unwrapSafe<T>(
 	promiseOrResponse: Promise<TreatyResponse> | TreatyResponse,
-): Promise<{ data: T | null; error: ApiError | null; status: number; response: Response | null }> {
+): Promise<{
+	data: T | null;
+	error: ApiError | null;
+	status: number;
+	response: Response | null;
+}> {
 	const res = await promiseOrResponse;
 	if (res.error) {
 		const status =
@@ -194,7 +204,10 @@ export async function unwrapSafe<T>(
 /**
  * Helper para invalidación cruzada: extrae `message` de un ApiError de forma segura.
  */
-export function getApiErrorMessage(e: unknown, fallback = "Unknown error"): string {
+export function getApiErrorMessage(
+	e: unknown,
+	fallback = "Unknown error",
+): string {
 	if (e instanceof ApiError) return e.message;
 	if (e instanceof Error) return e.message;
 	return fallback;

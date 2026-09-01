@@ -19,16 +19,23 @@ export function resolveBaseUrl(
 	// `import.meta.env` existe en Vite, no en Bun/Node; acceso seguro
 	try {
 		// @ts-ignore - import.meta puede no estar tipado en este contexto
-		const viteEnv = (globalThis as unknown as { __viteEnv?: Record<string, string> }).__viteEnv ??
+		const viteEnv =
+			(globalThis as unknown as { __viteEnv?: Record<string, string> })
+				.__viteEnv ??
 			// @ts-ignore
-			(typeof import.meta !== "undefined" ? (import.meta as unknown as { env?: Record<string, string> }).env : undefined);
+			(typeof import.meta !== "undefined"
+				? (import.meta as unknown as { env?: Record<string, string> }).env
+				: undefined);
 		if (viteEnv?.VITE_API_URL) return normalizeUrl(viteEnv.VITE_API_URL);
 	} catch {
 		// ignore
 	}
 
 	// Fallback a `process.env` (Bun, Node, Next.js, Tauri)
-	const env = typeof process !== "undefined" ? (process.env as Record<string, string | undefined>) : {};
+	const env =
+		typeof process !== "undefined"
+			? (process.env as Record<string, string | undefined>)
+			: {};
 	const fromProcess =
 		env.VITE_API_URL ??
 		env.NEXT_PUBLIC_API_URL ??

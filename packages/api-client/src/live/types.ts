@@ -31,7 +31,13 @@ export type LiveErrorMessage = Extract<ServerLiveMessage, { type: "error" }>;
 /**
  * Estado de la conexión WS gestionada.
  */
-export type LiveStatus = "idle" | "connecting" | "open" | "reconnecting" | "closed" | "error";
+export type LiveStatus =
+	| "idle"
+	| "connecting"
+	| "open"
+	| "reconnecting"
+	| "closed"
+	| "error";
 
 /**
  * Opciones comunes para hooks live.
@@ -42,7 +48,11 @@ export type LiveStatus = "idle" | "connecting" | "open" | "reconnecting" | "clos
  * - `updateCache`: si true, el hook invalida/muta TanStack Query cache automáticamente.
  */
 export interface LiveOptions {
-	getToken?: () => string | null | undefined | Promise<string | null | undefined>;
+	getToken?: () =>
+		| string
+		| null
+		| undefined
+		| Promise<string | null | undefined>;
 	enabled?: boolean;
 	heartbeatInterval?: number;
 	updateCache?: boolean;

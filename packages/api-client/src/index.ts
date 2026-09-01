@@ -24,17 +24,17 @@
  * ```
  */
 
-export { resolveBaseUrl, getDefaultApiUrl } from "./config";
+export type { ApiClient, ApiClientOptions } from "./client";
 export {
+	ApiError,
 	createApiClient,
+	getApiErrorMessage,
+	isApiError,
 	unwrap,
 	unwrapSafe,
-	getApiErrorMessage,
-	ApiError,
-	isApiError,
 } from "./client";
-export type { ApiClient, ApiClientOptions } from "./client";
-export type { App, Paginated, ApiErrorBody, TreatyApp } from "./types";
-export { queryKeys } from "./queryKeys";
-export * from "./queryKeys";
+export { getDefaultApiUrl, resolveBaseUrl } from "./config";
 export * from "./live";
+export * from "./queryKeys";
+export { queryKeys } from "./queryKeys";
+export type { ApiErrorBody, App, Paginated, TreatyApp } from "./types";

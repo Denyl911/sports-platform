@@ -108,7 +108,8 @@ export const userKeys = {
 export const membershipKeys = {
 	all: () => ["memberships"] as const,
 	detail: (id: string) => [...membershipKeys.all(), "detail", id] as const,
-	byUser: (userId: string) => [...membershipKeys.all(), "byUser", userId] as const,
+	byUser: (userId: string) =>
+		[...membershipKeys.all(), "byUser", userId] as const,
 } as const;
 
 export const registrationKeys = {

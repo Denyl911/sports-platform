@@ -6,7 +6,11 @@ import { getGroupLiveUrl, getMatchLiveUrl } from "./url";
 // ---------------------------------------------------------------------------
 
 export interface ManagedSocketOptions {
-	getToken?: () => string | null | undefined | Promise<string | null | undefined>;
+	getToken?: () =>
+		| string
+		| null
+		| undefined
+		| Promise<string | null | undefined>;
 	baseUrl?: string | (() => string) | null;
 	heartbeatInterval?: number; // ms, default 20_000 (< idleTimeout 30s)
 	enabled?: boolean;
@@ -94,7 +98,11 @@ export function createGroupSocket(
 
 interface InternalOptions extends ManagedSocketOptions {
 	getUrl: () => string | Promise<string>;
-	protocols?: () => string | string[] | undefined | Promise<string | string[] | undefined>;
+	protocols?: () =>
+		| string
+		| string[]
+		| undefined
+		| Promise<string | string[] | undefined>;
 }
 
 function createManagedSocket(internal: InternalOptions): ManagedSocket {
@@ -174,7 +182,9 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 	const createWebSocket = async (url: string): Promise<WebSocket> => {
 		// Si hay factory inyectada (tests), úsala
 		if (internal.createWebSocket) {
-			const protocols = internal.protocols ? await internal.protocols() : undefined;
+			const protocols = internal.protocols
+				? await internal.protocols()
+				: undefined;
 			if (protocols) {
 				return internal.createWebSocket(url, protocols);
 			}
@@ -183,7 +193,9 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 
 		// Intentar native WebSocket
 		if (typeof WebSocket !== "undefined") {
-			const protocols = internal.protocols ? await internal.protocols() : undefined;
+			const protocols = internal.protocols
+				? await internal.protocols()
+				: undefined;
 			try {
 				if (protocols) {
 					// Browser soporta segundo param como string|string[] (Sec-WebSocket-Protocol)
@@ -193,7 +205,10 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 				return new WebSocket(url);
 			} catch (e) {
 				// Fallthrough a Tauri
-				if (!isBrowser() || !(globalThis as unknown as { __TAURI__?: unknown }).__TAURI__) {
+				if (
+					!isBrowser() ||
+					!(globalThis as unknown as { __TAURI__?: unknown }).__TAURI__
+				) {
 					throw e;
 				}
 			}
@@ -210,11 +225,15 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 				return tauriWs as unknown as WebSocket;
 			}
 			if (typeof mod.WebSocket !== "undefined") {
-				const protocols = internal.protocols ? await internal.protocols() : undefined;
-				return new (mod.WebSocket as unknown as new (url: string, protocols?: string | string[]) => WebSocket)(
-					url,
-					protocols,
-				);
+				const protocols = internal.protocols
+					? await internal.protocols()
+					: undefined;
+				return new (
+					mod.WebSocket as unknown as new (
+						url: string,
+						protocols?: string | string[],
+					) => WebSocket
+				)(url, protocols);
 			}
 		} catch {}
 

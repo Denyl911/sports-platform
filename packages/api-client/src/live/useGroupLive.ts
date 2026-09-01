@@ -1,16 +1,17 @@
 // @ts-nocheck
-import { useEffect, useRef, useState, useCallback } from "react";
+
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { standingKeys } from "../queryKeys";
 import { createGroupSocket, type ManagedSocket } from "./socket";
 import type {
-	UseGroupLiveOptions,
-	LiveStatus,
+	LiveConnectedMessage,
+	LiveErrorMessage,
 	LiveMessage,
 	LiveStandingMessage,
-	LiveErrorMessage,
-	LiveConnectedMessage,
+	LiveStatus,
+	UseGroupLiveOptions,
 } from "./types";
-import { standingKeys } from "../queryKeys";
 
 /**
  * Hook live para standings de un grupo: `ws://host/groups/:groupId/live`
@@ -44,7 +45,9 @@ export function useGroupLive(
 	const qc = useQueryClient();
 	const [status, setStatus] = useState<LiveStatus>("idle");
 	const [lastMessage, setLastMessage] = useState<LiveMessage | null>(null);
-	const [lastStanding, setLastStanding] = useState<LiveStandingMessage | null>(null);
+	const [lastStanding, setLastStanding] = useState<LiveStandingMessage | null>(
+		null,
+	);
 	const [lastError, setLastError] = useState<LiveErrorMessage | null>(null);
 
 	const socketRef = useRef<ManagedSocket | null>(null);

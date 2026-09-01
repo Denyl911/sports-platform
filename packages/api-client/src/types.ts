@@ -28,7 +28,8 @@ export type ApiErrorBody = { message: string };
 export type TreatyApp = Treaty.Create<App>;
 
 /** Extrae el tipo `data` de una respuesta Treaty */
-export type TreatyData<T extends Promise<{ data: unknown }>> = Awaited<T> extends { data: infer D } ? D : never;
+export type TreatyData<T extends Promise<{ data: unknown }>> =
+	Awaited<T> extends { data: infer D } ? D : never;
 
 /** Utilidad para handlers delgados: firma del treaty ya tipada */
 export type { App };
