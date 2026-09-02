@@ -24,7 +24,7 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 	.use(jwtMiddleware)
 	.get(
 		"/me",
-		// @ts-ignore Elysia macro `auth` injects `user` but type inference for response fails with verbatimModuleSyntax
+		// @ts-expect-error Elysia macro `auth` injects `user` but type inference for response fails with verbatimModuleSyntax
 		async ({ user }) => user,
 		{
 			auth: true,
@@ -34,28 +34,8 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 			},
 			detail: {
 				summary: "Usuario autenticado actual",
-				description: "Requiere `Authorization: Bearer <accessToken>`. Retorna el usuario público sin `passwordHash`.",
-				tags: ["Auth"],
-			},
-		},
-	)
-	.post(
-		"/register",
-		async ({ body }) => {
-			// Registro público: fuerza role viewer_staff si no se especifica o si se intenta escalar
-			const safeRole = body.role === "organizer" ? "organizer" : "viewer_staff";
-			return createUser({ ...body, role: safeRole });
-		},
-		{
-			body: userCreateSchema,
-			response: {
-				200: userPublicSchema,
-				400: errorMessageSchema,
-				409: errorMessageSchema,
-			},
-			detail: {
-				summary: "Registro público",
-				description: "Crea un usuario sin autenticación. Solo permite roles `viewer_staff` u `organizer`; cualquier otro se normaliza a `viewer_staff`. 409 si el email ya existe.",
+				description:
+					"Requiere `Authorization: Bearer <accessToken>`. Retorna el usuario público sin `passwordHash`.",
 				tags: ["Auth"],
 			},
 		},
@@ -87,6 +67,28 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 				summary: "Iniciar sesión",
 				description:
 					"Autentica con email y contraseña. Retorna par de tokens (access 1h, refresh 7d) y el usuario público sin `passwordHash`. 401 si credenciales inválidas o usuario inactivo.",
+				tags: ["Auth"],
+			},
+		},
+	)
+	.post(
+		"/register",
+		async ({ body }) => {
+			// Registro público: fuerza role viewer_staff si no se especifica o si se intenta escalar
+			const safeRole = body.role === "organizer" ? "organizer" : "viewer_staff";
+			return createUser({ ...body, role: safeRole });
+		},
+		{
+			body: userCreateSchema,
+			response: {
+				200: userPublicSchema,
+				400: errorMessageSchema,
+				409: errorMessageSchema,
+			},
+			detail: {
+				summary: "Registro público",
+				description:
+					"Crea un usuario sin autenticación. Solo permite roles `viewer_staff` u `organizer`; cualquier otro se normaliza a `viewer_staff`. 409 si el email ya existe.",
 				tags: ["Auth"],
 			},
 		},

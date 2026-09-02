@@ -1,10 +1,10 @@
+import { tournamentMembers, users } from "@sports/db/tables";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { tournamentMembers, users } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -57,26 +57,27 @@ export const userCreateSchema = t.Object({
 
 // Login con password local (futuro OAuth: se añadirán DTOs propios)
 export const userLoginSchema = t.Object({
-  email: t.String({ format: "email" }),
-  password: t.String({ minLength: 1 }),
+	email: t.String({ format: "email" }),
+	password: t.String({ minLength: 1 }),
 });
 
 // Refresh de tokens
 export const authRefreshSchema = t.Object({
-  refreshToken: t.String({ minLength: 1 }),
+	refreshToken: t.String({ minLength: 1 }),
 });
 
 // Par de tokens emitidos (access corto + refresh largo)
 export const authTokenPairSchema = t.Object({
-  accessToken: t.String(),
-  refreshToken: t.String(),
+	accessToken: t.String(),
+	refreshToken: t.String(),
 });
 
 // Respuesta de /auth/login: par de tokens + usuario público (sin hash)
-export const authLoginResponseSchema = t.Intersect([
-  authTokenPairSchema,
-  t.Object({ user: userPublicSchema }),
-]);
+export const authLoginResponseSchema = t.Object({
+	accessToken: t.String(),
+	refreshToken: t.String(),
+	user: userPublicSchema,
+});
 
 // Cambio de contraseña autenticado
 export const userChangePasswordSchema = t.Object({
@@ -151,5 +152,5 @@ export type UserFilterQuery = Static<typeof userFilterQuerySchema>;
 export type TournamentMember = Static<typeof selectTournamentMemberSchema>;
 export type AddTournamentMember = Static<typeof addTournamentMemberSchema>;
 export type UpdateTournamentMemberRole = Static<
-  typeof updateTournamentMemberRoleSchema
+	typeof updateTournamentMemberRoleSchema
 >;

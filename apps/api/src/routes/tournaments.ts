@@ -8,6 +8,7 @@ import {
 	insertTournamentStageSchema,
 	selectStageGroupSchema,
 	selectTournamentEditionSchema,
+	selectTournamentMemberSchema,
 	selectTournamentSchema,
 	selectTournamentStageSchema,
 	stageRefParamsSchema,
@@ -34,6 +35,7 @@ import {
 	listEditionsByTournament,
 	updateEdition,
 } from "../services/edition.service";
+import { DomainError } from "../services/errors";
 import {
 	createGroup,
 	createStage,
@@ -51,6 +53,7 @@ import {
 	listTournaments,
 	updateTournament,
 } from "../services/tournament.service";
+import { findTournamentMembership } from "../services/user.service";
 
 export const tournamentsRoutes = new Elysia({
 	prefix: "/tournaments",
@@ -86,6 +89,35 @@ export const tournamentsRoutes = new Elysia({
 			detail: {
 				summary: "Obtener torneo por ID",
 				description: "Lectura pública. 404 si no existe.",
+				tags: ["Tournaments"],
+			},
+		},
+	)
+	.get(
+		"/:tournamentId/members/me",
+		async ({ params, userId }) => {
+			const membership = await findTournamentMembership(
+				params.tournamentId,
+				userId,
+			);
+			if (!membership)
+				throw DomainError.notFound(
+					`No membership for tournament '${params.tournamentId}'`,
+				);
+			return membership;
+		},
+		{
+			auth: true,
+			params: tournamentRefParamsSchema,
+			response: {
+				200: selectTournamentMemberSchema,
+				401: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			detail: {
+				summary: "Mi membresía en el torneo",
+				description:
+					"Requiere auth. Retorna la membresía del usuario autenticado en el torneo, o 404 si no es miembro.",
 				tags: ["Tournaments"],
 			},
 		},
