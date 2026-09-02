@@ -113,7 +113,7 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 	let reconnectAttempts = 0;
 	let closedIntentionally = false;
 	let lastPongAt = Date.now();
-	let heartbeatInterval = internal.heartbeatInterval ?? 20_000;
+	const heartbeatInterval = internal.heartbeatInterval ?? 20_000;
 
 	const setStatus = (next: LiveStatus) => {
 		if (status === next) return;
@@ -216,9 +216,12 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 
 		// Fallback Tauri plugin-websocket: dynamic import para no romper web
 		try {
-			// @ts-ignore plugin opcional - default export es WebSocket con static connect
 			const mod = await import("@tauri-apps/plugin-websocket");
-			const TauriWs = (mod as unknown as { default: { connect: (url: string) => Promise<unknown> } }).default;
+			const TauriWs = (
+				mod as unknown as {
+					default: { connect: (url: string) => Promise<unknown> };
+				}
+			).default;
 			if (TauriWs && typeof TauriWs.connect === "function") {
 				const tauriWs = await TauriWs.connect(url);
 				// Adaptar Tauri WebSocket (addListener/send/disconnect) a interfaz WebSocket mínima para ManagedSocket
@@ -252,7 +255,8 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 								// Tauri Message union: {type:"Text",data:string} etc. → adaptamos a MessageEvent
 								const m = msg as { type: string; data?: unknown };
 								let data: string | null = null;
-								if (m.type === "Text" && typeof m.data === "string") data = m.data;
+								if (m.type === "Text" && typeof m.data === "string")
+									data = m.data;
 								else if (m.type === "Close") {
 									const closeCbs = listeners.get("close");
 									if (closeCbs) closeCbs.forEach((c) => c(new Event("close")));
