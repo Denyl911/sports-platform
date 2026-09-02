@@ -3,7 +3,9 @@ import {
 	authRefreshSchema,
 	authTokenPairSchema,
 	userChangePasswordSchema,
+	userCreateSchema,
 	userLoginSchema,
+	userPublicSchema,
 } from "@sports/schemas";
 import { Elysia } from "elysia";
 import { accessTokenJwt, refreshTokenJwt } from "../lib/jwt";
@@ -11,6 +13,7 @@ import { errorMessageSchema, successSchema } from "../lib/openapi-helpers";
 import { jwtMiddleware } from "../middlewares/auth.middleware";
 import {
 	changePassword,
+	createUser,
 	findUserById,
 	verifyCredentials,
 } from "../services/user.service";
@@ -19,6 +22,44 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 	.use(accessTokenJwt)
 	.use(refreshTokenJwt)
 	.use(jwtMiddleware)
+	.get(
+		"/me",
+		// @ts-ignore Elysia macro `auth` injects `user` but type inference for response fails with verbatimModuleSyntax
+		async ({ user }) => user,
+		{
+			auth: true,
+			response: {
+				200: userPublicSchema,
+				401: errorMessageSchema,
+			},
+			detail: {
+				summary: "Usuario autenticado actual",
+				description: "Requiere `Authorization: Bearer <accessToken>`. Retorna el usuario público sin `passwordHash`.",
+				tags: ["Auth"],
+			},
+		},
+	)
+	.post(
+		"/register",
+		async ({ body }) => {
+			// Registro público: fuerza role viewer_staff si no se especifica o si se intenta escalar
+			const safeRole = body.role === "organizer" ? "organizer" : "viewer_staff";
+			return createUser({ ...body, role: safeRole });
+		},
+		{
+			body: userCreateSchema,
+			response: {
+				200: userPublicSchema,
+				400: errorMessageSchema,
+				409: errorMessageSchema,
+			},
+			detail: {
+				summary: "Registro público",
+				description: "Crea un usuario sin autenticación. Solo permite roles `viewer_staff` u `organizer`; cualquier otro se normaliza a `viewer_staff`. 409 si el email ya existe.",
+				tags: ["Auth"],
+			},
+		},
+	)
 	.post(
 		"/login",
 		async ({ body, set, accessToken, refreshToken }) => {

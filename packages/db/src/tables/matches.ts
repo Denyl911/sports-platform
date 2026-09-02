@@ -1,21 +1,19 @@
 import { sql } from "drizzle-orm";
 import {
-	boolean,
 	index,
 	integer,
 	jsonb,
 	pgTable,
 	timestamp,
 	uuid,
-	varchar,
 } from "drizzle-orm/pg-core";
-import { AnyPgColumn } from "drizzle-orm/pg-core/columns";
 import { check } from "drizzle-orm/pg-core/checks";
-import { tournamentStages } from "./tournament-stages";
+import type { AnyPgColumn } from "drizzle-orm/pg-core/columns";
+import { matchSlotEnum, matchStatusEnum } from "./enums";
 import { stageGroups } from "./stage-groups";
 import { teams } from "./teams";
+import { tournamentStages } from "./tournament-stages";
 import { venues } from "./venues";
-import { matchSlotEnum, matchStatusEnum } from "./enums";
 
 export const matches = pgTable(
 	"matches",

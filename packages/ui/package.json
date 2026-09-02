@@ -5,7 +5,15 @@
 	"exports": {
 		".": "./src/index.ts",
 		"./components/*": "./src/components/*.tsx",
-		"./lib/*": "./src/lib/*.ts"
+		"./lib/*": "./src/lib/*.ts",
+		"./styles.css": {
+			"style": "./src/styles.css",
+			"default": "./src/styles.css"
+		},
+		"./src/styles.css": {
+			"style": "./src/styles.css",
+			"default": "./src/styles.css"
+		}
 	},
 	"scripts": {
 		"lint": "eslint .",
