@@ -216,24 +216,71 @@ function createManagedSocket(internal: InternalOptions): ManagedSocket {
 
 		// Fallback Tauri plugin-websocket: dynamic import para no romper web
 		try {
-			// @ts-ignore plugin opcional
+			// @ts-ignore plugin opcional - default export es WebSocket con static connect
 			const mod = await import("@tauri-apps/plugin-websocket");
-			// plugin expone WebSocket.connect(url)
-			if (mod && typeof mod.default?.connect === "function") {
-				const tauriWs = await mod.default.connect(url);
-				// Adaptar a interfaz WebSocket mínima
-				return tauriWs as unknown as WebSocket;
-			}
-			if (typeof mod.WebSocket !== "undefined") {
-				const protocols = internal.protocols
-					? await internal.protocols()
-					: undefined;
-				return new (
-					mod.WebSocket as unknown as new (
-						url: string,
-						protocols?: string | string[],
-					) => WebSocket
-				)(url, protocols);
+			const TauriWs = (mod as unknown as { default: { connect: (url: string) => Promise<unknown> } }).default;
+			if (TauriWs && typeof TauriWs.connect === "function") {
+				const tauriWs = await TauriWs.connect(url);
+				// Adaptar Tauri WebSocket (addListener/send/disconnect) a interfaz WebSocket mínima para ManagedSocket
+				// Tauri usa addListener((msg)=>{}) y send(string|Message), no addEventListener
+				// Creamos wrapper que expone addEventListener/readyState/send/close
+				const raw = tauriWs as unknown as {
+					addListener: (cb: (msg: unknown) => void) => () => void;
+					send: (msg: string) => Promise<void>;
+					disconnect: () => Promise<void>;
+				};
+				let open = true;
+				const listeners = new Map<string, Set<(e: unknown) => void>>();
+				const wrapper = {
+					get readyState() {
+						return open ? WebSocket.OPEN : WebSocket.CLOSED;
+					},
+					send: (data: string) => {
+						void raw.send(data);
+					},
+					close: () => {
+						open = false;
+						void raw.disconnect();
+						const cbs = listeners.get("close");
+						if (cbs) cbs.forEach((cb) => cb(new Event("close")));
+					},
+					addEventListener: (type: string, cb: (e: unknown) => void) => {
+						if (!listeners.has(type)) listeners.set(type, new Set());
+						listeners.get(type)!.add(cb);
+						if (type === "message") {
+							const off = raw.addListener((msg: unknown) => {
+								// Tauri Message union: {type:"Text",data:string} etc. → adaptamos a MessageEvent
+								const m = msg as { type: string; data?: unknown };
+								let data: string | null = null;
+								if (m.type === "Text" && typeof m.data === "string") data = m.data;
+								else if (m.type === "Close") {
+									const closeCbs = listeners.get("close");
+									if (closeCbs) closeCbs.forEach((c) => c(new Event("close")));
+									return;
+								} else {
+									return;
+								}
+								if (data !== null) {
+									const ev = new MessageEvent("message", { data } as never);
+									cb(ev);
+								}
+							});
+							// store off for remove
+							(cb as unknown as { _off?: () => void })._off = off;
+						}
+						if (type === "open") {
+							// Tauri connect ya está abierto
+							setTimeout(() => cb(new Event("open")), 0);
+						}
+					},
+					removeEventListener: (type: string, cb: (e: unknown) => void) => {
+						const set = listeners.get(type);
+						if (set) set.delete(cb);
+						const off = (cb as unknown as { _off?: () => void })._off;
+						if (off) off();
+					},
+				} as unknown as WebSocket;
+				return wrapper;
 			}
 		} catch {}
 

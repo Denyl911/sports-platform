@@ -1,10 +1,18 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useRouter } from "@tanstack/react-router";
 import * as React from "react";
 import { getQueryClient } from "../lib/queryClient";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
-	const [queryClient] = React.useState(() => getQueryClient());
+	let routerQueryClient: ReturnType<typeof getQueryClient> | undefined;
+	try {
+		const router = useRouter({ warn: false } as never) as unknown as {
+			options?: { context?: { queryClient?: ReturnType<typeof getQueryClient> } };
+		};
+		routerQueryClient = router?.options?.context?.queryClient;
+	} catch {}
+	const [queryClient] = React.useState(() => routerQueryClient ?? getQueryClient());
 
 	return (
 		<QueryClientProvider client={queryClient}>

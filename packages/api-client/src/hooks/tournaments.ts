@@ -415,3 +415,24 @@ export function useDeleteGroup(
 		},
 	});
 }
+
+export function useMyTournamentMembership(
+	client: ApiClient,
+	tournamentId: string,
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
+) {
+	return useQuery({
+		queryKey: queryKeys.memberships.myMembership(tournamentId),
+		queryFn: () =>
+			unwrap(
+				// @ts-expect-error treaty nested members/me
+				client.tournaments({ tournamentId }).members.me.get(),
+			),
+		enabled: !!tournamentId && options?.enabled !== false,
+		retry: false,
+		...((options as unknown as object) ?? ({} as object)),
+	});
+}

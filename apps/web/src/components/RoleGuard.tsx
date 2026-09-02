@@ -1,6 +1,8 @@
-import * as React from "react";
+import { useMyTournamentMembership } from "@sports/api-client/hooks";
 import { Navigate } from "@tanstack/react-router";
-import { useAuth, type AuthUser } from "../lib/auth";
+import type * as React from "react";
+import { api } from "../lib/api";
+import { type AuthUser, useAuth } from "../lib/auth";
 
 export function RoleGuard({
 	children,
@@ -14,7 +16,11 @@ export function RoleGuard({
 	const { user, isLoading, hasRole } = useAuth();
 
 	if (isLoading) {
-		return <div className="demo-center text-sm text-[var(--sea-ink-soft)]">Cargando…</div>;
+		return (
+			<div className="demo-center text-sm text-[var(--sea-ink-soft)]">
+				Cargando…
+			</div>
+		);
 	}
 	if (!user) return <Navigate to={fallback} />;
 	if (!hasRole(...roles)) {
@@ -30,22 +36,29 @@ export function RoleGuard({
 }
 
 // Guard espejando requireGlobalRole / requireTournamentRole del backend.
-// Para torneo-scoped, el backend ya valida; aquí solo ocultamos UI si no es organizer/referee/etc.
-// El check real es la API (401/403). Este helper es para UX.
+// Ahora usa GET /tournaments/:id/members/me para verificar membresía real.
 export function useCanTournamentRole(
 	tournamentId: string | null,
 	...roles: AuthUser["role"][]
 ): { can: boolean; isLoading: boolean } {
-	const { user, hasRole, isLoading } = useAuth();
-	// super_admin/admin bypassan cualquier check de torneo
-	if (isLoading) return { can: false, isLoading: true };
+	const { user, hasRole, isLoading: authLoading } = useAuth();
+	const shouldBypass = !!user && hasRole("super_admin", "admin");
+	const { data, isPending, error } = useMyTournamentMembership(
+		api,
+		tournamentId ?? "",
+		{
+			enabled: !!tournamentId && !!user && !shouldBypass,
+			retry: false,
+		} as never,
+	);
+
+	if (authLoading || isPending) return { can: false, isLoading: true };
 	if (!user || !tournamentId) return { can: false, isLoading: false };
-	if (hasRole("super_admin", "admin")) return { can: true, isLoading: false };
-	// Sin endpoint /tournaments/:id/members/me, asumimos que si no es global, la UI muestra
-	// y el backend decidirá 403. Para checks finos, el loader puede intentar una mutación dry-run.
-	// Aquí devolvemos can=false para no mostrar botones sensibles por defecto.
-	// El caller puede sobre-escribir con su propio fetch a /users/me/memberships si se añade.
-	const _roles = roles;
-	void _roles;
-	return { can: false, isLoading: false };
+	if (shouldBypass) return { can: true, isLoading: false };
+	if (error || !data) return { can: false, isLoading: false };
+	const membership = data as { role: string };
+	return {
+		can: roles.includes(membership.role as AuthUser["role"]),
+		isLoading: false,
+	};
 }

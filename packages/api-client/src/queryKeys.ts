@@ -110,6 +110,8 @@ export const membershipKeys = {
 	detail: (id: string) => [...membershipKeys.all(), "detail", id] as const,
 	byUser: (userId: string) =>
 		[...membershipKeys.all(), "byUser", userId] as const,
+	myMembership: (tournamentId: string) =>
+		[...membershipKeys.all(), "my", tournamentId] as const,
 } as const;
 
 export const registrationKeys = {

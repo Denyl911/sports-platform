@@ -15,6 +15,40 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as EditionsEditionIdRouteImport } from './routes/editions/$editionId'
+import { Route as GroupsGroupIdRouteImport } from './routes/groups/$groupId'
+import { Route as MatchesIndexRouteImport } from './routes/matches/index'
+import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
+import { Route as PlayersIndexRouteImport } from './routes/players/index'
+import { Route as PlayersPlayerIdRouteImport } from './routes/players/$playerId'
+import { Route as SportsIndexRouteImport } from './routes/sports/index'
+import { Route as SportsSportIdRouteImport } from './routes/sports/$sportId'
+import { Route as StagesStageIdRouteImport } from './routes/stages/$stageId'
+import { Route as StandingsGroupIdRouteImport } from './routes/standings/$groupId'
+import { Route as TeamsIndexRouteImport } from './routes/teams/index'
+import { Route as TeamsTeamIdRouteImport } from './routes/teams/$teamId'
+import { Route as TournamentsIndexRouteImport } from './routes/tournaments/index'
+import { Route as TournamentsTournamentIdRouteImport } from './routes/tournaments/$tournamentId'
+import { Route as VenuesIndexRouteImport } from './routes/venues/index'
+import { Route as VenuesVenueIdRouteImport } from './routes/venues/$venueId'
+import { Route as AdminClubsIndexRouteImport } from './routes/admin/clubs/index'
+import { Route as AdminClubsClubIdRouteImport } from './routes/admin/clubs/$clubId'
+import { Route as AdminEditionsEditionIdRouteImport } from './routes/admin/editions/$editionId'
+import { Route as AdminMatchesMatchIdRouteImport } from './routes/admin/matches/$matchId'
+import { Route as AdminPlayersIndexRouteImport } from './routes/admin/players/index'
+import { Route as AdminPlayersPlayerIdRouteImport } from './routes/admin/players/$playerId'
+import { Route as AdminSportsIndexRouteImport } from './routes/admin/sports/index'
+import { Route as AdminSportsSportIdRouteImport } from './routes/admin/sports/$sportId'
+import { Route as AdminStagesStageIdRouteImport } from './routes/admin/stages/$stageId'
+import { Route as AdminStandingsGroupIdRouteImport } from './routes/admin/standings/$groupId'
+import { Route as AdminTeamsIndexRouteImport } from './routes/admin/teams/index'
+import { Route as AdminTeamsTeamIdRouteImport } from './routes/admin/teams/$teamId'
+import { Route as AdminTournamentsIndexRouteImport } from './routes/admin/tournaments/index'
+import { Route as AdminTournamentsTournamentIdRouteImport } from './routes/admin/tournaments/$tournamentId'
+import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
+import { Route as AdminUsersUserIdRouteImport } from './routes/admin/users/$userId'
+import { Route as AdminVenuesIndexRouteImport } from './routes/admin/venues/index'
+import { Route as AdminVenuesVenueIdRouteImport } from './routes/admin/venues/$venueId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +80,177 @@ const AuthRegisterRoute = AuthRegisterRouteImport.update({
   path: '/auth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditionsEditionIdRoute = EditionsEditionIdRouteImport.update({
+  id: '/editions/$editionId',
+  path: '/editions/$editionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupsGroupIdRoute = GroupsGroupIdRouteImport.update({
+  id: '/groups/$groupId',
+  path: '/groups/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchesIndexRoute = MatchesIndexRouteImport.update({
+  id: '/matches/',
+  path: '/matches/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MatchesMatchIdRoute = MatchesMatchIdRouteImport.update({
+  id: '/matches/$matchId',
+  path: '/matches/$matchId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayersIndexRoute = PlayersIndexRouteImport.update({
+  id: '/players/',
+  path: '/players/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlayersPlayerIdRoute = PlayersPlayerIdRouteImport.update({
+  id: '/players/$playerId',
+  path: '/players/$playerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportsIndexRoute = SportsIndexRouteImport.update({
+  id: '/sports/',
+  path: '/sports/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SportsSportIdRoute = SportsSportIdRouteImport.update({
+  id: '/sports/$sportId',
+  path: '/sports/$sportId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StagesStageIdRoute = StagesStageIdRouteImport.update({
+  id: '/stages/$stageId',
+  path: '/stages/$stageId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StandingsGroupIdRoute = StandingsGroupIdRouteImport.update({
+  id: '/standings/$groupId',
+  path: '/standings/$groupId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsIndexRoute = TeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsTeamIdRoute = TeamsTeamIdRouteImport.update({
+  id: '/teams/$teamId',
+  path: '/teams/$teamId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TournamentsIndexRoute = TournamentsIndexRouteImport.update({
+  id: '/tournaments/',
+  path: '/tournaments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TournamentsTournamentIdRoute = TournamentsTournamentIdRouteImport.update({
+  id: '/tournaments/$tournamentId',
+  path: '/tournaments/$tournamentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VenuesIndexRoute = VenuesIndexRouteImport.update({
+  id: '/venues/',
+  path: '/venues/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VenuesVenueIdRoute = VenuesVenueIdRouteImport.update({
+  id: '/venues/$venueId',
+  path: '/venues/$venueId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminClubsIndexRoute = AdminClubsIndexRouteImport.update({
+  id: '/clubs/',
+  path: '/clubs/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClubsClubIdRoute = AdminClubsClubIdRouteImport.update({
+  id: '/clubs/$clubId',
+  path: '/clubs/$clubId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminEditionsEditionIdRoute = AdminEditionsEditionIdRouteImport.update({
+  id: '/editions/$editionId',
+  path: '/editions/$editionId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMatchesMatchIdRoute = AdminMatchesMatchIdRouteImport.update({
+  id: '/matches/$matchId',
+  path: '/matches/$matchId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayersIndexRoute = AdminPlayersIndexRouteImport.update({
+  id: '/players/',
+  path: '/players/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlayersPlayerIdRoute = AdminPlayersPlayerIdRouteImport.update({
+  id: '/players/$playerId',
+  path: '/players/$playerId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSportsIndexRoute = AdminSportsIndexRouteImport.update({
+  id: '/sports/',
+  path: '/sports/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSportsSportIdRoute = AdminSportsSportIdRouteImport.update({
+  id: '/sports/$sportId',
+  path: '/sports/$sportId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStagesStageIdRoute = AdminStagesStageIdRouteImport.update({
+  id: '/stages/$stageId',
+  path: '/stages/$stageId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStandingsGroupIdRoute = AdminStandingsGroupIdRouteImport.update({
+  id: '/standings/$groupId',
+  path: '/standings/$groupId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTeamsIndexRoute = AdminTeamsIndexRouteImport.update({
+  id: '/teams/',
+  path: '/teams/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTeamsTeamIdRoute = AdminTeamsTeamIdRouteImport.update({
+  id: '/teams/$teamId',
+  path: '/teams/$teamId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTournamentsIndexRoute = AdminTournamentsIndexRouteImport.update({
+  id: '/tournaments/',
+  path: '/tournaments/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTournamentsTournamentIdRoute =
+  AdminTournamentsTournamentIdRouteImport.update({
+    id: '/tournaments/$tournamentId',
+    path: '/tournaments/$tournamentId',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminUsersIndexRoute = AdminUsersIndexRouteImport.update({
+  id: '/users/',
+  path: '/users/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersUserIdRoute = AdminUsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVenuesIndexRoute = AdminVenuesIndexRouteImport.update({
+  id: '/venues/',
+  path: '/venues/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminVenuesVenueIdRoute = AdminVenuesVenueIdRouteImport.update({
+  id: '/venues/$venueId',
+  path: '/venues/$venueId',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,14 +258,82 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/players/$playerId': typeof PlayersPlayerIdRoute
+  '/sports/$sportId': typeof SportsSportIdRoute
+  '/stages/$stageId': typeof StagesStageIdRoute
+  '/standings/$groupId': typeof StandingsGroupIdRoute
+  '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/matches/': typeof MatchesIndexRoute
+  '/players/': typeof PlayersIndexRoute
+  '/sports/': typeof SportsIndexRoute
+  '/teams/': typeof TeamsIndexRoute
+  '/tournaments/': typeof TournamentsIndexRoute
+  '/venues/': typeof VenuesIndexRoute
+  '/admin/clubs/$clubId': typeof AdminClubsClubIdRoute
+  '/admin/editions/$editionId': typeof AdminEditionsEditionIdRoute
+  '/admin/matches/$matchId': typeof AdminMatchesMatchIdRoute
+  '/admin/players/$playerId': typeof AdminPlayersPlayerIdRoute
+  '/admin/sports/$sportId': typeof AdminSportsSportIdRoute
+  '/admin/stages/$stageId': typeof AdminStagesStageIdRoute
+  '/admin/standings/$groupId': typeof AdminStandingsGroupIdRoute
+  '/admin/teams/$teamId': typeof AdminTeamsTeamIdRoute
+  '/admin/tournaments/$tournamentId': typeof AdminTournamentsTournamentIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/clubs/': typeof AdminClubsIndexRoute
+  '/admin/players/': typeof AdminPlayersIndexRoute
+  '/admin/sports/': typeof AdminSportsIndexRoute
+  '/admin/teams/': typeof AdminTeamsIndexRoute
+  '/admin/tournaments/': typeof AdminTournamentsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/venues/': typeof AdminVenuesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/players/$playerId': typeof PlayersPlayerIdRoute
+  '/sports/$sportId': typeof SportsSportIdRoute
+  '/stages/$stageId': typeof StagesStageIdRoute
+  '/standings/$groupId': typeof StandingsGroupIdRoute
+  '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin': typeof AdminIndexRoute
+  '/matches': typeof MatchesIndexRoute
+  '/players': typeof PlayersIndexRoute
+  '/sports': typeof SportsIndexRoute
+  '/teams': typeof TeamsIndexRoute
+  '/tournaments': typeof TournamentsIndexRoute
+  '/venues': typeof VenuesIndexRoute
+  '/admin/clubs/$clubId': typeof AdminClubsClubIdRoute
+  '/admin/editions/$editionId': typeof AdminEditionsEditionIdRoute
+  '/admin/matches/$matchId': typeof AdminMatchesMatchIdRoute
+  '/admin/players/$playerId': typeof AdminPlayersPlayerIdRoute
+  '/admin/sports/$sportId': typeof AdminSportsSportIdRoute
+  '/admin/stages/$stageId': typeof AdminStagesStageIdRoute
+  '/admin/standings/$groupId': typeof AdminStandingsGroupIdRoute
+  '/admin/teams/$teamId': typeof AdminTeamsTeamIdRoute
+  '/admin/tournaments/$tournamentId': typeof AdminTournamentsTournamentIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/clubs': typeof AdminClubsIndexRoute
+  '/admin/players': typeof AdminPlayersIndexRoute
+  '/admin/sports': typeof AdminSportsIndexRoute
+  '/admin/teams': typeof AdminTeamsIndexRoute
+  '/admin/tournaments': typeof AdminTournamentsIndexRoute
+  '/admin/users': typeof AdminUsersIndexRoute
+  '/admin/venues': typeof AdminVenuesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,14 +342,126 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/groups/$groupId': typeof GroupsGroupIdRoute
+  '/matches/$matchId': typeof MatchesMatchIdRoute
+  '/players/$playerId': typeof PlayersPlayerIdRoute
+  '/sports/$sportId': typeof SportsSportIdRoute
+  '/stages/$stageId': typeof StagesStageIdRoute
+  '/standings/$groupId': typeof StandingsGroupIdRoute
+  '/teams/$teamId': typeof TeamsTeamIdRoute
+  '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
+  '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/matches/': typeof MatchesIndexRoute
+  '/players/': typeof PlayersIndexRoute
+  '/sports/': typeof SportsIndexRoute
+  '/teams/': typeof TeamsIndexRoute
+  '/tournaments/': typeof TournamentsIndexRoute
+  '/venues/': typeof VenuesIndexRoute
+  '/admin/clubs/$clubId': typeof AdminClubsClubIdRoute
+  '/admin/editions/$editionId': typeof AdminEditionsEditionIdRoute
+  '/admin/matches/$matchId': typeof AdminMatchesMatchIdRoute
+  '/admin/players/$playerId': typeof AdminPlayersPlayerIdRoute
+  '/admin/sports/$sportId': typeof AdminSportsSportIdRoute
+  '/admin/stages/$stageId': typeof AdminStagesStageIdRoute
+  '/admin/standings/$groupId': typeof AdminStandingsGroupIdRoute
+  '/admin/teams/$teamId': typeof AdminTeamsTeamIdRoute
+  '/admin/tournaments/$tournamentId': typeof AdminTournamentsTournamentIdRoute
+  '/admin/users/$userId': typeof AdminUsersUserIdRoute
+  '/admin/venues/$venueId': typeof AdminVenuesVenueIdRoute
+  '/admin/clubs/': typeof AdminClubsIndexRoute
+  '/admin/players/': typeof AdminPlayersIndexRoute
+  '/admin/sports/': typeof AdminSportsIndexRoute
+  '/admin/teams/': typeof AdminTeamsIndexRoute
+  '/admin/tournaments/': typeof AdminTournamentsIndexRoute
+  '/admin/users/': typeof AdminUsersIndexRoute
+  '/admin/venues/': typeof AdminVenuesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/about' | '/admin' | '/auth/login' | '/auth/register' | '/admin/'
+    | '/'
+    | '/about'
+    | '/admin'
+    | '/auth/login'
+    | '/auth/register'
+    | '/editions/$editionId'
+    | '/groups/$groupId'
+    | '/matches/$matchId'
+    | '/players/$playerId'
+    | '/sports/$sportId'
+    | '/stages/$stageId'
+    | '/standings/$groupId'
+    | '/teams/$teamId'
+    | '/tournaments/$tournamentId'
+    | '/venues/$venueId'
+    | '/admin/'
+    | '/matches/'
+    | '/players/'
+    | '/sports/'
+    | '/teams/'
+    | '/tournaments/'
+    | '/venues/'
+    | '/admin/clubs/$clubId'
+    | '/admin/editions/$editionId'
+    | '/admin/matches/$matchId'
+    | '/admin/players/$playerId'
+    | '/admin/sports/$sportId'
+    | '/admin/stages/$stageId'
+    | '/admin/standings/$groupId'
+    | '/admin/teams/$teamId'
+    | '/admin/tournaments/$tournamentId'
+    | '/admin/users/$userId'
+    | '/admin/venues/$venueId'
+    | '/admin/clubs/'
+    | '/admin/players/'
+    | '/admin/sports/'
+    | '/admin/teams/'
+    | '/admin/tournaments/'
+    | '/admin/users/'
+    | '/admin/venues/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/auth/login' | '/auth/register' | '/admin'
+  to:
+    | '/'
+    | '/about'
+    | '/auth/login'
+    | '/auth/register'
+    | '/editions/$editionId'
+    | '/groups/$groupId'
+    | '/matches/$matchId'
+    | '/players/$playerId'
+    | '/sports/$sportId'
+    | '/stages/$stageId'
+    | '/standings/$groupId'
+    | '/teams/$teamId'
+    | '/tournaments/$tournamentId'
+    | '/venues/$venueId'
+    | '/admin'
+    | '/matches'
+    | '/players'
+    | '/sports'
+    | '/teams'
+    | '/tournaments'
+    | '/venues'
+    | '/admin/clubs/$clubId'
+    | '/admin/editions/$editionId'
+    | '/admin/matches/$matchId'
+    | '/admin/players/$playerId'
+    | '/admin/sports/$sportId'
+    | '/admin/stages/$stageId'
+    | '/admin/standings/$groupId'
+    | '/admin/teams/$teamId'
+    | '/admin/tournaments/$tournamentId'
+    | '/admin/users/$userId'
+    | '/admin/venues/$venueId'
+    | '/admin/clubs'
+    | '/admin/players'
+    | '/admin/sports'
+    | '/admin/teams'
+    | '/admin/tournaments'
+    | '/admin/users'
+    | '/admin/venues'
   id:
     | '__root__'
     | '/'
@@ -84,7 +469,41 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth/login'
     | '/auth/register'
+    | '/editions/$editionId'
+    | '/groups/$groupId'
+    | '/matches/$matchId'
+    | '/players/$playerId'
+    | '/sports/$sportId'
+    | '/stages/$stageId'
+    | '/standings/$groupId'
+    | '/teams/$teamId'
+    | '/tournaments/$tournamentId'
+    | '/venues/$venueId'
     | '/admin/'
+    | '/matches/'
+    | '/players/'
+    | '/sports/'
+    | '/teams/'
+    | '/tournaments/'
+    | '/venues/'
+    | '/admin/clubs/$clubId'
+    | '/admin/editions/$editionId'
+    | '/admin/matches/$matchId'
+    | '/admin/players/$playerId'
+    | '/admin/sports/$sportId'
+    | '/admin/stages/$stageId'
+    | '/admin/standings/$groupId'
+    | '/admin/teams/$teamId'
+    | '/admin/tournaments/$tournamentId'
+    | '/admin/users/$userId'
+    | '/admin/venues/$venueId'
+    | '/admin/clubs/'
+    | '/admin/players/'
+    | '/admin/sports/'
+    | '/admin/teams/'
+    | '/admin/tournaments/'
+    | '/admin/users/'
+    | '/admin/venues/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -93,6 +512,22 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  EditionsEditionIdRoute: typeof EditionsEditionIdRoute
+  GroupsGroupIdRoute: typeof GroupsGroupIdRoute
+  MatchesMatchIdRoute: typeof MatchesMatchIdRoute
+  PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
+  SportsSportIdRoute: typeof SportsSportIdRoute
+  StagesStageIdRoute: typeof StagesStageIdRoute
+  StandingsGroupIdRoute: typeof StandingsGroupIdRoute
+  TeamsTeamIdRoute: typeof TeamsTeamIdRoute
+  TournamentsTournamentIdRoute: typeof TournamentsTournamentIdRoute
+  VenuesVenueIdRoute: typeof VenuesVenueIdRoute
+  MatchesIndexRoute: typeof MatchesIndexRoute
+  PlayersIndexRoute: typeof PlayersIndexRoute
+  SportsIndexRoute: typeof SportsIndexRoute
+  TeamsIndexRoute: typeof TeamsIndexRoute
+  TournamentsIndexRoute: typeof TournamentsIndexRoute
+  VenuesIndexRoute: typeof VenuesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -139,15 +574,289 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editions/$editionId': {
+      id: '/editions/$editionId'
+      path: '/editions/$editionId'
+      fullPath: '/editions/$editionId'
+      preLoaderRoute: typeof EditionsEditionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groups/$groupId': {
+      id: '/groups/$groupId'
+      path: '/groups/$groupId'
+      fullPath: '/groups/$groupId'
+      preLoaderRoute: typeof GroupsGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matches/': {
+      id: '/matches/'
+      path: '/matches'
+      fullPath: '/matches/'
+      preLoaderRoute: typeof MatchesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/matches/$matchId': {
+      id: '/matches/$matchId'
+      path: '/matches/$matchId'
+      fullPath: '/matches/$matchId'
+      preLoaderRoute: typeof MatchesMatchIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/players/': {
+      id: '/players/'
+      path: '/players'
+      fullPath: '/players/'
+      preLoaderRoute: typeof PlayersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/players/$playerId': {
+      id: '/players/$playerId'
+      path: '/players/$playerId'
+      fullPath: '/players/$playerId'
+      preLoaderRoute: typeof PlayersPlayerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sports/': {
+      id: '/sports/'
+      path: '/sports'
+      fullPath: '/sports/'
+      preLoaderRoute: typeof SportsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sports/$sportId': {
+      id: '/sports/$sportId'
+      path: '/sports/$sportId'
+      fullPath: '/sports/$sportId'
+      preLoaderRoute: typeof SportsSportIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/stages/$stageId': {
+      id: '/stages/$stageId'
+      path: '/stages/$stageId'
+      fullPath: '/stages/$stageId'
+      preLoaderRoute: typeof StagesStageIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/standings/$groupId': {
+      id: '/standings/$groupId'
+      path: '/standings/$groupId'
+      fullPath: '/standings/$groupId'
+      preLoaderRoute: typeof StandingsGroupIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/': {
+      id: '/teams/'
+      path: '/teams'
+      fullPath: '/teams/'
+      preLoaderRoute: typeof TeamsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams/$teamId': {
+      id: '/teams/$teamId'
+      path: '/teams/$teamId'
+      fullPath: '/teams/$teamId'
+      preLoaderRoute: typeof TeamsTeamIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tournaments/': {
+      id: '/tournaments/'
+      path: '/tournaments'
+      fullPath: '/tournaments/'
+      preLoaderRoute: typeof TournamentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tournaments/$tournamentId': {
+      id: '/tournaments/$tournamentId'
+      path: '/tournaments/$tournamentId'
+      fullPath: '/tournaments/$tournamentId'
+      preLoaderRoute: typeof TournamentsTournamentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venues/': {
+      id: '/venues/'
+      path: '/venues'
+      fullPath: '/venues/'
+      preLoaderRoute: typeof VenuesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/venues/$venueId': {
+      id: '/venues/$venueId'
+      path: '/venues/$venueId'
+      fullPath: '/venues/$venueId'
+      preLoaderRoute: typeof VenuesVenueIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/clubs/': {
+      id: '/admin/clubs/'
+      path: '/clubs'
+      fullPath: '/admin/clubs/'
+      preLoaderRoute: typeof AdminClubsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clubs/$clubId': {
+      id: '/admin/clubs/$clubId'
+      path: '/clubs/$clubId'
+      fullPath: '/admin/clubs/$clubId'
+      preLoaderRoute: typeof AdminClubsClubIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/editions/$editionId': {
+      id: '/admin/editions/$editionId'
+      path: '/editions/$editionId'
+      fullPath: '/admin/editions/$editionId'
+      preLoaderRoute: typeof AdminEditionsEditionIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/matches/$matchId': {
+      id: '/admin/matches/$matchId'
+      path: '/matches/$matchId'
+      fullPath: '/admin/matches/$matchId'
+      preLoaderRoute: typeof AdminMatchesMatchIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/players/': {
+      id: '/admin/players/'
+      path: '/players'
+      fullPath: '/admin/players/'
+      preLoaderRoute: typeof AdminPlayersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/players/$playerId': {
+      id: '/admin/players/$playerId'
+      path: '/players/$playerId'
+      fullPath: '/admin/players/$playerId'
+      preLoaderRoute: typeof AdminPlayersPlayerIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sports/': {
+      id: '/admin/sports/'
+      path: '/sports'
+      fullPath: '/admin/sports/'
+      preLoaderRoute: typeof AdminSportsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sports/$sportId': {
+      id: '/admin/sports/$sportId'
+      path: '/sports/$sportId'
+      fullPath: '/admin/sports/$sportId'
+      preLoaderRoute: typeof AdminSportsSportIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/stages/$stageId': {
+      id: '/admin/stages/$stageId'
+      path: '/stages/$stageId'
+      fullPath: '/admin/stages/$stageId'
+      preLoaderRoute: typeof AdminStagesStageIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/standings/$groupId': {
+      id: '/admin/standings/$groupId'
+      path: '/standings/$groupId'
+      fullPath: '/admin/standings/$groupId'
+      preLoaderRoute: typeof AdminStandingsGroupIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/teams/': {
+      id: '/admin/teams/'
+      path: '/teams'
+      fullPath: '/admin/teams/'
+      preLoaderRoute: typeof AdminTeamsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/teams/$teamId': {
+      id: '/admin/teams/$teamId'
+      path: '/teams/$teamId'
+      fullPath: '/admin/teams/$teamId'
+      preLoaderRoute: typeof AdminTeamsTeamIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tournaments/': {
+      id: '/admin/tournaments/'
+      path: '/tournaments'
+      fullPath: '/admin/tournaments/'
+      preLoaderRoute: typeof AdminTournamentsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/tournaments/$tournamentId': {
+      id: '/admin/tournaments/$tournamentId'
+      path: '/tournaments/$tournamentId'
+      fullPath: '/admin/tournaments/$tournamentId'
+      preLoaderRoute: typeof AdminTournamentsTournamentIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/': {
+      id: '/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AdminUsersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users/$userId': {
+      id: '/admin/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/admin/users/$userId'
+      preLoaderRoute: typeof AdminUsersUserIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/venues/': {
+      id: '/admin/venues/'
+      path: '/venues'
+      fullPath: '/admin/venues/'
+      preLoaderRoute: typeof AdminVenuesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/venues/$venueId': {
+      id: '/admin/venues/$venueId'
+      path: '/venues/$venueId'
+      fullPath: '/admin/venues/$venueId'
+      preLoaderRoute: typeof AdminVenuesVenueIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminClubsClubIdRoute: typeof AdminClubsClubIdRoute
+  AdminEditionsEditionIdRoute: typeof AdminEditionsEditionIdRoute
+  AdminMatchesMatchIdRoute: typeof AdminMatchesMatchIdRoute
+  AdminPlayersPlayerIdRoute: typeof AdminPlayersPlayerIdRoute
+  AdminSportsSportIdRoute: typeof AdminSportsSportIdRoute
+  AdminStagesStageIdRoute: typeof AdminStagesStageIdRoute
+  AdminStandingsGroupIdRoute: typeof AdminStandingsGroupIdRoute
+  AdminTeamsTeamIdRoute: typeof AdminTeamsTeamIdRoute
+  AdminTournamentsTournamentIdRoute: typeof AdminTournamentsTournamentIdRoute
+  AdminUsersUserIdRoute: typeof AdminUsersUserIdRoute
+  AdminVenuesVenueIdRoute: typeof AdminVenuesVenueIdRoute
+  AdminClubsIndexRoute: typeof AdminClubsIndexRoute
+  AdminPlayersIndexRoute: typeof AdminPlayersIndexRoute
+  AdminSportsIndexRoute: typeof AdminSportsIndexRoute
+  AdminTeamsIndexRoute: typeof AdminTeamsIndexRoute
+  AdminTournamentsIndexRoute: typeof AdminTournamentsIndexRoute
+  AdminUsersIndexRoute: typeof AdminUsersIndexRoute
+  AdminVenuesIndexRoute: typeof AdminVenuesIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
+  AdminClubsClubIdRoute: AdminClubsClubIdRoute,
+  AdminEditionsEditionIdRoute: AdminEditionsEditionIdRoute,
+  AdminMatchesMatchIdRoute: AdminMatchesMatchIdRoute,
+  AdminPlayersPlayerIdRoute: AdminPlayersPlayerIdRoute,
+  AdminSportsSportIdRoute: AdminSportsSportIdRoute,
+  AdminStagesStageIdRoute: AdminStagesStageIdRoute,
+  AdminStandingsGroupIdRoute: AdminStandingsGroupIdRoute,
+  AdminTeamsTeamIdRoute: AdminTeamsTeamIdRoute,
+  AdminTournamentsTournamentIdRoute: AdminTournamentsTournamentIdRoute,
+  AdminUsersUserIdRoute: AdminUsersUserIdRoute,
+  AdminVenuesVenueIdRoute: AdminVenuesVenueIdRoute,
+  AdminClubsIndexRoute: AdminClubsIndexRoute,
+  AdminPlayersIndexRoute: AdminPlayersIndexRoute,
+  AdminSportsIndexRoute: AdminSportsIndexRoute,
+  AdminTeamsIndexRoute: AdminTeamsIndexRoute,
+  AdminTournamentsIndexRoute: AdminTournamentsIndexRoute,
+  AdminUsersIndexRoute: AdminUsersIndexRoute,
+  AdminVenuesIndexRoute: AdminVenuesIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -158,6 +867,22 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  EditionsEditionIdRoute: EditionsEditionIdRoute,
+  GroupsGroupIdRoute: GroupsGroupIdRoute,
+  MatchesMatchIdRoute: MatchesMatchIdRoute,
+  PlayersPlayerIdRoute: PlayersPlayerIdRoute,
+  SportsSportIdRoute: SportsSportIdRoute,
+  StagesStageIdRoute: StagesStageIdRoute,
+  StandingsGroupIdRoute: StandingsGroupIdRoute,
+  TeamsTeamIdRoute: TeamsTeamIdRoute,
+  TournamentsTournamentIdRoute: TournamentsTournamentIdRoute,
+  VenuesVenueIdRoute: VenuesVenueIdRoute,
+  MatchesIndexRoute: MatchesIndexRoute,
+  PlayersIndexRoute: PlayersIndexRoute,
+  SportsIndexRoute: SportsIndexRoute,
+  TeamsIndexRoute: TeamsIndexRoute,
+  TournamentsIndexRoute: TournamentsIndexRoute,
+  VenuesIndexRoute: VenuesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

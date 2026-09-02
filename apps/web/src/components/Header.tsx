@@ -26,6 +26,28 @@ export default function Header() {
 						Home
 					</Link>
 					<Link
+						to="/tournaments"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
+						Torneos
+					</Link>
+					<Link to="/matches" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						Partidos
+					</Link>
+					<Link to="/teams" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						Equipos
+					</Link>
+					<Link to="/players" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						Jugadores
+					</Link>
+					<Link to="/venues" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						Sedes
+					</Link>
+					<Link to="/sports" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						Deportes
+					</Link>
+					<Link
 						to="/about"
 						className="nav-link"
 						activeProps={{ className: "nav-link is-active" }}
