@@ -71,8 +71,7 @@ export function useTournamentEditions(
 ) {
 	return useQuery({
 		queryKey: queryKeys.editions.listByTournament(tournamentId),
-		queryFn: () =>
-			unwrap(client.tournaments({ tournamentId }).editions.get()),
+		queryFn: () => unwrap(client.tournaments({ tournamentId }).editions.get()),
 		enabled: !!tournamentId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -117,7 +116,10 @@ export function useGroupsByStage(
 
 export function useCreateTournament(
 	client: ApiClient,
-	options?: Omit<UseMutationOptions<unknown, Error, InsertTournament>, "mutationFn">,
+	options?: Omit<
+		UseMutationOptions<unknown, Error, InsertTournament>,
+		"mutationFn"
+	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
@@ -169,9 +171,7 @@ export function useDeleteTournament(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (tournamentId: string) =>
-			unwrap(
-				client.tournaments({ tournamentId }).delete(undefined, undefined),
-			),
+			unwrap(client.tournaments({ tournamentId }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.tournaments.all() });
@@ -250,9 +250,7 @@ export function useDeleteEdition(
 	return useMutation({
 		mutationFn: (editionId: string) =>
 			unwrap(
-				client.tournaments
-					.editions({ editionId })
-					.delete(undefined, undefined),
+				client.tournaments.editions({ editionId }).delete(undefined, undefined),
 			),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {
@@ -281,8 +279,7 @@ export function useCreateStage(
 		}: {
 			editionId: string;
 			body: CreateStageBody;
-		}) =>
-			unwrap(client.tournaments.editions({ editionId }).stages.post(body)),
+		}) => unwrap(client.tournaments.editions({ editionId }).stages.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({
@@ -352,8 +349,13 @@ export function useCreateGroup(
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ stageId, body }: { stageId: string; body: CreateGroupBody }) =>
-			unwrap(client.tournaments.stages({ stageId }).groups.post(body)),
+		mutationFn: ({
+			stageId,
+			body,
+		}: {
+			stageId: string;
+			body: CreateGroupBody;
+		}) => unwrap(client.tournaments.stages({ stageId }).groups.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({

@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
+import { check } from "drizzle-orm/pg-core/checks";
 import { uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { index } from "drizzle-orm/pg-core/indexes";
 import { pgTable } from "drizzle-orm/pg-core/table";
 import { unique } from "drizzle-orm/pg-core/unique-constraint";
-import { check } from "drizzle-orm/pg-core/checks";
-import { index } from "drizzle-orm/pg-core/indexes";
 import { tournamentStages } from "./tournament-stages";
 
 export const stageGroups = pgTable(

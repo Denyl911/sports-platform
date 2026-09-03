@@ -32,19 +32,39 @@ export default function Header() {
 					>
 						Torneos
 					</Link>
-					<Link to="/matches" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+					<Link
+						to="/matches"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
 						Partidos
 					</Link>
-					<Link to="/teams" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+					<Link
+						to="/teams"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
 						Equipos
 					</Link>
-					<Link to="/players" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+					<Link
+						to="/players"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
 						Jugadores
 					</Link>
-					<Link to="/venues" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+					<Link
+						to="/venues"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
 						Sedes
 					</Link>
-					<Link to="/sports" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+					<Link
+						to="/sports"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
 						Deportes
 					</Link>
 					<Link
@@ -55,7 +75,11 @@ export default function Header() {
 						About
 					</Link>
 					{hasRole("admin", "organizer", "super_admin") && (
-						<Link to="/admin" className="nav-link" activeProps={{ className: "nav-link is-active" }}>
+						<Link
+							to="/admin"
+							className="nav-link"
+							activeProps={{ className: "nav-link is-active" }}
+						>
 							Admin
 						</Link>
 					)}
@@ -68,8 +92,8 @@ export default function Header() {
 
 				<div className="ml-auto flex items-center gap-1.5 sm:gap-2">
 					{isAuthenticated ? (
-            <button
-              type="button"
+						<button
+							type="button"
 							onClick={logout}
 							className="rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink-soft) hover:bg-(--surface-strong)"
 						>

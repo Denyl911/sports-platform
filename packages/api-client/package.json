@@ -3,11 +3,11 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
-		"lint": "biome lint .",
-		"format": "biome format --write .",
-		"check": "biome check --write .",
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
 		"test": "bun test",
-		"test:types": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"exports": {
 		".": "./src/index.ts",

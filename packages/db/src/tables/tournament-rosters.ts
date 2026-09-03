@@ -1,9 +1,9 @@
 import { sql } from "drizzle-orm";
-import { integer, uuid, varchar, boolean } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
-import { unique } from "drizzle-orm/pg-core/unique-constraint";
+import { boolean, integer, uuid, varchar } from "drizzle-orm/pg-core/columns";
 import { index, uniqueIndex } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
+import { unique } from "drizzle-orm/pg-core/unique-constraint";
 import { players } from "./players";
 import { teams } from "./teams";
 import { tournamentEditions } from "./tournament-editions";

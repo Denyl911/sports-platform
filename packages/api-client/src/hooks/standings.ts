@@ -46,11 +46,7 @@ export function useRecalculateStandings(
 export function useUpdateStandingRow(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: UpdateStandingRow }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateStandingRow }>,
 		"mutationFn"
 	>,
 ) {

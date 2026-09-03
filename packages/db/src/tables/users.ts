@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { check } from "drizzle-orm/pg-core/checks";
 import {
 	boolean,
 	text,
@@ -6,12 +7,11 @@ import {
 	uuid,
 	varchar,
 } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { index } from "drizzle-orm/pg-core/indexes";
-import { check } from "drizzle-orm/pg-core/checks";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { unique } from "drizzle-orm/pg-core/unique-constraint";
-import { tournaments } from "./tournaments";
 import { userRoleEnum } from "./enums";
+import { tournaments } from "./tournaments";
 
 export const users = pgTable(
 	"users",

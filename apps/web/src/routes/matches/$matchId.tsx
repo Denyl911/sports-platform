@@ -1,17 +1,28 @@
+import { queryKeys, unwrap } from "@sports/api-client";
+import { useGroupLive, useMatchLive } from "@sports/api-client/live";
+import {
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	MatchCard,
+	StandingsTable,
+	VenuePill,
+} from "@sports/ui";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, useQuery } from "@tanstack/react-query";
-import { api, getStoredAccessToken } from "../../lib/api";
-import { queryKeys } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { useMatchLive, useGroupLive } from "@sports/api-client/live";
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button, VenuePill } from "@sports/ui";
-import { MatchCard, StandingsTable } from "@sports/ui";
 import * as React from "react";
+import { api, getStoredAccessToken } from "../../lib/api";
 
 export const Route = createFileRoute("/matches/$matchId")({
 	loader: async ({ context, params }) => {
-		const qc = (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient;
-		await qc.ensureQueryData({
+		const qc = (
+			context as { queryClient: import("@tanstack/react-query").QueryClient }
+		).queryClient;
+		await qc.query({
+			staleTime: "static",
 			queryKey: queryKeys.matches.detail(params.matchId),
 			queryFn: () => unwrap(api.matches({ id: params.matchId }).get()),
 		});
@@ -33,16 +44,26 @@ function MatchDetailPage() {
 		awayTeamId: string | null;
 		homeScore: number;
 		awayScore: number;
-		status: "scheduled" | "in_progress" | "paused" | "finished" | "cancelled" | "walkover";
+		status:
+			| "scheduled"
+			| "in_progress"
+			| "paused"
+			| "finished"
+			| "cancelled"
+			| "walkover";
 		scheduledAt: string | null;
 		venueId: string | null;
 	};
 	const { data: venueData } = useQuery({
-		queryKey: match.venueId ? queryKeys.venues.detail(match.venueId) : ["venues", "none"],
+		queryKey: match.venueId
+			? queryKeys.venues.detail(match.venueId)
+			: ["venues", "none"],
 		queryFn: () => unwrap(api.venues({ id: match.venueId! }).get()),
 		enabled: !!match.venueId,
 	});
-	const venue = venueData as { name: string; address?: string | null } | undefined;
+	const venue = venueData as
+		| { name: string; address?: string | null }
+		| undefined;
 
 	const live = useMatchLive(matchId, {
 		getToken: getStoredAccessToken,
@@ -69,8 +90,14 @@ function MatchDetailPage() {
 	return (
 		<div className="demo-page space-y-6">
 			<MatchCard
-				homeTeam={{ id: match.homeTeamId ?? "home", name: match.homeTeamId?.slice(0, 8) ?? "Local" }}
-				awayTeam={{ id: match.awayTeamId ?? "away", name: match.awayTeamId?.slice(0, 8) ?? "Visitante" }}
+				homeTeam={{
+					id: match.homeTeamId ?? "home",
+					name: match.homeTeamId?.slice(0, 8) ?? "Local",
+				}}
+				awayTeam={{
+					id: match.awayTeamId ?? "away",
+					name: match.awayTeamId?.slice(0, 8) ?? "Visitante",
+				}}
 				homeScore={match.homeScore}
 				awayScore={match.awayScore}
 				status={match.status}
@@ -81,21 +108,48 @@ function MatchDetailPage() {
 			{venue && <VenuePill name={venue.name} address={venue.address} />}
 
 			<Card className="p-4">
-				<CardHeader className="p-0 pb-2"><CardTitle className="text-base">Live WS</CardTitle></CardHeader>
+				<CardHeader className="p-0 pb-2">
+					<CardTitle className="text-base">Live WS</CardTitle>
+				</CardHeader>
 				<CardContent className="p-0 space-y-2">
 					<div className="flex items-center gap-2 text-sm">
-						<Badge variant={live.isOpen ? "success" : "secondary"}>{live.status}</Badge>
-						<span className="text-[var(--sea-ink-soft)]">{live.lastMessage ? JSON.stringify(live.lastMessage).slice(0, 120) : "sin mensajes"}</span>
+						<Badge variant={live.isOpen ? "success" : "secondary"}>
+							{live.status}
+						</Badge>
+						<span className="text-(--sea-ink-soft)">
+							{live.lastMessage
+								? JSON.stringify(live.lastMessage).slice(0, 120)
+								: "sin mensajes"}
+						</span>
 					</div>
 					{match.groupId && (
-						<div className="text-xs text-[var(--sea-ink-soft)]">Group live: {groupLive.status} {groupLive.lastStanding ? "· standing updated" : ""}</div>
+						<div className="text-xs text-(--sea-ink-soft)">
+							Group live: {groupLive.status}{" "}
+							{groupLive.lastStanding ? "· standing updated" : ""}
+						</div>
 					)}
 					<div className="flex gap-2">
-						<input type="number" value={homeScore} onChange={(e) => setHomeScore(Number(e.target.value))} className="demo-input w-20" />
-						<input type="number" value={awayScore} onChange={(e) => setAwayScore(Number(e.target.value))} className="demo-input w-20" />
-						<Button onClick={handleSendScore} disabled={!live.isOpen}>Enviar score</Button>
+						<input
+							type="number"
+							value={homeScore}
+							onChange={(e) => setHomeScore(Number(e.target.value))}
+							className="demo-input w-20"
+						/>
+						<input
+							type="number"
+							value={awayScore}
+							onChange={(e) => setAwayScore(Number(e.target.value))}
+							className="demo-input w-20"
+						/>
+						<Button onClick={handleSendScore} disabled={!live.isOpen}>
+							Enviar score
+						</Button>
 					</div>
-					{live.lastError && <div className="demo-alert-danger text-sm">{live.lastError.message}</div>}
+					{live.lastError && (
+						<div className="demo-alert-danger text-sm">
+							{live.lastError.message}
+						</div>
+					)}
 				</CardContent>
 			</Card>
 
@@ -109,7 +163,24 @@ function GroupStandingsInline({ groupId }: { groupId: string }) {
 		queryKey: queryKeys.standings.byGroup(groupId),
 		queryFn: () => unwrap(api.groups({ groupId }).standings.get()),
 	});
-	const standings = data as { items: Array<{ standing: { id: string; rankPosition: number | null; played: number; won: number; drawn: number; lost: number; points: number; scoreFor: number; scoreAgainst: number; scoreDifference: number }; team: { id: string; name: string } }>; total: number };
+	const standings = data as {
+		items: Array<{
+			standing: {
+				id: string;
+				rankPosition: number | null;
+				played: number;
+				won: number;
+				drawn: number;
+				lost: number;
+				points: number;
+				scoreFor: number;
+				scoreAgainst: number;
+				scoreDifference: number;
+			};
+			team: { id: string; name: string };
+		}>;
+		total: number;
+	};
 	const rows = standings.items.map(({ standing, team }) => ({
 		id: standing.id,
 		team: { id: team.id, name: team.name },

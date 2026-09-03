@@ -17,9 +17,7 @@ export function RoleGuard({
 
 	if (isLoading) {
 		return (
-			<div className="demo-center text-sm text-(--sea-ink-soft)">
-				Cargando…
-			</div>
+			<div className="demo-center text-sm text-(--sea-ink-soft)">Cargando…</div>
 		);
 	}
 	if (!user) return <Navigate to={fallback} />;

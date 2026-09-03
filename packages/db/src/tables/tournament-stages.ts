@@ -1,10 +1,10 @@
-import { uuid, varchar, jsonb, integer } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
-import { index, uniqueIndex } from "drizzle-orm/pg-core/indexes";
-import { check } from "drizzle-orm/pg-core/checks";
 import { sql } from "drizzle-orm";
-import { tournamentEditions } from "./tournament-editions";
+import { check } from "drizzle-orm/pg-core/checks";
+import { integer, jsonb, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { index, uniqueIndex } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { stageTypeEnum } from "./enums";
+import { tournamentEditions } from "./tournament-editions";
 
 export const tournamentStages = pgTable(
 	"tournament_stages",

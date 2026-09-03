@@ -1,8 +1,4 @@
-import type {
-	InsertTeam,
-	TeamFilterQuery,
-	UpdateTeam,
-} from "@sports/schemas";
+import type { InsertTeam, TeamFilterQuery, UpdateTeam } from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -23,8 +19,7 @@ export function useTeams(
 ) {
 	return useQuery({
 		queryKey: queryKeys.teams.list(filters),
-		queryFn: () =>
-			unwrap(client.teams.get({ query: { ...(filters ?? {}) } })),
+		queryFn: () => unwrap(client.teams.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

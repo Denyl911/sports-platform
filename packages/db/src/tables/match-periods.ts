@@ -1,9 +1,9 @@
 import { integer, uuid } from "drizzle-orm/pg-core/columns";
+import { index } from "drizzle-orm/pg-core/indexes";
 import { pgTable } from "drizzle-orm/pg-core/table";
 import { unique } from "drizzle-orm/pg-core/unique-constraint";
-import { index } from "drizzle-orm/pg-core/indexes";
-import { matches } from "./matches";
 import { matchPeriodTypeEnum } from "./enums";
+import { matches } from "./matches";
 
 export const matchPeriods = pgTable(
 	"match_periods",

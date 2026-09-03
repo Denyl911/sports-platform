@@ -1,26 +1,24 @@
-// @ts-nocheck
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
-import { getApiErrorMessage, queryKeys } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
+import { getApiErrorMessage, unwrap } from "@sports/api-client";
 import {
-	useGroupsByStage,
+	useAddPlayerToRoster,
 	useCreateGroup,
+	useCreateMatch,
 	useDeleteGroup,
-	useUpdateGroup,
-	useRegistrationsByStage,
+	useGroupsByStage,
+	usePlayers,
 	useRegisterTeam,
+	useRegistrationsByStage,
+	useRemovePlayerFromRoster,
+	useRoster,
+	useTeams,
 	useUnregisterTeam,
 	useUpdateRegistrationGroup,
-	useRoster,
-	useAddPlayerToRoster,
-	useRemovePlayerFromRoster,
 } from "@sports/api-client/hooks";
-import { useTeams, usePlayers, useCreateMatch } from "@sports/api-client/hooks";
-import { Button, Card, Input, Select, Badge } from "@sports/ui";
-import { RosterTable } from "@sports/ui";
+import { Badge, Button, Card, Input, Select } from "@sports/ui";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/stages/$stageId")({
 	component: AdminStageDetailPage,
@@ -32,13 +30,19 @@ function AdminStageDetailPage() {
 		queryKey: ["stage", stageId],
 		queryFn: () => unwrap(api.tournaments.stages({ stageId }).get()),
 	});
-	const editionId = (stageData as { editionId?: string } | undefined)?.editionId ?? null;
+	const editionId =
+		(stageData as { editionId?: string } | undefined)?.editionId ?? null;
 	const { data: editionData } = useQuery({
 		queryKey: editionId ? ["edition", editionId] : ["edition", "none"],
-		queryFn: () => unwrap(api.tournaments.editions({ editionId: editionId! }).get() as never),
+		queryFn: () =>
+			unwrap(
+				api.tournaments.editions({ editionId: editionId! }).get() as never,
+			),
 		enabled: !!editionId,
 	});
-	const tournamentId = (editionData as { tournamentId?: string } | undefined)?.tournamentId ?? null;
+	const tournamentId =
+		(editionData as { tournamentId?: string } | undefined)?.tournamentId ??
+		null;
 
 	const { data: groupsData } = useGroupsByStage(api, stageId);
 	const { data: regsData } = useRegistrationsByStage(api, stageId);
@@ -51,10 +55,43 @@ function AdminStageDetailPage() {
 	const unregisterTeam = useUnregisterTeam(api);
 	const updateRegGroup = useUpdateRegistrationGroup(api);
 
-	const groups = (groupsData as { items: Array<{ id: string; name: string }>; total: number } | undefined)?.items ?? [];
-	const registrations = (regsData as { items: Array<{ registration: { id: string; teamId: string; groupId: string | null }; team: { id: string; name: string } }>; total: number } | undefined)?.items ?? [];
-	const teams = (teamsData as { items: Array<{ id: string; name: string }>; total: number } | undefined)?.items ?? [];
-	const players = (playersData as { items: Array<{ id: string; firstName: string; lastName: string }>; total: number } | undefined)?.items ?? [];
+	const groups =
+		(
+			groupsData as
+				| { items: Array<{ id: string; name: string }>; total: number }
+				| undefined
+		)?.items ?? [];
+	const registrations =
+		(
+			regsData as
+				| {
+						items: Array<{
+							registration: {
+								id: string;
+								teamId: string;
+								groupId: string | null;
+							};
+							team: { id: string; name: string };
+						}>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
+	const teams =
+		(
+			teamsData as
+				| { items: Array<{ id: string; name: string }>; total: number }
+				| undefined
+		)?.items ?? [];
+	const players =
+		(
+			playersData as
+				| {
+						items: Array<{ id: string; firstName: string; lastName: string }>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
 
 	const [groupName, setGroupName] = React.useState("");
 	const [teamId, setTeamId] = React.useState("");
@@ -64,11 +101,14 @@ function AdminStageDetailPage() {
 		if (teams.length && !teamId) setTeamId(teams[0]!.id);
 	}, [teams, teamId]);
 
-	const onCreateGroup = async (e: React.FormEvent) => {
+	const onCreateGroup = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
 		try {
-			await createGroup.mutateAsync({ stageId, body: { name: groupName } as never });
+			await createGroup.mutateAsync({
+				stageId,
+				body: { name: groupName } as never,
+			});
 			setGroupName("");
 		} catch (err) {
 			setError(getApiErrorMessage(err));
@@ -84,7 +124,7 @@ function AdminStageDetailPage() {
 		}
 	};
 
-	const onRegister = async (e: React.FormEvent) => {
+	const onRegister = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
 		try {
@@ -96,43 +136,89 @@ function AdminStageDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/tournaments" className="text-sm text-[var(--sea-ink-soft)]">← Torneos</Link>
-			{tournamentId && <div className="text-xs text-[var(--sea-ink-soft)]">Torneo: {tournamentId.slice(0, 8)} · Edición: {editionId?.slice(0, 8)}</div>}
+			<Link to="/admin/tournaments" className="text-sm text-(--sea-ink-soft)">
+				← Torneos
+			</Link>
+			{tournamentId && (
+				<div className="text-xs text-(--sea-ink-soft)">
+					Torneo: {tournamentId.slice(0, 8)} · Edición: {editionId?.slice(0, 8)}
+				</div>
+			)}
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="p-4">
 					<h3 className="font-bold">Grupos</h3>
 					<form onSubmit={onCreateGroup} className="mt-2 flex gap-2">
-						<Input value={groupName} onChange={(e) => setGroupName(e.target.value)} placeholder="Grupo A" required className="flex-1" />
-						<Button type="submit" disabled={createGroup.isPending}>Crear</Button>
+						<Input
+							value={groupName}
+							onChange={(e) => setGroupName(e.target.value)}
+							placeholder="Grupo A"
+							required
+							className="flex-1"
+						/>
+						<Button type="submit" disabled={createGroup.isPending}>
+							Crear
+						</Button>
 					</form>
 					<div className="mt-3 flex flex-col gap-2">
 						{groups.map((g) => (
-							<div key={g.id} className="flex items-center justify-between rounded-xl border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-2">
-								<Link to="/groups/$groupId" params={{ groupId: g.id }} className="no-underline">
+							<div
+								key={g.id}
+								className="flex items-center justify-between rounded-xl border border-(--line) bg-(--chip-bg) px-3 py-2"
+							>
+								<Link
+									to="/groups/$groupId"
+									params={{ groupId: g.id }}
+									className="no-underline"
+								>
 									<Badge variant="secondary">{g.name}</Badge>
 								</Link>
-								<Button variant="ghost" size="sm" onClick={() => onDeleteGroup(g.id)}>Eliminar</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => onDeleteGroup(g.id)}
+								>
+									Eliminar
+								</Button>
 							</div>
 						))}
 					</div>
-					{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
+					{error && (
+						<div className="demo-alert-danger mt-2 text-sm">{error}</div>
+					)}
 				</Card>
 
 				<Card className="p-4">
 					<h3 className="font-bold">Inscripciones</h3>
 					<form onSubmit={onRegister} className="mt-2 flex gap-2">
-						<Select value={teamId} onChange={(e) => setTeamId(e.target.value)} className="flex-1">
+						<Select
+							value={teamId}
+							onChange={(e) => setTeamId(e.target.value)}
+							className="flex-1"
+						>
 							{teams.map((t) => (
-								<option key={t.id} value={t.id}>{t.name}</option>
+								<option key={t.id} value={t.id}>
+									{t.name}
+								</option>
 							))}
 						</Select>
-						<Button type="submit" disabled={registerTeam.isPending}>Inscribir</Button>
+						<Button type="submit" disabled={registerTeam.isPending}>
+							Inscribir
+						</Button>
 					</form>
 					<div className="mt-3 space-y-1">
 						{registrations.map(({ registration, team }) => (
-							<RegistrationRow key={registration.id} registration={registration} team={team} groups={groups} />
+							<RegistrationRow
+								key={registration.id}
+								registration={registration}
+								team={team}
+								groups={groups}
+							/>
 						))}
-						{registrations.length === 0 && <div className="text-sm text-[var(--sea-ink-soft)]">Sin inscripciones</div>}
+						{registrations.length === 0 && (
+							<div className="text-sm text-(--sea-ink-soft)">
+								Sin inscripciones
+							</div>
+						)}
 					</div>
 				</Card>
 			</div>
@@ -140,27 +226,52 @@ function AdminStageDetailPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				{tournamentId ? (
-					<CreateMatchInline stageId={stageId} tournamentId={tournamentId} groups={groups} teams={teams} />
+					<CreateMatchInline
+						stageId={stageId}
+						tournamentId={tournamentId}
+						groups={groups}
+						teams={teams}
+					/>
 				) : (
-					<div className="text-sm text-[var(--sea-ink-soft)]">Cargando torneo…</div>
+					<div className="text-sm text-(--sea-ink-soft)">Cargando torneo…</div>
 				)}
 			</Card>
 
 			<Card className="p-4">
 				<h3 className="font-bold">Roster</h3>
-				{editionId && teams[0] ? <RosterSection editionId={editionId} teamId={teams[0].id} teams={teams} players={players} /> : <span className="text-sm">Sin equipos o edición</span>}
+				{editionId && teams[0] ? (
+					<RosterSection
+						editionId={editionId}
+						teamId={teams[0].id}
+						teams={teams}
+						players={players}
+					/>
+				) : (
+					<span className="text-sm">Sin equipos o edición</span>
+				)}
 			</Card>
 		</div>
 	);
 }
 
-function RegistrationRow({ registration, team, groups }: { registration: { id: string; teamId: string; groupId: string | null }; team: { id: string; name: string }; groups: Array<{ id: string; name: string }> }) {
+function RegistrationRow({
+	registration,
+	team,
+	groups,
+}: {
+	registration: { id: string; teamId: string; groupId: string | null };
+	team: { id: string; name: string };
+	groups: Array<{ id: string; name: string }>;
+}) {
 	const updateGroup = useUpdateRegistrationGroup(api);
 	const unregister = useUnregisterTeam(api);
 	const [groupId, setGroupId] = React.useState(registration.groupId ?? "");
 	const onMove = async () => {
 		try {
-			await updateGroup.mutateAsync({ id: registration.id, body: { groupId: groupId || null } as never });
+			await updateGroup.mutateAsync({
+				id: registration.id,
+				body: { groupId: groupId || null } as never,
+			});
 		} catch {}
 	};
 	const onRemove = async () => {
@@ -173,18 +284,40 @@ function RegistrationRow({ registration, team, groups }: { registration: { id: s
 		<div className="demo-list-item flex flex-wrap items-center justify-between gap-2 text-sm">
 			<span>{team.name}</span>
 			<div className="flex items-center gap-2">
-				<Select value={groupId} onChange={(e) => setGroupId(e.target.value)} className="w-32">
+				<Select
+					value={groupId}
+					onChange={(e) => setGroupId(e.target.value)}
+					className="w-32"
+				>
 					<option value="">sin grupo</option>
-					{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+					{groups.map((g) => (
+						<option key={g.id} value={g.id}>
+							{g.name}
+						</option>
+					))}
 				</Select>
-				<Button variant="ghost" size="sm" onClick={onMove}>Mover</Button>
-				<Button variant="destructive" size="sm" onClick={onRemove}>Quitar</Button>
+				<Button variant="ghost" size="sm" onClick={onMove}>
+					Mover
+				</Button>
+				<Button variant="destructive" size="sm" onClick={onRemove}>
+					Quitar
+				</Button>
 			</div>
 		</div>
 	);
 }
 
-function CreateMatchInline({ stageId, tournamentId, groups, teams }: { stageId: string; tournamentId: string; groups: Array<{ id: string; name: string }>; teams: Array<{ id: string; name: string }> }) {
+function CreateMatchInline({
+	stageId,
+	tournamentId,
+	groups,
+	teams,
+}: {
+	stageId: string;
+	tournamentId: string;
+	groups: Array<{ id: string; name: string }>;
+	teams: Array<{ id: string; name: string }>;
+}) {
 	const createMatch = useCreateMatch(api);
 	const [homeTeamId, setHomeTeamId] = React.useState("");
 	const [awayTeamId, setAwayTeamId] = React.useState("");
@@ -197,12 +330,18 @@ function CreateMatchInline({ stageId, tournamentId, groups, teams }: { stageId: 
 			setAwayTeamId(teams[1]!.id);
 		}
 	}, [teams]);
-	const onCreate = async (e: React.FormEvent) => {
+	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
 		setSuccess(null);
 		try {
-			await createMatch.mutateAsync({ stageId, groupId: groupId || null, homeTeamId, awayTeamId, tournamentId } as never);
+			await createMatch.mutateAsync({
+				stageId,
+				groupId: groupId || null,
+				homeTeamId,
+				awayTeamId,
+				tournamentId,
+			} as never);
 			setSuccess("Partido creado");
 		} catch (err: unknown) {
 			setError(getApiErrorMessage(err));
@@ -211,57 +350,141 @@ function CreateMatchInline({ stageId, tournamentId, groups, teams }: { stageId: 
 	return (
 		<form onSubmit={onCreate} className="mt-2 flex flex-wrap gap-2">
 			<Badge variant="outline">Torneo {tournamentId.slice(0, 8)}</Badge>
-			<Select value={homeTeamId} onChange={(e) => setHomeTeamId(e.target.value)} className="w-40">
-				{teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+			<Select
+				value={homeTeamId}
+				onChange={(e) => setHomeTeamId(e.target.value)}
+				className="w-40"
+			>
+				{teams.map((t) => (
+					<option key={t.id} value={t.id}>
+						{t.name}
+					</option>
+				))}
 			</Select>
 			<span className="self-center">vs</span>
-			<Select value={awayTeamId} onChange={(e) => setAwayTeamId(e.target.value)} className="w-40">
-				{teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+			<Select
+				value={awayTeamId}
+				onChange={(e) => setAwayTeamId(e.target.value)}
+				className="w-40"
+			>
+				{teams.map((t) => (
+					<option key={t.id} value={t.id}>
+						{t.name}
+					</option>
+				))}
 			</Select>
-			<Select value={groupId} onChange={(e) => setGroupId(e.target.value)} className="w-32">
+			<Select
+				value={groupId}
+				onChange={(e) => setGroupId(e.target.value)}
+				className="w-32"
+			>
 				<option value="">Sin grupo</option>
-				{groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+				{groups.map((g) => (
+					<option key={g.id} value={g.id}>
+						{g.name}
+					</option>
+				))}
 			</Select>
-			<Button type="submit" disabled={createMatch.isPending}>Crear partido</Button>
+			<Button type="submit" disabled={createMatch.isPending}>
+				Crear partido
+			</Button>
 			{error && <span className="demo-alert-danger text-xs">{error}</span>}
 			{success && <span className="demo-alert text-xs">{success}</span>}
 		</form>
 	);
 }
 
-function RosterSection({ editionId, teamId, teams, players }: { editionId: string; teamId: string; teams: Array<{ id: string; name: string }>; players: Array<{ id: string; firstName: string; lastName: string }> }) {
+function RosterSection({
+	editionId,
+	teamId,
+	teams,
+	players,
+}: {
+	editionId: string;
+	teamId: string;
+	teams: Array<{ id: string; name: string }>;
+	players: Array<{ id: string; firstName: string; lastName: string }>;
+}) {
 	const [selectedTeamId, setSelectedTeamId] = React.useState(teamId);
 	React.useEffect(() => setSelectedTeamId(teamId), [teamId]);
 	const { data: rosterData } = useRoster(api, editionId, selectedTeamId);
 	const addPlayer = useAddPlayerToRoster(api);
 	const removePlayer = useRemovePlayerFromRoster(api);
 	const [playerId, setPlayerId] = React.useState("");
-	React.useEffect(() => { if (players.length) setPlayerId(players[0]!.id); }, [players]);
-	const onAdd = async (e: React.FormEvent) => {
+	React.useEffect(() => {
+		if (players.length) setPlayerId(players[0]!.id);
+	}, [players]);
+	const onAdd = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		try {
-			await addPlayer.mutateAsync({ editionId, teamId: selectedTeamId, body: { playerId } as never });
+			await addPlayer.mutateAsync({
+				editionId,
+				teamId: selectedTeamId,
+				body: { playerId } as never,
+			});
 		} catch {}
 	};
-	const roster = (rosterData as { items: Array<{ roster: { id: string }; player: { id: string; firstName: string; lastName: string } }>; total: number } | undefined)?.items ?? [];
+	const roster =
+		(
+			rosterData as
+				| {
+						items: Array<{
+							roster: { id: string };
+							player: { id: string; firstName: string; lastName: string };
+						}>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
 	return (
 		<div className="mt-2 space-y-3">
-			<Select value={selectedTeamId} onChange={(e) => setSelectedTeamId(e.target.value)} className="w-full">
-				{teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+			<Select
+				value={selectedTeamId}
+				onChange={(e) => setSelectedTeamId(e.target.value)}
+				className="w-full"
+			>
+				{teams.map((t) => (
+					<option key={t.id} value={t.id}>
+						{t.name}
+					</option>
+				))}
 			</Select>
 			<form onSubmit={onAdd} className="flex gap-2">
-				<Select value={playerId} onChange={(e) => setPlayerId(e.target.value)} className="flex-1">
-					{players.map((p) => <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>)}
+				<Select
+					value={playerId}
+					onChange={(e) => setPlayerId(e.target.value)}
+					className="flex-1"
+				>
+					{players.map((p) => (
+						<option key={p.id} value={p.id}>
+							{p.firstName} {p.lastName}
+						</option>
+					))}
 				</Select>
-				<Button type="submit" disabled={addPlayer.isPending}>Añadir</Button>
+				<Button type="submit" disabled={addPlayer.isPending}>
+					Añadir
+				</Button>
 			</form>
 			<div className="space-y-1">
-				{roster.length === 0 ? <div className="text-sm text-[var(--sea-ink-soft)]">Plantel vacío</div> : (
+				{roster.length === 0 ? (
+					<div className="text-sm text-(--sea-ink-soft)">Plantel vacío</div>
+				) : (
 					<div className="space-y-1">
 						{roster.map(({ roster: r, player }) => (
-							<div key={r.id} className="demo-list-item flex items-center justify-between text-sm">
-								<span>{player.firstName} {player.lastName}</span>
-								<Button variant="ghost" size="sm" onClick={() => removePlayer.mutateAsync(r.id)}>Quitar</Button>
+							<div
+								key={r.id}
+								className="demo-list-item flex items-center justify-between text-sm"
+							>
+								<span>
+									{player.firstName} {player.lastName}
+								</span>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => removePlayer.mutateAsync(r.id)}
+								>
+									Quitar
+								</Button>
 							</div>
 						))}
 					</div>

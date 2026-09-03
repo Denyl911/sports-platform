@@ -1,10 +1,10 @@
 import { sql } from "drizzle-orm";
-import { date, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
-import { index } from "drizzle-orm/pg-core/indexes";
 import { check } from "drizzle-orm/pg-core/checks";
-import { tournaments } from "./tournaments";
+import { date, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { index } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { editionStatusEnum } from "./enums";
+import { tournaments } from "./tournaments";
 
 export const tournamentEditions = pgTable(
 	"tournament_editions",

@@ -1,15 +1,17 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { queryKeys, unwrap } from "@sports/api-client";
+import { Badge, Card, CardHeader, CardTitle, Select } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { api } from "../../lib/api";
-import { queryKeys } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle, Badge, Select } from "@sports/ui";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import { api } from "../../lib/api";
 
 export const Route = createFileRoute("/matches/")({
 	loader: async ({ context }) => {
-		const qc = (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient;
-		await qc.ensureQueryData({
+		const qc = (
+			context as { queryClient: import("@tanstack/react-query").QueryClient }
+		).queryClient;
+		await qc.query({
+			staleTime: "static",
 			queryKey: queryKeys.matches.list(),
 			queryFn: () => unwrap(api.matches.get({ query: {} as never })),
 		});
@@ -21,9 +23,20 @@ function MatchesPage() {
 	const [status, setStatus] = React.useState<string | undefined>(undefined);
 	const { data } = useSuspenseQuery({
 		queryKey: queryKeys.matches.list(status ? { status } : {}),
-		queryFn: () => unwrap(api.matches.get({ query: (status ? { status } : {}) as never })),
+		queryFn: () =>
+			unwrap(api.matches.get({ query: (status ? { status } : {}) as never })),
 	});
-	const matches = (data as { items: Array<{ id: string; status: string; homeScore: number; awayScore: number }>; total: number }).items;
+	const matches = (
+		data as {
+			items: Array<{
+				id: string;
+				status: string;
+				homeScore: number;
+				awayScore: number;
+			}>;
+			total: number;
+		}
+	).items;
 
 	return (
 		<div className="demo-page space-y-4">
@@ -31,7 +44,11 @@ function MatchesPage() {
 				<h1 className="demo-title">Partidos</h1>
 				<Badge variant="secondary">{matches.length} partidos</Badge>
 			</div>
-			<Select value={status ?? ""} onChange={(e) => setStatus(e.target.value || undefined)} className="max-w-xs">
+			<Select
+				value={status ?? ""}
+				onChange={(e) => setStatus(e.target.value || undefined)}
+				className="max-w-xs"
+			>
 				<option value="">Todos los estados</option>
 				<option value="scheduled">scheduled</option>
 				<option value="in_progress">in_progress</option>
@@ -42,18 +59,33 @@ function MatchesPage() {
 			</Select>
 			<div className="grid gap-3 sm:grid-cols-2">
 				{matches.map((m) => (
-					<Link key={m.id} to="/matches/$matchId" params={{ matchId: m.id }} className="no-underline">
-						<Card className="p-4 hover:border-[var(--lagoon-deep)]">
-							<CardHeader className="p-0"><CardTitle className="text-sm">Partido {m.id.slice(0, 8)}</CardTitle></CardHeader>
+					<Link
+						key={m.id}
+						to="/matches/$matchId"
+						params={{ matchId: m.id }}
+						className="no-underline"
+					>
+						<Card className="p-4 hover:border-(--lagoon-deep)">
+							<CardHeader className="p-0">
+								<CardTitle className="text-sm">
+									Partido {m.id.slice(0, 8)}
+								</CardTitle>
+							</CardHeader>
 							<div className="flex gap-2 mt-1">
 								<Badge>{m.status}</Badge>
-								<Badge variant="outline">{m.homeScore} : {m.awayScore}</Badge>
+								<Badge variant="outline">
+									{m.homeScore} : {m.awayScore}
+								</Badge>
 							</div>
 						</Card>
 					</Link>
 				))}
 			</div>
-			{matches.length === 0 && <div className="demo-card text-center text-sm">No hay partidos con ese estado.</div>}
+			{matches.length === 0 && (
+				<div className="demo-card text-center text-sm">
+					No hay partidos con ese estado.
+				</div>
+			)}
 		</div>
 	);
 }

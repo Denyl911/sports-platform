@@ -1,14 +1,22 @@
-// @ts-nocheck
-import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { api, getStoredAccessToken } from "../../../lib/api";
-import { queryKeys, getApiErrorMessage } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { useRecalculateStandings, useUpdateStandingRow } from "@sports/api-client/hooks";
+import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
+import {
+	useRecalculateStandings,
+	useUpdateStandingRow,
+} from "@sports/api-client/hooks";
 import { useGroupLive } from "@sports/api-client/live";
-import { StandingsTable } from "@sports/ui";
-import { Button, Card, Input, Label, Select, Badge } from "@sports/ui";
+import {
+	Badge,
+	Button,
+	Card,
+	Input,
+	Label,
+	Select,
+	StandingsTable,
+} from "@sports/ui";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { api, getStoredAccessToken } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/standings/$groupId")({
 	component: AdminStandingsPage,
@@ -16,12 +24,38 @@ export const Route = createFileRoute("/admin/standings/$groupId")({
 
 function AdminStandingsPage() {
 	const { groupId } = Route.useParams();
-	const { data } = useQuery({ queryKey: queryKeys.standings.byGroup(groupId), queryFn: () => unwrap(api.groups({ groupId }).standings.get()) });
+	const { data } = useQuery({
+		queryKey: queryKeys.standings.byGroup(groupId),
+		queryFn: () => unwrap(api.groups({ groupId }).standings.get()),
+	});
 	const recalc = useRecalculateStandings(api);
 	const updateRow = useUpdateStandingRow(api);
-	const live = useGroupLive(groupId, { getToken: getStoredAccessToken, updateCache: true });
+	const live = useGroupLive(groupId, {
+		getToken: getStoredAccessToken,
+		updateCache: true,
+	});
 
-	const standings = data as { items: Array<{ standing: { id: string; rankPosition: number | null; played: number; won: number; drawn: number; lost: number; points: number; scoreFor: number; scoreAgainst: number; scoreDifference: number; bonusPoints?: number | null }; team: { id: string; name: string } }>; total: number } | undefined;
+	const standings = data as
+		| {
+				items: Array<{
+					standing: {
+						id: string;
+						rankPosition: number | null;
+						played: number;
+						won: number;
+						drawn: number;
+						lost: number;
+						points: number;
+						scoreFor: number;
+						scoreAgainst: number;
+						scoreDifference: number;
+						bonusPoints?: number | null;
+					};
+					team: { id: string; name: string };
+				}>;
+				total: number;
+		  }
+		| undefined;
 	const rows = (standings?.items ?? []).map(({ standing, team }) => ({
 		id: standing.id,
 		team: { id: team.id, name: team.name },
@@ -42,48 +76,111 @@ function AdminStandingsPage() {
 	const [bonus, setBonus] = React.useState(0);
 	const [error, setError] = React.useState<string | null>(null);
 
-	React.useEffect(() => { if (rows.length && !selectedId) { setSelectedId(rows[0]!.id); setPoints(rows[0]!.points); setBonus(rows[0]!.bonusPoints ?? 0); } }, [rows, selectedId]);
+	React.useEffect(() => {
+		if (rows.length && !selectedId) {
+			setSelectedId(rows[0]!.id);
+			setPoints(rows[0]!.points);
+			setBonus(rows[0]!.bonusPoints ?? 0);
+		}
+	}, [rows, selectedId]);
 
 	const onRecalc = async () => {
 		setError(null);
-		try { await recalc.mutateAsync(groupId); } catch (err) { setError(getApiErrorMessage(err)); }
+		try {
+			await recalc.mutateAsync(groupId);
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
 	};
 
-	const onUpdateRow = async (e: React.FormEvent) => {
+	const onUpdateRow = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
-		try { await updateRow.mutateAsync({ id: selectedId, body: { points, bonusPoints: bonus } as never }); } catch (err) { setError(getApiErrorMessage(err)); }
+		try {
+			await updateRow.mutateAsync({
+				id: selectedId,
+				body: { points, bonusPoints: bonus } as never,
+			});
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
 	};
 
 	return (
 		<div className="demo-page space-y-6">
 			<div className="flex items-center gap-2">
 				<h1 className="demo-title">Standings Admin</h1>
-				<Badge variant={live.isOpen ? "success" : "secondary"}>{live.status}</Badge>
-				<Button size="sm" onClick={onRecalc} disabled={recalc.isPending}>{recalc.isPending ? "Recalculando…" : "Recalcular"}</Button>
+				<Badge variant={live.isOpen ? "success" : "secondary"}>
+					{live.status}
+				</Badge>
+				<Button size="sm" onClick={onRecalc} disabled={recalc.isPending}>
+					{recalc.isPending ? "Recalculando…" : "Recalcular"}
+				</Button>
 			</div>
-			{live.lastStanding && <div className="demo-alert text-sm">Live standing actualizado: {JSON.stringify(live.lastStanding).slice(0, 120)}</div>}
+			{live.lastStanding && (
+				<div className="demo-alert text-sm">
+					Live standing actualizado:{" "}
+					{JSON.stringify(live.lastStanding).slice(0, 120)}
+				</div>
+			)}
 			<StandingsTable rows={rows} />
-			{rows.length === 0 && <div className="demo-card text-center text-sm">Sin filas</div>}
+			{rows.length === 0 && (
+				<div className="demo-card text-center text-sm">Sin filas</div>
+			)}
 
 			<Card className="p-4">
-				<h3 className="font-bold">Ajuste manual de fila (statistician/organizer)</h3>
-				<p className="text-sm text-[var(--sea-ink-soft)]">El siguiente recálculo sobrescribe el ajuste manual.</p>
+				<h3 className="font-bold">
+					Ajuste manual de fila (statistician/organizer)
+				</h3>
+				<p className="text-sm text-(--sea-ink-soft)">
+					El siguiente recálculo sobrescribe el ajuste manual.
+				</p>
 				<form onSubmit={onUpdateRow} className="mt-3 flex flex-wrap gap-2">
-					<Select value={selectedId} onChange={(e) => {
-						const id = e.target.value;
-						setSelectedId(id);
-						const r = rows.find((x) => x.id === id);
-						if (r) { setPoints(r.points); setBonus(r.bonusPoints ?? 0); }
-					}} className="min-w-48 flex-1">
-						{rows.map((r) => <option key={r.id} value={r.id}>{r.team.name} — {r.points} pts</option>)}
+					<Select
+						value={selectedId}
+						onChange={(e) => {
+							const id = e.target.value;
+							setSelectedId(id);
+							const r = rows.find((x) => x.id === id);
+							if (r) {
+								setPoints(r.points);
+								setBonus(r.bonusPoints ?? 0);
+							}
+						}}
+						className="min-w-48 flex-1"
+					>
+						{rows.map((r) => (
+							<option key={r.id} value={r.id}>
+								{r.team.name} — {r.points} pts
+							</option>
+						))}
 					</Select>
-					<div><Label>Puntos</Label><Input type="number" value={points} onChange={(e) => setPoints(Number(e.target.value))} className="w-20" /></div>
-					<div><Label>Bonus</Label><Input type="number" value={bonus} onChange={(e) => setBonus(Number(e.target.value))} className="w-20" /></div>
-					<Button type="submit" disabled={updateRow.isPending}>Guardar fila</Button>
+					<div>
+						<Label>Puntos</Label>
+						<Input
+							type="number"
+							value={points}
+							onChange={(e) => setPoints(Number(e.target.value))}
+							className="w-20"
+						/>
+					</div>
+					<div>
+						<Label>Bonus</Label>
+						<Input
+							type="number"
+							value={bonus}
+							onChange={(e) => setBonus(Number(e.target.value))}
+							className="w-20"
+						/>
+					</div>
+					<Button type="submit" disabled={updateRow.isPending}>
+						Guardar fila
+					</Button>
 				</form>
 				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
-				{updateRow.isSuccess && <div className="demo-alert mt-2 text-sm">Fila actualizada</div>}
+				{updateRow.isSuccess && (
+					<div className="demo-alert mt-2 text-sm">Fila actualizada</div>
+				)}
 			</Card>
 		</div>
 	);

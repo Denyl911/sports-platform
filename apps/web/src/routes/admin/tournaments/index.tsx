@@ -1,12 +1,24 @@
-// @ts-nocheck
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
+import {
+	useCreateTournament,
+	useDeleteTournament,
+	useSports,
+} from "@sports/api-client/hooks";
+import {
+	Badge,
+	Button,
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	Input,
+	Label,
+	Select,
+} from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
-import { queryKeys, getApiErrorMessage } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { useCreateTournament, useDeleteTournament, useSports } from "@sports/api-client/hooks";
-import { Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Select, Badge } from "@sports/ui";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/tournaments/")({
 	component: AdminTournamentsPage,
@@ -25,14 +37,27 @@ function AdminTournamentsPage() {
 	const [sportId, setSportId] = React.useState("");
 	const [error, setError] = React.useState<string | null>(null);
 
-	const tournaments = (tournamentsData as { items: Array<{ id: string; name: string; sportId: string }>; total: number } | undefined)?.items ?? [];
-	const sports = (sportsData as { items: Array<{ id: string; name: string }>; total: number } | undefined)?.items ?? [];
+	const tournaments =
+		(
+			tournamentsData as
+				| {
+						items: Array<{ id: string; name: string; sportId: string }>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
+	const sports =
+		(
+			sportsData as
+				| { items: Array<{ id: string; name: string }>; total: number }
+				| undefined
+		)?.items ?? [];
 
 	React.useEffect(() => {
 		if (sports.length && !sportId) setSportId(sports[0]!.id);
 	}, [sports, sportId]);
 
-	const onCreate = async (e: React.FormEvent) => {
+	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
 		try {
@@ -55,11 +80,21 @@ function AdminTournamentsPage() {
 				<form onSubmit={onCreate} className="flex flex-wrap gap-3">
 					<div className="min-w-48 flex-1">
 						<Label htmlFor="t-name">Nombre</Label>
-						<Input id="t-name" value={name} onChange={(e) => setName(e.target.value)} required placeholder="Copa Apertura" />
+						<Input
+							id="t-name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							required
+							placeholder="Copa Apertura"
+						/>
 					</div>
 					<div className="w-48">
 						<Label htmlFor="t-sport">Deporte</Label>
-						<Select id="t-sport" value={sportId} onChange={(e) => setSportId(e.target.value)}>
+						<Select
+							id="t-sport"
+							value={sportId}
+							onChange={(e) => setSportId(e.target.value)}
+						>
 							{sports.map((s) => (
 								<option key={s.id} value={s.id}>
 									{s.name} ({s.id})
@@ -68,13 +103,18 @@ function AdminTournamentsPage() {
 						</Select>
 					</div>
 					<div className="flex items-end">
-						<Button type="submit" disabled={create.isPending || !name || !sportId}>
+						<Button
+							type="submit"
+							disabled={create.isPending || !name || !sportId}
+						>
 							{create.isPending ? "Creando…" : "Crear"}
 						</Button>
 					</div>
 				</form>
 				{error && <div className="demo-alert-danger mt-3 text-sm">{error}</div>}
-				{create.isSuccess && <div className="demo-alert mt-3 text-sm">Torneo creado</div>}
+				{create.isSuccess && (
+					<div className="demo-alert mt-3 text-sm">Torneo creado</div>
+				)}
 			</Card>
 
 			{isPending ? (
@@ -83,9 +123,17 @@ function AdminTournamentsPage() {
 				<div className="grid gap-3 sm:grid-cols-2">
 					{tournaments.map((t) => (
 						<Card key={t.id} className="p-4 flex flex-col justify-between">
-							<Link to="/admin/tournaments/$tournamentId" params={{ tournamentId: t.id }} className="no-underline">
-								<CardHeader className="p-0"><CardTitle className="text-base">{t.name}</CardTitle></CardHeader>
-								<CardContent className="p-0"><Badge variant="outline">{t.sportId}</Badge></CardContent>
+							<Link
+								to="/admin/tournaments/$tournamentId"
+								params={{ tournamentId: t.id }}
+								className="no-underline"
+							>
+								<CardHeader className="p-0">
+									<CardTitle className="text-base">{t.name}</CardTitle>
+								</CardHeader>
+								<CardContent className="p-0">
+									<Badge variant="outline">{t.sportId}</Badge>
+								</CardContent>
 							</Link>
 							<div className="mt-3 flex gap-2">
 								<Button

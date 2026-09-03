@@ -23,7 +23,7 @@ function RegisterPage() {
 		if (isAuthenticated) navigate({ to: "/" });
 	}, [isAuthenticated, navigate]);
 
-	async function onSubmit(e: React.FormEvent) {
+	async function onSubmit(e: React.SyntheticEvent) {
 		e.preventDefault();
 		setError(null);
 		setPending(true);

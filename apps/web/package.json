@@ -10,9 +10,10 @@
 		"generate-routes": "tsr generate",
 		"build": "vite build",
 		"preview": "vite preview",
-		"format": "biome format",
-		"lint": "biome lint",
-		"check": "biome check"
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@sports/api-client": "*",

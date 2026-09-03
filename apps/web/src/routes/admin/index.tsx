@@ -8,8 +8,8 @@ function AdminDashboard() {
 	return (
 		<div className="space-y-6">
 			<div className="island-shell rounded-2xl p-6">
-				<h1 className="text-2xl font-black text-[var(--sea-ink)]">Admin</h1>
-				<p className="mt-2 text-sm text-[var(--sea-ink-soft)]">
+				<h1 className="text-2xl font-black text-(--sea-ink)">Admin</h1>
+				<p className="mt-2 text-sm text-(--sea-ink-soft)">
 					Gestión de torneos, fixture y membresías. Requiere rol{" "}
 					<code>admin</code> / <code>organizer</code> (o{" "}
 					<code>super_admin</code>).

@@ -47,7 +47,10 @@ export function usePlayer(
 
 export function useCreatePlayer(
 	client: ApiClient,
-	options?: Omit<UseMutationOptions<unknown, Error, InsertPlayer>, "mutationFn">,
+	options?: Omit<
+		UseMutationOptions<unknown, Error, InsertPlayer>,
+		"mutationFn"
+	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({

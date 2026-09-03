@@ -16,7 +16,9 @@
 		}
 	},
 	"scripts": {
-		"lint": "eslint .",
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {

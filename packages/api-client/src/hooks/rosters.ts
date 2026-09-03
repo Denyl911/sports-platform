@@ -82,13 +82,8 @@ export function useUpdateRosterEntry(
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			body,
-		}: {
-			id: string;
-			body: UpdateTournamentRoster;
-		}) => unwrap(client.rosters({ id }).patch(body)),
+		mutationFn: ({ id, body }: { id: string; body: UpdateTournamentRoster }) =>
+			unwrap(client.rosters({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.rosters.all() });

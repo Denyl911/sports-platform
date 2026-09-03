@@ -22,8 +22,8 @@ export const Route = createRootRoute({
 			},
 			{
 				title: "TanStack Start Starter",
-      },
-			{scripts: [THEME_INIT_SCRIPT]},
+			},
+			{ scripts: [THEME_INIT_SCRIPT] },
 		],
 		links: [
 			{

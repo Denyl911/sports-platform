@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { jsonb, varchar, boolean, integer } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
+import { boolean, integer, jsonb, varchar } from "drizzle-orm/pg-core/columns";
+import { pgTable } from "drizzle-orm/pg-core/table";
 
 export const sports = pgTable(
 	"sports",

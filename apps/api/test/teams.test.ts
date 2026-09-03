@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { treaty } from "@elysia/eden";
+import { db } from "@sports/db";
+import { clubs } from "@sports/db/tables";
 import { app } from "../src/app";
 import { authHeaders } from "./helpers/auth";
 import { resetDb, seedTeam, seedUser } from "./helpers/db";
-import { db } from "@sports/db";
-import { clubs } from "@sports/db/tables";
 
 const api = treaty(app);
 

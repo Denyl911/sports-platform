@@ -50,7 +50,11 @@ export function useRegistrationsByGroup(
 export function useRegisterTeam(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<unknown, Error, { stageId: string; body: RegisterTeamBody }>,
+		UseMutationOptions<
+			unknown,
+			Error,
+			{ stageId: string; body: RegisterTeamBody }
+		>,
 		"mutationFn"
 	>,
 ) {
@@ -86,13 +90,8 @@ export function useUpdateRegistrationGroup(
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({
-			id,
-			body,
-		}: {
-			id: string;
-			body: RegistrationGroupUpdate;
-		}) => unwrap(client.registrations({ id }).group.patch(body)),
+		mutationFn: ({ id, body }: { id: string; body: RegistrationGroupUpdate }) =>
+			unwrap(client.registrations({ id }).group.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.registrations.all() });

@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { uuid, varchar, text, integer } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
+import { integer, text, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { pgTable } from "drizzle-orm/pg-core/table";
 
 export const venues = pgTable(
 	"venues",

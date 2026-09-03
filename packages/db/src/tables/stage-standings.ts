@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
+import { check } from "drizzle-orm/pg-core/checks";
 import { integer, timestamp, uuid } from "drizzle-orm/pg-core/columns";
 import { pgTable } from "drizzle-orm/pg-core/table";
 import { unique } from "drizzle-orm/pg-core/unique-constraint";
-import { check } from "drizzle-orm/pg-core/checks";
 import { stageGroups } from "./stage-groups";
 import { teams } from "./teams";
 

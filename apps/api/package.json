@@ -6,11 +6,11 @@
 	"scripts": {
 		"dev": "bun --watch src/index.ts",
 		"build": "bun build src/index.ts --outdir ./dist --target bun",
-		"lint": "biome lint .",
-		"format": "biome format --write .",
-		"check": "biome check --write .",
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
 		"test": "bun test",
-		"test:types": "tsc --noEmit"
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@elysia/cors": "^1.4.2",

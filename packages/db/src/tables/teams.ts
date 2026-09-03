@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
-import { uuid, varchar } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
+import { uuid, varchar } from "drizzle-orm/pg-core/columns";
 import { index } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { clubs } from "./clubs";
 
 export const teams = pgTable(

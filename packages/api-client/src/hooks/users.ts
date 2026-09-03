@@ -25,8 +25,7 @@ export function useUsers(
 ) {
 	return useQuery({
 		queryKey: queryKeys.users.list(filters),
-		queryFn: () =>
-			unwrap(client.users.get({ query: { ...(filters ?? {}) } })),
+		queryFn: () => unwrap(client.users.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

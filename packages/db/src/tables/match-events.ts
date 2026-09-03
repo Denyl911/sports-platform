@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
-import { integer, jsonb, uuid, varchar } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
-import { index } from "drizzle-orm/pg-core/indexes";
 import { check } from "drizzle-orm/pg-core/checks";
+import { integer, jsonb, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { index } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { matches } from "./matches";
-import { teams } from "./teams";
 import { players } from "./players";
+import { teams } from "./teams";
 
 export const matchEvents = pgTable(
 	"match_events",

@@ -14,21 +14,21 @@
  * ```
  */
 
-export * from "./auth";
-export * from "./tournaments";
-export * from "./matches";
-export * from "./standings";
-export * from "./teams";
-export * from "./clubs";
-export * from "./players";
-export * from "./sports";
-export * from "./venues";
-export * from "./users";
-export * from "./registrations";
-export * from "./rosters";
-// Live — Fase 2 (re-export para `import { useMatchLive } from "@sports/api-client/hooks"`)
-export * from "../live/useMatchLive";
-export * from "../live/useGroupLive";
+export * from "../live/socket";
 export * from "../live/types";
 export * from "../live/url";
-export * from "../live/socket";
+export * from "../live/useGroupLive";
+// Live — Fase 2 (re-export para `import { useMatchLive } from "@sports/api-client/hooks"`)
+export * from "../live/useMatchLive";
+export * from "./auth";
+export * from "./clubs";
+export * from "./matches";
+export * from "./players";
+export * from "./registrations";
+export * from "./rosters";
+export * from "./sports";
+export * from "./standings";
+export * from "./teams";
+export * from "./tournaments";
+export * from "./users";
+export * from "./venues";

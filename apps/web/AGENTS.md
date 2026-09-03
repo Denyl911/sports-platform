@@ -26,7 +26,7 @@ Sitio público SSR + Dashboard Admin para la plataforma deportiva multideporte, 
 4. **Componentes (`src/components/`):** `Header` (nav role-aware), `RoleGuard` (guard + `useCanTournamentRole`), `ThemeToggle`.
 
 ### Datos y Type-Safety
-- **Loaders públicos:** `qc.ensureQueryData({ queryKey: queryKeys.*, queryFn: () => unwrap(api.*) })` y el componente repite la misma key con `useSuspenseQuery`. Misma key en ambos lados.
+- **Loaders públicos:** `qc.query({ queryKey: queryKeys.*, queryFn: () => unwrap(api.*), staleTime: "static" })` y el componente repite la misma key con `useSuspenseQuery`. Misma key en ambos lados. No usar `ensureQueryData` (deprecado, se elimina en la próxima major de TanStack Query).
 - **Mutaciones admin:** hooks de `@sports/api-client/hooks` con `api` de `src/lib/api.ts`; errores con `getApiErrorMessage(err)`.
 - **Rutas admin con `// @ts-nocheck`:** Obligatorio en archivos que llaman `mutateAsync({ id, body })`; la inferencia de `UseMutationOptions` resuelve `TVariables` a `void` sin él. No quitarlo.
 - **Tiempo real:** `useMatchLive` / `useGroupLive` de `@sports/api-client/live` con `getToken: getStoredAccessToken`. Nunca pasar el token directo; siempre el getter (rota en reconexión).

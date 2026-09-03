@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
-import { integer, uuid } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
-import { unique } from "drizzle-orm/pg-core/unique-constraint";
+import { integer, uuid } from "drizzle-orm/pg-core/columns";
 import { index, uniqueIndex } from "drizzle-orm/pg-core/indexes";
-import { tournamentStages } from "./tournament-stages";
+import { pgTable } from "drizzle-orm/pg-core/table";
+import { unique } from "drizzle-orm/pg-core/unique-constraint";
 import { stageGroups } from "./stage-groups";
 import { teams } from "./teams";
+import { tournamentStages } from "./tournament-stages";
 
 export const stageTeamRegistrations = pgTable(
 	"stage_team_registrations",

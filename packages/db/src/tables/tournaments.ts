@@ -1,6 +1,6 @@
-import { uuid, varchar, text, timestamp } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
+import { text, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
 import { index } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 import { sports } from "./sports";
 
 export const tournaments = pgTable(

@@ -11,9 +11,10 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
-		"lint": "biome lint .",
-		"format": "biome format --write .",
-		"check": "biome check --write ."
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"drizzle-orm": "^1.0.0-rc.4"

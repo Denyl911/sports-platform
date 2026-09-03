@@ -141,8 +141,7 @@ export function useCreateSportEventType(
 		}: {
 			sportId: string;
 			body: InsertSportEventType;
-		}) =>
-			unwrap(client.sports({ id: sportId })["event-types"].post(body)),
+		}) => unwrap(client.sports({ id: sportId })["event-types"].post(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({
@@ -172,8 +171,7 @@ export function useUpdateSportEventType(
 		}: {
 			eventTypeId: string;
 			body: UpdateSportEventType;
-		}) =>
-			unwrap(client.sports["event-types"]({ eventTypeId }).patch(body)),
+		}) => unwrap(client.sports["event-types"]({ eventTypeId }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
@@ -190,7 +188,10 @@ export function useDeleteSportEventType(
 	return useMutation({
 		mutationFn: (eventTypeId: string) =>
 			unwrap(
-				client.sports["event-types"]({ eventTypeId }).delete(undefined, undefined),
+				client.sports["event-types"]({ eventTypeId }).delete(
+					undefined,
+					undefined,
+				),
 			),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, variables, onMutateResult, context) => {

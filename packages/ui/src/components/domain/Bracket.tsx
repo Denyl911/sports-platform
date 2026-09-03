@@ -66,8 +66,7 @@ export function Bracket({
 								onClick={() => onMatchClick?.(m)}
 								className={cn(
 									"p-3",
-									onMatchClick &&
-										"cursor-pointer hover:border-(--lagoon-deep)",
+									onMatchClick && "cursor-pointer hover:border-(--lagoon-deep)",
 								)}
 							>
 								<div className="flex items-center justify-between gap-2 text-sm">

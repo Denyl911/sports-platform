@@ -125,10 +125,10 @@ export function useMatchLive(
 			enabled: true,
 			onMessage: handleMessage,
 			onStatusChange: setStatus,
-		onError: () => {
-			// No propagar como LiveError, solo status
-			// Los errores de WS se manejan vía onMessage {type:"error"} del servidor
-		},
+			onError: () => {
+				// No propagar como LiveError, solo status
+				// Los errores de WS se manejan vía onMessage {type:"error"} del servidor
+			},
 		});
 
 		socketRef.current = socket;

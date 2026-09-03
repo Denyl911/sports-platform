@@ -1,12 +1,10 @@
-// @ts-nocheck
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../../../lib/api";
-import { queryKeys, getApiErrorMessage } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
+import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
 import { useUpdateVenue } from "@sports/api-client/hooks";
 import { Button, Card, CardHeader, CardTitle, Input, Label } from "@sports/ui";
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/venues/$venueId")({
 	component: AdminVenueDetailPage,
@@ -18,7 +16,14 @@ function AdminVenueDetailPage() {
 		queryKey: queryKeys.venues.detail(venueId),
 		queryFn: () => unwrap(api.venues({ id: venueId }).get()),
 	});
-	const venue = data as { id: string; name: string; address?: string | null; fieldCount?: number | null } | undefined;
+	const venue = data as
+		| {
+				id: string;
+				name: string;
+				address?: string | null;
+				fieldCount?: number | null;
+		  }
+		| undefined;
 	const update = useUpdateVenue(api);
 	const [name, setName] = React.useState("");
 	const [address, setAddress] = React.useState("");
@@ -35,11 +40,14 @@ function AdminVenueDetailPage() {
 
 	if (!venue) return <div className="demo-center text-sm">Cargando sede…</div>;
 
-	const onUpdate = async (e: React.FormEvent) => {
+	const onUpdate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
 		try {
-			await update.mutateAsync({ id: venueId, body: { name, address: address || null, fieldCount } as never });
+			await update.mutateAsync({
+				id: venueId,
+				body: { name, address: address || null, fieldCount } as never,
+			});
 		} catch (err) {
 			setError(getApiErrorMessage(err));
 		}
@@ -47,25 +55,44 @@ function AdminVenueDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/venues" className="text-sm text-[var(--sea-ink-soft)]">← Sedes</Link>
+			<Link to="/admin/venues" className="text-sm text-(--sea-ink-soft)">
+				← Sedes
+			</Link>
 			<Card className="p-4">
-				<CardHeader className="p-0 pb-2"><CardTitle>Editar sede</CardTitle></CardHeader>
+				<CardHeader className="p-0 pb-2">
+					<CardTitle>Editar sede</CardTitle>
+				</CardHeader>
 				<form onSubmit={onUpdate} className="space-y-3">
 					<div>
 						<Label>Nombre</Label>
-						<Input value={name} onChange={(e) => setName(e.target.value)} required />
+						<Input
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							required
+						/>
 					</div>
 					<div>
 						<Label>Dirección</Label>
-						<Input value={address} onChange={(e) => setAddress(e.target.value)} />
+						<Input
+							value={address}
+							onChange={(e) => setAddress(e.target.value)}
+						/>
 					</div>
 					<div>
 						<Label>Canchas</Label>
-						<Input type="number" value={fieldCount} onChange={(e) => setFieldCount(Number(e.target.value))} />
+						<Input
+							type="number"
+							value={fieldCount}
+							onChange={(e) => setFieldCount(Number(e.target.value))}
+						/>
 					</div>
-					<Button type="submit" disabled={update.isPending}>Guardar</Button>
+					<Button type="submit" disabled={update.isPending}>
+						Guardar
+					</Button>
 					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && <div className="demo-alert text-sm">Guardado</div>}
+					{update.isSuccess && (
+						<div className="demo-alert text-sm">Guardado</div>
+					)}
 				</form>
 			</Card>
 		</div>

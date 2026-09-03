@@ -55,9 +55,7 @@ export function StandingsTable({
 	return (
 		<div className={cn("w-full", className)} {...props}>
 			{caption && (
-				<div className="mb-2 text-sm font-bold text-(--sea-ink)">
-					{caption}
-				</div>
+				<div className="mb-2 text-sm font-bold text-(--sea-ink)">{caption}</div>
 			)}
 			<Table>
 				<TableHeader>

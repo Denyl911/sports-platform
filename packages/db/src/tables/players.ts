@@ -1,8 +1,8 @@
 import { sql } from "drizzle-orm";
-import { uuid, varchar, date } from "drizzle-orm/pg-core/columns";
-import { pgTable } from "drizzle-orm/pg-core/table";
 import { check } from "drizzle-orm/pg-core/checks";
+import { date, uuid, varchar } from "drizzle-orm/pg-core/columns";
 import { index } from "drizzle-orm/pg-core/indexes";
+import { pgTable } from "drizzle-orm/pg-core/table";
 
 export const players = pgTable(
 	"players",

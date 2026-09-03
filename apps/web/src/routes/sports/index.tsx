@@ -1,14 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { queryKeys, unwrap } from "@sports/api-client";
+import { Badge, Card, CardHeader, CardTitle } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
-import { queryKeys } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle, Badge } from "@sports/ui";
 
 export const Route = createFileRoute("/sports/")({
 	loader: async ({ context }) => {
-		const qc = (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient;
-		await qc.ensureQueryData({
+		const qc = (
+			context as { queryClient: import("@tanstack/react-query").QueryClient }
+		).queryClient;
+		await qc.query({
+			staleTime: "static",
 			queryKey: queryKeys.sports.lists(),
 			queryFn: () => unwrap(api.sports.get()),
 		});
@@ -21,23 +23,44 @@ function SportsPage() {
 		queryKey: queryKeys.sports.lists(),
 		queryFn: () => unwrap(api.sports.get()),
 	});
-	const sports = (data as { items: Array<{ id: string; name: string; hasDraws?: boolean | null }>; total: number }).items;
+	const sports = (
+		data as {
+			items: Array<{ id: string; name: string; hasDraws?: boolean | null }>;
+			total: number;
+		}
+	).items;
 
 	return (
 		<div className="demo-page space-y-4">
 			<h1 className="demo-title">Deportes</h1>
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{sports.map((s) => (
-					<Link key={s.id} to="/sports/$sportId" params={{ sportId: s.id }} className="no-underline">
-						<Card className="p-4 hover:border-[var(--lagoon-deep)]">
-							<CardHeader className="p-0"><CardTitle className="text-base">{s.name}</CardTitle></CardHeader>
+					<Link
+						key={s.id}
+						to="/sports/$sportId"
+						params={{ sportId: s.id }}
+						className="no-underline"
+					>
+						<Card className="p-4 hover:border-(--lagoon-deep)">
+							<CardHeader className="p-0">
+								<CardTitle className="text-base">{s.name}</CardTitle>
+							</CardHeader>
 							<Badge variant="outline">{s.id}</Badge>
-							{s.hasDraws !== undefined && <Badge className="ml-2" variant={s.hasDraws ? "success" : "secondary"}>{s.hasDraws ? "Con empate" : "Sin empate"}</Badge>}
+							{s.hasDraws !== undefined && (
+								<Badge
+									className="ml-2"
+									variant={s.hasDraws ? "success" : "secondary"}
+								>
+									{s.hasDraws ? "Con empate" : "Sin empate"}
+								</Badge>
+							)}
 						</Card>
 					</Link>
 				))}
 			</div>
-			{sports.length === 0 && <div className="demo-card text-center text-sm">No hay deportes.</div>}
+			{sports.length === 0 && (
+				<div className="demo-card text-center text-sm">No hay deportes.</div>
+			)}
 		</div>
 	);
 }

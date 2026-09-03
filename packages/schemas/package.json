@@ -7,6 +7,12 @@
 	"exports": {
 		".": "./src/index.ts"
 	},
+	"scripts": {
+		"lint": "biome lint --write",
+		"format": "biome format --write",
+		"check": "biome check --write",
+		"typecheck": "tsc --noEmit"
+	},
 	"dependencies": {
 		"@sports/db": "*",
 		"drizzle-orm": "^1.0.0-rc.4",

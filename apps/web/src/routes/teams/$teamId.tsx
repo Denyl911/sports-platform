@@ -1,14 +1,16 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { queryKeys, unwrap } from "@sports/api-client";
+import { Badge, Card } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
-import { queryKeys } from "@sports/api-client";
-import { unwrap } from "@sports/api-client";
-import { Card, Badge } from "@sports/ui";
 
 export const Route = createFileRoute("/teams/$teamId")({
 	loader: async ({ context, params }) => {
-		const qc = (context as { queryClient: import("@tanstack/react-query").QueryClient }).queryClient;
-		await qc.ensureQueryData({
+		const qc = (
+			context as { queryClient: import("@tanstack/react-query").QueryClient }
+		).queryClient;
+		await qc.query({
+			staleTime: "static",
 			queryKey: queryKeys.teams.detail(params.teamId),
 			queryFn: () => unwrap(api.teams({ id: params.teamId }).get()),
 		});
@@ -22,7 +24,12 @@ function TeamDetailPage() {
 		queryKey: queryKeys.teams.detail(teamId),
 		queryFn: () => unwrap(api.teams({ id: teamId }).get()),
 	});
-	const team = data as { id: string; name: string; clubId: string; category?: string | null };
+	const team = data as {
+		id: string;
+		name: string;
+		clubId: string;
+		category?: string | null;
+	};
 
 	return (
 		<div className="demo-page space-y-4">
@@ -32,7 +39,7 @@ function TeamDetailPage() {
 					<Badge variant="outline">Club {team.clubId.slice(0, 8)}</Badge>
 					{team.category && <Badge>{team.category}</Badge>}
 				</div>
-				<p className="mt-2 text-sm text-[var(--sea-ink-soft)]">ID: {team.id}</p>
+				<p className="mt-2 text-sm text-(--sea-ink-soft)">ID: {team.id}</p>
 			</Card>
 		</div>
 	);

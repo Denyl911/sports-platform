@@ -1,15 +1,15 @@
 import {
+	stageGroups,
+	tournamentEditions,
+	tournamentStages,
+	tournaments,
+} from "@sports/db/tables";
+import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
-import { t, type Static } from "elysia";
-import {
-	tournaments,
-	tournamentEditions,
-	tournamentStages,
-	stageGroups,
-} from "@sports/db/tables";
+import { type Static, t } from "elysia";
 
 export const selectTournamentSchema = createSelectSchema(tournaments);
 export const insertTournamentSchema = createInsertSchema(tournaments);

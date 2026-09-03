@@ -89,9 +89,7 @@ export function MatchCard({
 					{showScore ? (
 						<div className="flex items-baseline gap-1 font-black text-(--sea-ink)">
 							<span className="text-2xl">{homeScore}</span>
-							<span className="text-sm font-bold text-(--sea-ink-soft)">
-								:
-							</span>
+							<span className="text-sm font-bold text-(--sea-ink-soft)">:</span>
 							<span className="text-2xl">{awayScore}</span>
 						</div>
 					) : (
