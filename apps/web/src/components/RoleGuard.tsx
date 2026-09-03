@@ -17,7 +17,7 @@ export function RoleGuard({
 
 	if (isLoading) {
 		return (
-			<div className="demo-center text-sm text-[var(--sea-ink-soft)]">
+			<div className="demo-center text-sm text-(--sea-ink-soft)">
 				Cargando…
 			</div>
 		);

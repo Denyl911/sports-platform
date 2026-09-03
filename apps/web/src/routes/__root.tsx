@@ -22,7 +22,8 @@ export const Route = createRootRoute({
 			},
 			{
 				title: "TanStack Start Starter",
-			},
+      },
+			{scripts: [THEME_INIT_SCRIPT]},
 		],
 		links: [
 			{
@@ -38,10 +39,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
-				<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+				{/*<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />*/}
 				<HeadContent />
 			</head>
-			<body className="font-sans antialiased [overflow-wrap:anywhere] selection:bg-[rgba(79,184,178,0.24)]">
+			<body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]">
 				<AppProviders>
 					<AuthProvider>
 						<Header />

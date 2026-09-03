@@ -16,62 +16,62 @@ function AdminLayout() {
 								to="/admin"
 								activeOptions={{ exact: true }}
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Dashboard
 							</Link>
 							<Link
 								to="/admin/tournaments"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Torneos
 							</Link>
 							<Link
 								to="/admin/venues"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Sedes
 							</Link>
 							<Link
 								to="/admin/clubs"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Clubes
 							</Link>
 							<Link
 								to="/admin/teams"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Equipos
 							</Link>
 							<Link
 								to="/admin/players"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Jugadores
 							</Link>
 							<Link
 								to="/admin/sports"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Deportes
 							</Link>
 							<Link
 								to="/admin/users"
 								activeProps={{ className: "bg-[var(--chip-bg)] font-bold text-[var(--sea-ink)]" }}
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Usuarios
 							</Link>
 							<Link
 								to="/teams"
-								className="rounded-xl px-3 py-2 text-[var(--sea-ink-soft)] hover:bg-[var(--surface)]"
+								className="rounded-xl px-3 py-2 text-(--sea-ink-soft) hover:bg-(--surface)"
 							>
 								Equipos (público)
 							</Link>
