@@ -27,8 +27,8 @@ Sitio público SSR + Dashboard Admin para la plataforma deportiva multideporte, 
 
 ### Datos y Type-Safety
 - **Loaders públicos:** `qc.query({ queryKey: queryKeys.*, queryFn: () => unwrap(api.*), staleTime: "static" })` y el componente repite la misma key con `useSuspenseQuery`. Misma key en ambos lados. No usar `ensureQueryData` (deprecado, se elimina en la próxima major de TanStack Query).
-- **Mutaciones admin:** hooks de `@sports/api-client/hooks` con `api` de `src/lib/api.ts`; errores con `getApiErrorMessage(err)`.
-- **Rutas admin con `// @ts-nocheck`:** Obligatorio en archivos que llaman `mutateAsync({ id, body })`; la inferencia de `UseMutationOptions` resuelve `TVariables` a `void` sin él. No quitarlo.
+- **Mutaciones admin:** hooks de `@sports/api-client/hooks` con `api` de `src/lib/api.ts`; errores con `getApiErrorMessage(err)`. Bodies con tipos reales (los hooks ya están tipados con `@sports/schemas`); prohibidos `as never` y `// @ts-nocheck` en rutas nuevas.
+- **IDs padre sin GET single:** la API no tiene GET single de stage/edition; `editionId`/`tournamentId` viajan por **search params** desde la página padre (`Link … search={{ … }}`), nunca con inputs manuales ni queries a rutas inexistentes.
 - **Tiempo real:** `useMatchLive` / `useGroupLive` de `@sports/api-client/live` con `getToken: getStoredAccessToken`. Nunca pasar el token directo; siempre el getter (rota en reconexión).
 - **Estilos:** Tokens y utilidades en `packages/ui/src/styles.css` (SSOT). `src/styles.css` solo importa. Componentes desde `@sports/ui`.
 
@@ -71,5 +71,5 @@ apps/web/
 - `bun run dev` — desarrollo (`vite dev --port 3000`, requiere `VITE_API_URL` a `apps/api`).
 - `bun run generate-routes` — regenerar tras cambios en `src/routes`.
 - `bun run build` — build cliente + SSR + Nitro. Verificar tras cambios de rutas o providers.
-- `bunx tsc --noEmit --project apps/web/tsconfig.json` — typecheck (los archivos admin con `// @ts-nocheck` quedan excluidos por diseño).
+- `bunx tsc --noEmit --project apps/web/tsconfig.json`
 - Lint/formato con Biome (`bun run lint|format|check`).

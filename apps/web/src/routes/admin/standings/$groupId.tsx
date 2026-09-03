@@ -67,7 +67,8 @@ function AdminStandingsPage() {
 		scoreFor: standing.scoreFor,
 		scoreAgainst: standing.scoreAgainst,
 		scoreDifference: standing.scoreDifference,
-		bonusPoints: standing.bonusPoints,
+		// StandingsTable.bonusPoints no acepta null → normalizar a undefined
+		bonusPoints: standing.bonusPoints ?? undefined,
 		rankPosition: standing.rankPosition,
 	}));
 
@@ -99,7 +100,7 @@ function AdminStandingsPage() {
 		try {
 			await updateRow.mutateAsync({
 				id: selectedId,
-				body: { points, bonusPoints: bonus } as never,
+				body: { points, bonusPoints: bonus },
 			});
 		} catch (err) {
 			setError(getApiErrorMessage(err));

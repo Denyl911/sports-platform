@@ -5,7 +5,6 @@ import {
 	useVenues,
 } from "@sports/api-client/hooks";
 import {
-	Badge,
 	Button,
 	Card,
 	CardHeader,

@@ -44,7 +44,7 @@ apps/web/
 │   │   ├── auth/          # login.tsx, register.tsx (formularios, sin loader)
 │   │   ├── tournaments/   # index.tsx (SSR list), $tournamentId.tsx (detail + ediciones)
 │   │   ├── editions/      # $editionId.tsx (stages)
-│   │   ├── stages/        # $stageId.tsx (grupos + partidos, Bracket si single_elimination)
+│   │   ├── stages/        # $stageId.tsx (grupos + partidos)
 │   │   ├── groups/        # $groupId.tsx (standings, solo lectura)
 │   │   ├── standings/     # $groupId.tsx (standings + useGroupLive)
 │   │   ├── matches/       # index.tsx (filtro status), $matchId.tsx (detail + useMatchLive)
@@ -77,22 +77,23 @@ apps/web/
 
 ## Patrones de datos
 
-Público (SSR): cada ruta usa `loader` con `qc.ensureQueryData({ queryKey: queryKeys.* })` y el componente usa `useSuspenseQuery` con la misma key. El `queryClient` llega por router context (`router.tsx` → `AppProviders`).
+Público (SSR): cada ruta usa `loader` con `qc.query({ queryKey: queryKeys.*, queryFn, staleTime: "static" })` y el componente usa `useSuspenseQuery` con la misma key. El `queryClient` llega por router context (`router.tsx` → `AppProviders`). No usar `ensureQueryData` (deprecado en TanStack Query, se elimina en la próxima major).
 
 ```tsx
 export const Route = createFileRoute("/tournaments/")({
   loader: async ({ context }) => {
     const qc = (context as { queryClient: QueryClient }).queryClient;
-    await qc.ensureQueryData({
+    await qc.query({
       queryKey: queryKeys.tournaments.list(),
       queryFn: () => unwrap(api.tournaments.get({ query: {} as never })),
+      staleTime: "static",
     });
   },
   component: TournamentsPage,
 });
 ```
 
-Admin (CSR): sin `loader`; usa hooks de `@sports/api-client/hooks` (`useCreateTournament`, `useUpdateMatchScore`, …) con `api` de `src/lib/api.ts`. Todas las rutas admin usan `// @ts-nocheck` por la inferencia `void` de `UseMutationOptions` con `mutateAsync({ x, body })`.
+Admin (CSR): sin `loader`; usa hooks de `@sports/api-client/hooks` (`useCreateTournament`, `useUpdateMatchScore`, …) con `api` de `src/lib/api.ts` y tipos reales de `@sports/schemas` (sin `as never` ni `// @ts-nocheck`). Los `editionId`/`tournamentId` que la API no expone por GET single viajan por **search params** desde la página padre (`tournaments → editions → stages`).
 
 Tiempo real: `useMatchLive(matchId, { getToken: getStoredAccessToken })` y `useGroupLive(groupId, …)` de `@sports/api-client/live`. Token vía `?token=` (principal). Ver `packages/api-client/README.md`.
 
@@ -110,7 +111,7 @@ Tailwind CSS v4 vía plugin de Vite (sin `tailwind.config.js`). Los tokens (`--s
 
 ```bash
 bun run build
-node .output/server/index.mjs
+bun .output/server/index.mjs
 ```
 
-El build genera cliente + SSR + Nitro (`preset: node-server`). Para otros presets/hosts ver https://v3.nitro.build/deploy.
+El build genera cliente + SSR + Nitro (`preset: bun`). Para otros presets/hosts ver https://v3.nitro.build/deploy.

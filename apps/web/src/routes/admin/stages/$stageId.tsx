@@ -1,4 +1,4 @@
-import { getApiErrorMessage, unwrap } from "@sports/api-client";
+import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useAddPlayerToRoster,
 	useCreateGroup,
@@ -15,7 +15,6 @@ import {
 	useUpdateRegistrationGroup,
 } from "@sports/api-client/hooks";
 import { Badge, Button, Card, Input, Select } from "@sports/ui";
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../../../lib/api";
@@ -26,23 +25,14 @@ export const Route = createFileRoute("/admin/stages/$stageId")({
 
 function AdminStageDetailPage() {
 	const { stageId } = Route.useParams();
-	const { data: stageData } = useQuery({
-		queryKey: ["stage", stageId],
-		queryFn: () => unwrap(api.tournaments.stages({ stageId }).get()),
-	});
-	const editionId =
-		(stageData as { editionId?: string } | undefined)?.editionId ?? null;
-	const { data: editionData } = useQuery({
-		queryKey: editionId ? ["edition", editionId] : ["edition", "none"],
-		queryFn: () =>
-			unwrap(
-				api.tournaments.editions({ editionId: editionId! }).get() as never,
-			),
-		enabled: !!editionId,
-	});
-	const tournamentId =
-		(editionData as { tournamentId?: string } | undefined)?.tournamentId ??
-		null;
+	// editionId/tournamentId llegan por search desde la página padre
+	// (no existen endpoints GET single de stage/edition en la API).
+	const search = Route.useSearch() as {
+		editionId?: string;
+		tournamentId?: string;
+	};
+	const editionId = search.editionId ?? null;
+	const tournamentId = search.tournamentId ?? null;
 
 	const { data: groupsData } = useGroupsByStage(api, stageId);
 	const { data: regsData } = useRegistrationsByStage(api, stageId);
@@ -52,8 +42,6 @@ function AdminStageDetailPage() {
 	const createGroup = useCreateGroup(api);
 	const deleteGroup = useDeleteGroup(api);
 	const registerTeam = useRegisterTeam(api);
-	const unregisterTeam = useUnregisterTeam(api);
-	const updateRegGroup = useUpdateRegistrationGroup(api);
 
 	const groups =
 		(
@@ -107,7 +95,7 @@ function AdminStageDetailPage() {
 		try {
 			await createGroup.mutateAsync({
 				stageId,
-				body: { name: groupName } as never,
+				body: { name: groupName },
 			});
 			setGroupName("");
 		} catch (err) {
@@ -128,7 +116,7 @@ function AdminStageDetailPage() {
 		e.preventDefault();
 		setError(null);
 		try {
-			await registerTeam.mutateAsync({ stageId, body: { teamId } as never });
+			await registerTeam.mutateAsync({ stageId, body: { teamId } });
 		} catch (err) {
 			setError(getApiErrorMessage(err));
 		}
@@ -270,7 +258,7 @@ function RegistrationRow({
 		try {
 			await updateGroup.mutateAsync({
 				id: registration.id,
-				body: { groupId: groupId || null } as never,
+				body: { groupId: groupId || null },
 			});
 		} catch {}
 	};
@@ -341,7 +329,7 @@ function CreateMatchInline({
 				homeTeamId,
 				awayTeamId,
 				tournamentId,
-			} as never);
+			});
 			setSuccess("Partido creado");
 		} catch (err: unknown) {
 			setError(getApiErrorMessage(err));
@@ -420,7 +408,7 @@ function RosterSection({
 			await addPlayer.mutateAsync({
 				editionId,
 				teamId: selectedTeamId,
-				body: { playerId } as never,
+				body: { playerId },
 			});
 		} catch {}
 	};

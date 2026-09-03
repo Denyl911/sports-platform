@@ -23,6 +23,8 @@ export const Route = createFileRoute("/admin/editions/$editionId")({
 
 function AdminEditionDetailPage() {
 	const { editionId } = Route.useParams();
+	const search = Route.useSearch() as { tournamentId?: string };
+	const tournamentId = search.tournamentId ?? null;
 	const { data: stagesData } = useStagesByEdition(api, editionId);
 	const createStage = useCreateStage(api);
 	const deleteStage = useDeleteStage(api);
@@ -102,6 +104,7 @@ function AdminEditionDetailPage() {
 							<Link
 								to="/admin/stages/$stageId"
 								params={{ stageId: s.id }}
+								search={{ editionId, tournamentId: tournamentId ?? undefined }}
 								className="no-underline"
 							>
 								<CardHeader className="p-0">

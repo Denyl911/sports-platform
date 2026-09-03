@@ -141,6 +141,7 @@ function AdminTournamentDetailPage() {
 							<Link
 								to="/admin/editions/$editionId"
 								params={{ editionId: ed.id }}
+								search={{ tournamentId }}
 								className="no-underline"
 							>
 								<div className="font-bold text-sm">{ed.name}</div>

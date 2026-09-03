@@ -62,11 +62,6 @@ function AdminMatchLivePage() {
 		teams.find((t) => t.id === id)?.name ?? (id ? id.slice(0, 8) : "—");
 
 	const updateScore = useUpdateMatchScore(api);
-	const recordEvent = useRecordLiveEvent(api);
-	const assignVenue = useAssignVenue(api);
-	const scheduleMatch = useScheduleMatch(api);
-	const updateMatch = useUpdateMatch(api);
-	const deleteMatch = useDeleteMatch(api);
 	const live = useMatchLive(matchId, {
 		getToken: getStoredAccessToken,
 		updateCache: true,
