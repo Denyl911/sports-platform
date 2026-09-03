@@ -2,8 +2,6 @@
 
 Cliente RPC **Eden Treaty** (`apps/api/src/app.ts:80` `export type App`) + **Hooks TanStack Query** compartidos para `apps/web` (TanStack Start) y `apps/mobile` (Tauri).
 
-Fase 3: integración + `src/hooks` re-exporta `live`, `src/live` con `ManagedSocket` y `useMatchLive`/`useGroupLive` (vía principal `?token=` + `getToken()`).
-
 ## Instalación (workspace)
 
 ```bash
@@ -11,6 +9,7 @@ bun install
 ```
 
 `package.json` exports:
+
 ```json
 {
   "exports": {
@@ -19,6 +18,16 @@ bun install
     "./live": "./src/live/index.ts"
   }
 }
+```
+
+## Comandos
+
+```bash
+bun run test          # bun test (usa test/setup.ts: JWT secrets + DATABASE_URL de pruebas)
+bun run test:types    # tsc --noEmit
+bun run lint          # biome lint .
+bun run format        # biome format --write .
+bun run check         # biome check --write .
 ```
 
 ## Uso básico (treaty delgado)
@@ -39,7 +48,13 @@ const data = await unwrap(client.tournaments.get({ query: {} }));
 await unwrap(client.tournaments.post({ sportId, name } as never));
 ```
 
-`createApiClient` usa `treaty<App>(resolveBaseUrl(baseUrl), { headers: async () => ({Authorization: Bearer token}), onResponse: 401→onUnauthorized })` (`src/client.ts`, `src/config.ts:10` `resolveBaseUrl` prioriza `override` → `import.meta.env.VITE_API_URL` → `process.env` → `http://localhost:3000`).
+`createApiClient` usa `treaty<App>(resolveBaseUrl(baseUrl), { headers: async () => ({Authorization: Bearer token}), onResponse: 401→onUnauthorized })` (`src/client.ts`, `src/config.ts` `resolveBaseUrl` prioriza `override` → `import.meta.env.VITE_API_URL` → `process.env` → `http://localhost:3000`).
+
+`unwrap` lanza `ApiError` (`status`, `value`, `response`); `unwrapSafe` retorna `{ data, error, status, response }` sin lanzar; `getApiErrorMessage` extrae el mensaje; `isApiError` es type-guard.
+
+## QueryKeys
+
+Factories estables en `src/queryKeys.ts` (`queryKeys.*`), una por dominio: `tournaments`, `editions`, `stages`, `groups`, `matches`, `standings`, `teams`, `clubs`, `players`, `sports`, `venues`, `users`, `memberships` (incluye `myMembership(tournamentId)`), `registrations`, `rosters`, `auth`. Las mutaciones invalidan su dominio (`score` → `standingKeys.all()`).
 
 ## Hooks TanStack Query
 
@@ -58,11 +73,11 @@ function TournamentsPage() {
 }
 ```
 
-Todos los dominios: `auth` (`useLogin`/`useRefresh`/`useChangePassword`), `tournaments` (+ `editions`/`stages`/`groups`), `matches` (`useMatches`/`useMatch`/`useCreateMatch`/`useUpdateMatchScore`/`useRecordLiveEvent`...), `standings` (`useStandings`/`useRecalculateStandings`), `teams`/`clubs`/`players`/`sports`/`venues`/`users`/`registrations`/`rosters`. Ver `src/queryKeys.ts` para `queryKeys.*` e invalidación (`score` → `standingKeys.all()`).
+Todos los hooks reciben `client: ApiClient` como primer argumento y son thin wrappers `useQuery`/`useMutation` sobre treaty. Dominios en `src/hooks/`: `auth` (`useLogin`, `useRefresh`, `useChangePassword`, `useMyTournamentMembership`), `tournaments` (+ `editions`/`stages`/`groups`), `matches` (`useMatches`, `useMatch`, `useCreateMatch`, `useUpdateMatchScore`, `useRecordLiveEvent`, …), `standings` (`useStandings`, `useRecalculateStandings`, `useUpdateStandingRow`), `teams`, `clubs`, `players`, `sports`, `venues`, `users`, `registrations`, `rosters`. `src/hooks/index.ts` también re-exporta `live/*`.
 
-## Live — Fase 2
+## Live
 
-Servidor `apps/api/src/lib/live.ts:5` tipa `LiveMessage` (`score|event|standing|connected|ack|pong|error`) y `apps/api/src/routes/live.ts:75` expone `ws("/matches/:id/live")` y `ws("/groups/:groupId/live")` con `beforeHandle` 404, `open` `subscribe` + `connected`, `message` resuelve `token` `Authorization > Sec-WebSocket-Protocol > ?token=` (`live.ts:139`), `ws("/groups/...")` solo lectura.
+Servidor `apps/api/src/lib/live.ts` tipa `LiveMessage` (`score|event|standing|connected|ack|pong|error`) y `apps/api/src/routes/live.ts` expone `ws("/matches/:id/live")` y `ws("/groups/:groupId/live")` con `beforeHandle` 404, `open` `subscribe` + `connected`, `message` resuelve `token` `Authorization > Sec-WebSocket-Protocol > ?token=`, `ws("/groups/...")` solo lectura.
 
 Cliente `src/live/`:
 
@@ -111,32 +126,37 @@ const live = useMatchLive(matchId, {
 ## Testing
 
 - `test/setup.ts` + `bunfig.toml` preload `JWT_*_SECRET` y `DATABASE_URL=sports_platform_test` (igual que `apps/api/test/setup.ts`).
-- `test/live.test.ts` (16 tests): unit `wsUrlFromBase`/`getMatchLiveUrl`, smoke `createApiClient` vs `treaty(app)` + `unwrap`, hooks re-export, WS real `createMatchSocket`/`createGroupSocket` con `app.listen(0)` + `resetDb` + `seed*` + `signToken` (anon, referee `?token=` `ack+broadcast`, ping/pong, viewer 403, super_admin bypass, anon 401, raw `new WebSocket(getMatchLiveUrl(...,token))` compat, group `standing` tras `recalculate`, `Read-only`, ghost 404, `idleTimeout 30`).
+- `test/live.test.ts`: unit `wsUrlFromBase`/`getMatchLiveUrl`, smoke `createApiClient` vs `treaty(app)` + `unwrap`, hooks re-export, WS real `createMatchSocket`/`createGroupSocket` con `app.listen(0)` + `resetDb` + `seed*` + `signToken` (anon, referee `?token=` `ack+broadcast`, ping/pong, viewer 403, super_admin bypass, anon 401, raw `new WebSocket(getMatchLiveUrl(...,token))` compat, group `standing` tras `recalculate`, `Read-only`, ghost 404, `idleTimeout 30`).
 
 ```bash
 # en @sports/api-client
 bun test test/live.test.ts
 # en root (turbo)
 DATABASE_URL="postgresql://sports_user:sports_user_password@localhost:5432/sports_platform_test" bun test
-# 211 pass (195 api + 16 api-client)
 ```
 
 ## Estructura
 
-```
-src/
-  client.ts       # createApiClient, ApiError, unwrap
-  config.ts       # resolveBaseUrl
-  queryKeys.ts    # factories por dominio
-  types.ts        # re-export @sports/schemas
-  live/
-    types.ts      # LiveMessage, LiveStatus, UseMatchLiveOptions
-    url.ts        # wsUrlFromBase, getMatchLiveUrl
-    socket.ts     # ManagedSocket
-    useMatchLive.ts / useGroupLive.ts
-    index.ts
-  hooks/
-    auth.ts / tournaments.ts / matches.ts / standings.ts / teams.ts / ...
-    index.ts      # barrel + re-export live
-  index.ts
+```text
+packages/api-client/
+├── src/
+│   ├── client.ts      # createApiClient, ApiError, unwrap/unwrapSafe
+│   ├── config.ts      # resolveBaseUrl
+│   ├── queryKeys.ts   # factories por dominio
+│   ├── types.ts       # re-export @sports/schemas
+│   ├── live/
+│   │   ├── types.ts   # LiveMessage, LiveStatus, UseMatchLiveOptions
+│   │   ├── url.ts     # wsUrlFromBase, getMatchLiveUrl
+│   │   ├── socket.ts  # ManagedSocket
+│   │   ├── useMatchLive.ts / useGroupLive.ts
+│   │   └── index.ts
+│   ├── hooks/
+│   │   ├── auth.ts / tournaments.ts / matches.ts / standings.ts / teams.ts / ...
+│   │   └── index.ts   # barrel + re-export live
+│   └── index.ts
+├── test/
+│   ├── live.test.ts
+│   └── setup.ts
+├── bunfig.toml
+└── package.json
 ```
