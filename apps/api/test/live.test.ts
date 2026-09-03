@@ -23,7 +23,6 @@ import {
 	seedUser,
 } from "./helpers/db";
 
-const api = treaty(app);
 
 // Harness de WebSocket real
 let server: ReturnType<typeof app.listen> | null = null;

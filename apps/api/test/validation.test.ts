@@ -5,13 +5,9 @@ import { authHeaders } from "./helpers/auth";
 import {
 	resetDb,
 	seedEdition,
-	seedGroup,
 	seedMatch,
 	seedMember,
-	seedPlayer,
-	seedSport,
 	seedStage,
-	seedTeam,
 	seedTournament,
 	seedUser,
 } from "./helpers/db";
@@ -318,7 +314,7 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 			[
 				"PATCH /matches/:id/schedule scheduledAt inválido",
 				async () => {
-					const { admin, headers } = await adminHeaders().then(async (r) => ({
+					const { admin } = await adminHeaders().then(async (r) => ({
 						admin: r.admin,
 						headers: r.headers,
 					}));

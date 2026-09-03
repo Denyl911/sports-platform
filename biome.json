@@ -1,63 +1,66 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignoreUnknown": false,
-    "includes": [
-      "**/*.ts",
-      "**/*.tsx",
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.mjs",
-      "**/*.cjs",
-      "**/*.json",
-      "**/*.jsonc",
-      "!**/dist",
-      "!**/.turbo",
-      "!**/node_modules",
-      "!**/.nitro",
-      "!**/.output",
-      "!**/.tanstack",
-      "!**/coverage",
-      "!.zed",
-      "!**/src-tauri/target",
-      "!**/src-tauri/gen",
-      "!**/drizzle",
-      "!**/*.gen.ts",
-      "!**/src/styles.css"
-    ]
-  },
-  "formatter": {
-    "enabled": true,
-    "indentStyle": "tab"
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "preset": "recommended",
-      "correctness": {
-        "useExhaustiveDependencies": "info"
-      },
-      "suspicious": {
-        "useIterableCallbackReturn": "info"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "double"
-    }
-  },
-  "assist": {
-    "enabled": true,
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
-    }
-  }
+	"$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"ignoreUnknown": false,
+		"includes": [
+			"**/*.ts",
+			"**/*.tsx",
+			"**/*.js",
+			"**/*.jsx",
+			"**/*.mjs",
+			"**/*.cjs",
+			"**/*.json",
+			"**/*.jsonc",
+			"!**/dist",
+			"!**/.turbo",
+			"!**/node_modules",
+			"!**/.nitro",
+			"!**/.output",
+			"!**/.tanstack",
+			"!**/coverage",
+			"!.zed",
+			"!**/src-tauri/target",
+			"!**/src-tauri/gen",
+			"!**/drizzle",
+			"!**/*.gen.ts",
+			"!**/src/styles.css"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "recommended",
+			"correctness": {
+				"useExhaustiveDependencies": "info"
+			},
+			"suspicious": {
+				"useIterableCallbackReturn": "info"
+			},
+			"style": {
+				"noNonNullAssertion": "info"
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "double"
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
 }

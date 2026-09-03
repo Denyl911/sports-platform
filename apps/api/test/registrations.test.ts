@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { treaty } from "@elysia/eden";
-import { db } from "@sports/db";
 import { stageTeamRegistrations } from "@sports/db/tables";
 import { eq } from "drizzle-orm";
 import { app } from "../src/app";
@@ -11,7 +10,6 @@ import {
 	seedEdition,
 	seedGroup,
 	seedMember,
-	seedSport,
 	seedStage,
 	seedTeam,
 	seedTournament,
