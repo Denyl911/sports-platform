@@ -1,10 +1,10 @@
+import { stageStandings } from "@sports/db/tables";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { stageStandings } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -31,17 +31,17 @@ export const standingRowIdParamsSchema = t.Object({
 // Payload para recalcular/ajustar manualmente una fila de posiciones
 // (scoreDifference es columna generada en DB: no se ajusta manualmente)
 export const updateStandingRowSchema = t.Partial(
-  t.Pick(updateStageStandingSchema, [
-    "played",
-    "won",
-    "drawn",
-    "lost",
-    "points",
-    "scoreFor",
-    "scoreAgainst",
-    "bonusPoints",
-    "rankPosition",
-  ])
+	t.Pick(updateStageStandingSchema, [
+		"played",
+		"won",
+		"drawn",
+		"lost",
+		"points",
+		"scoreFor",
+		"scoreAgainst",
+		"bonusPoints",
+		"rankPosition",
+	]),
 );
 
 // ==========================================

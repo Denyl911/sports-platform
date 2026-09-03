@@ -21,6 +21,14 @@ Cliente RPC **Eden Treaty** tipado contra `apps/api` + **hooks TanStack Query** 
 - Errores: `unwrap` (lanza `ApiError`) por defecto; `unwrapSafe` solo cuando se maneja 404/409 sin `try/catch`. Mensajes con `getApiErrorMessage(err)`.
 - **Invalidación:** cada mutación invalida su dominio en `onSuccess` (`score` → `standingKeys.all()`). Mantener el mapeo `queryKeys.*` existente.
 
+### Type-Safety Sin Supresores
+- **Cero `// @ts-nocheck` y `// @ts-ignore` en `src/`.** Los `@ts-expect-error` puntuales con comentario de justificación son aceptables (fallan solos si el error desaparece); hoy el conteo es cero.
+- **Bodies con `@sports/schemas` reales** (`InsertClub`, `UpdateMatchScore`, …), nunca `Record<string, unknown>`. Si falta el tipo, añadirlo en `packages/schemas` (p. ej. `PlayerSearchQuery`, `RegistrationGroupUpdate`). Los POST anidados omiten el id del padre con `Omit<>` (`CreateEditionBody`, `AddPlayerBody`).
+- **`mutationFn` con destructuring siempre anotado** (`({ id, body }: { id: string; body: X })`): sin anotación, el spread `options as unknown as object` hace que `TVariables` colapse a `void` (`TS2339`).
+- **`onSuccess` con 4 args** (`(data, vars, onMutateResult, context)`) y reenvío directo a `options?.onSuccess?.(...)`: TanStack Query v5 pasa `(data, variables, onMutateResult, context)`; castear a `never` rompe la llamada (`TS2349`).
+- **Declaraciones globales en el archivo que las usa** (p. ej. `declare global { var __viteEnv }` en `config.ts`): los `.d.ts` no importados no entran al programa de los consumidores (`apps/web`), y `tsc` allí es más estricto (`noUnusedLocals`/`noUnusedParameters`).
+- Verificar siempre con `tsc` del package **y** de `apps/web` (`bunx tsc --noEmit -p apps/web/tsconfig.json`), que es más estricto.
+
 ### Modularidad por Dominio
 - Un archivo por dominio en `src/hooks/` (`tournaments.ts`, `matches.ts`, `standings.ts`, …) y factories en `src/queryKeys.ts`.
 - **Barrel Export Obligatorio:** todo hook nuevo debe re-exportarse en `src/hooks/index.ts` (que además re-exporta `live/*`); `src/index.ts` re-exporta `live`, `queryKeys`, `client`, `config`, `types`.

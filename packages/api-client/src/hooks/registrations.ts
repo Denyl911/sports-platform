@@ -1,4 +1,7 @@
-// @ts-nocheck
+import type {
+	RegisterTeamInStage,
+	RegistrationGroupUpdate,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -8,6 +11,9 @@ import {
 } from "@tanstack/react-query";
 import { type ApiClient, unwrap } from "../client";
 import { queryKeys } from "../queryKeys";
+
+// El POST anidado omite el stageId (va en la ruta): POST /stages/:stageId/registrations
+type RegisterTeamBody = Omit<RegisterTeamInStage, "stageId">;
 
 export function useRegistrationsByStage(
 	client: ApiClient,
@@ -19,11 +25,7 @@ export function useRegistrationsByStage(
 ) {
 	return useQuery({
 		queryKey: queryKeys.registrations.byStage(stageId),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error GET /stages/:stageId/registrations
-				client.stages({ stageId }).registrations.get(),
-			),
+		queryFn: () => unwrap(client.stages({ stageId }).registrations.get()),
 		enabled: !!stageId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -39,11 +41,7 @@ export function useRegistrationsByGroup(
 ) {
 	return useQuery({
 		queryKey: queryKeys.registrations.byGroup(groupId),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error GET /registrations/groups/:groupId
-				client.registrations.groups({ groupId }).get(),
-			),
+		queryFn: () => unwrap(client.registrations.groups({ groupId }).get()),
 		enabled: !!groupId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -52,27 +50,25 @@ export function useRegistrationsByGroup(
 export function useRegisterTeam(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ stageId: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { stageId: string; body: RegisterTeamBody }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ stageId, body }) =>
-			unwrap(
-				// @ts-expect-error POST /stages/:stageId/registrations
-				client.stages({ stageId }).registrations.post(body as never),
-			),
+		mutationFn: ({
+			stageId,
+			body,
+		}: {
+			stageId: string;
+			body: RegisterTeamBody;
+		}) => unwrap(client.stages({ stageId }).registrations.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({
 				queryKey: queryKeys.registrations.byStage(vars.stageId),
 			});
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -83,22 +79,24 @@ export function useUpdateRegistrationGroup(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ id: string; body: Record<string, unknown> }
+			{ id: string; body: RegistrationGroupUpdate }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error PATCH /registrations/:id/group
-				client.registrations({ id }).group.patch(body as never),
-			),
+		mutationFn: ({
+			id,
+			body,
+		}: {
+			id: string;
+			body: RegistrationGroupUpdate;
+		}) => unwrap(client.registrations({ id }).group.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.registrations.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -110,16 +108,11 @@ export function useUnregisterTeam(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error DELETE /registrations/:id
-				client
-					.registrations({ id })
-					.delete(undefined as never, undefined as never),
-			),
+			unwrap(client.registrations({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.registrations.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

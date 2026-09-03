@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { InsertVenue, UpdateVenue } from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -33,11 +33,7 @@ export function useVenue(
 ) {
 	return useQuery({
 		queryKey: queryKeys.venues.detail(id),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.venues({ id }).get(),
-			),
+		queryFn: () => unwrap(client.venues({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -45,19 +41,15 @@ export function useVenue(
 
 export function useCreateVenue(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, InsertVenue>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.venues.post(body as never)),
+		mutationFn: (body: InsertVenue) => unwrap(client.venues.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.venues.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -65,26 +57,19 @@ export function useCreateVenue(
 export function useUpdateVenue(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateVenue }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.venues({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateVenue }) =>
+			unwrap(client.venues({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.venues.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.venues.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -96,14 +81,11 @@ export function useDeleteVenue(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error
-				client.venues({ id }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.venues({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.venues.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

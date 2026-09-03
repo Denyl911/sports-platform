@@ -1,4 +1,10 @@
-// @ts-nocheck
+import type {
+	InsertSport,
+	InsertSportEventType,
+	SportEventTypeFilterQuery,
+	UpdateSport,
+	UpdateSportEventType,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -37,11 +43,7 @@ export function useSport(
 ) {
 	return useQuery({
 		queryKey: queryKeys.sports.detail(id),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.sports({ id }).get(),
-			),
+		queryFn: () => unwrap(client.sports({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -50,7 +52,7 @@ export function useSport(
 export function useSportEventTypes(
 	client: ApiClient,
 	sportId: string,
-	filters?: Record<string, unknown>,
+	filters?: SportEventTypeFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
@@ -60,9 +62,8 @@ export function useSportEventTypes(
 		queryKey: queryKeys.sports.eventTypes(sportId),
 		queryFn: () =>
 			unwrap(
-				// @ts-expect-error GET /sports/:id/event-types
 				client.sports({ id: sportId })["event-types"].get({
-					query: (filters ?? {}) as never,
+					query: { sportId, ...(filters ?? {}) },
 				}),
 			),
 		enabled: !!sportId && options?.enabled !== false,
@@ -72,19 +73,15 @@ export function useSportEventTypes(
 
 export function useCreateSport(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, InsertSport>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.sports.post(body as never)),
+		mutationFn: (body: InsertSport) => unwrap(client.sports.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -92,26 +89,19 @@ export function useCreateSport(
 export function useUpdateSport(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateSport }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.sports({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateSport }) =>
+			unwrap(client.sports({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.sports.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -123,14 +113,11 @@ export function useDeleteSport(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error
-				client.sports({ id }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.sports({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -141,24 +128,27 @@ export function useCreateSportEventType(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ sportId: string; body: Record<string, unknown> }
+			{ sportId: string; body: InsertSportEventType }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ sportId, body }) =>
-			unwrap(
-				// @ts-expect-error POST /sports/:id/event-types
-				client.sports({ id: sportId })["event-types"].post(body as never),
-			),
+		mutationFn: ({
+			sportId,
+			body,
+		}: {
+			sportId: string;
+			body: InsertSportEventType;
+		}) =>
+			unwrap(client.sports({ id: sportId })["event-types"].post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({
 				queryKey: queryKeys.sports.eventTypes(vars.sportId),
 			});
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -169,22 +159,25 @@ export function useUpdateSportEventType(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ eventTypeId: string; body: Record<string, unknown> }
+			{ eventTypeId: string; body: UpdateSportEventType }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ eventTypeId, body }) =>
-			unwrap(
-				// @ts-expect-error PATCH /sports/event-types/:eventTypeId
-				client.sports["event-types"]({ eventTypeId }).patch(body as never),
-			),
+		mutationFn: ({
+			eventTypeId,
+			body,
+		}: {
+			eventTypeId: string;
+			body: UpdateSportEventType;
+		}) =>
+			unwrap(client.sports["event-types"]({ eventTypeId }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -197,16 +190,12 @@ export function useDeleteSportEventType(
 	return useMutation({
 		mutationFn: (eventTypeId: string) =>
 			unwrap(
-				// @ts-expect-error DELETE /sports/event-types/:eventTypeId
-				client.sports["event-types"]({ eventTypeId }).delete(
-					undefined as never,
-					undefined as never,
-				),
+				client.sports["event-types"]({ eventTypeId }).delete(undefined, undefined),
 			),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.sports.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

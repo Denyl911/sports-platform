@@ -1,4 +1,12 @@
-// @ts-nocheck
+import type {
+	CreateMatch,
+	MatchFilterQuery,
+	MatchScheduleUpdate,
+	MatchVenueUpdate,
+	RecordLiveEvent,
+	UpdateMatchInfo,
+	UpdateMatchScore,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -15,7 +23,7 @@ import { queryKeys } from "../queryKeys";
 
 export function useMatches(
 	client: ApiClient,
-	filters?: Record<string, unknown>,
+	filters?: MatchFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
@@ -24,10 +32,7 @@ export function useMatches(
 	return useQuery({
 		queryKey: queryKeys.matches.list(filters),
 		queryFn: () =>
-			unwrap(
-				// @ts-expect-error treaty query
-				client.matches.get({ query: (filters ?? {}) as never }),
-			),
+			unwrap(client.matches.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }
@@ -42,11 +47,7 @@ export function useMatch(
 ) {
 	return useQuery({
 		queryKey: queryKeys.matches.detail(id),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).get(),
-			),
+		queryFn: () => unwrap(client.matches({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -58,19 +59,15 @@ export function useMatch(
 
 export function useCreateMatch(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, CreateMatch>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.matches.post(body as never)),
+		mutationFn: (body: CreateMatch) => unwrap(client.matches.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -78,26 +75,19 @@ export function useCreateMatch(
 export function useUpdateMatch(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateMatchInfo }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateMatchInfo }) =>
+			unwrap(client.matches({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -109,14 +99,11 @@ export function useDeleteMatch(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error Eden delete
-				client.matches({ id }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.matches({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -128,21 +115,23 @@ export function useDeleteMatch(
 export function useAssignVenue(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<unknown, Error, { id: string; venueId: string }>,
+		UseMutationOptions<unknown, Error, { id: string } & MatchVenueUpdate>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, venueId }) =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).venue.patch({ venueId } as never),
-			),
+		mutationFn: ({
+			id,
+			...body
+		}: {
+			id: string;
+			venueId: MatchVenueUpdate["venueId"];
+		}) => unwrap(client.matches({ id }).venue.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -150,21 +139,23 @@ export function useAssignVenue(
 export function useScheduleMatch(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<unknown, Error, { id: string; scheduledAt: string }>,
+		UseMutationOptions<unknown, Error, { id: string } & MatchScheduleUpdate>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, scheduledAt }) =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).schedule.patch({ scheduledAt } as never),
-			),
+		mutationFn: ({
+			id,
+			...body
+		}: {
+			id: string;
+			scheduledAt: MatchScheduleUpdate["scheduledAt"];
+		}) => unwrap(client.matches({ id }).schedule.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -177,28 +168,21 @@ export function useScheduleMatch(
 export function useUpdateMatchScore(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateMatchScore }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).score.patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateMatchScore }) =>
+			unwrap(client.matches({ id }).score.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.lists() });
 			// standings se recalcula en service si finished/walkover + groupId
 			qc.invalidateQueries({ queryKey: queryKeys.standings.all() });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -206,26 +190,19 @@ export function useUpdateMatchScore(
 export function useRecordLiveEvent(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: RecordLiveEvent }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.matches({ id }).events.post(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: RecordLiveEvent }) =>
+			unwrap(client.matches({ id }).events.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			qc.invalidateQueries({ queryKey: queryKeys.standings.all() });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }

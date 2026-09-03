@@ -1,4 +1,10 @@
-// @ts-nocheck
+import type {
+	AddTournamentMember,
+	UpdateTournamentMemberRole,
+	UpdateUser,
+	UserCreate,
+	UserFilterQuery,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -11,7 +17,7 @@ import { queryKeys } from "../queryKeys";
 
 export function useUsers(
 	client: ApiClient,
-	filters?: Record<string, unknown>,
+	filters?: UserFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
@@ -20,10 +26,7 @@ export function useUsers(
 	return useQuery({
 		queryKey: queryKeys.users.list(filters),
 		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.users.get({ query: (filters ?? {}) as never }),
-			),
+			unwrap(client.users.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }
@@ -38,11 +41,7 @@ export function useUser(
 ) {
 	return useQuery({
 		queryKey: queryKeys.users.detail(userId),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.users({ userId }).get(),
-			),
+		queryFn: () => unwrap(client.users({ userId }).get()),
 		enabled: !!userId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -50,19 +49,15 @@ export function useUser(
 
 export function useCreateUser(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, UserCreate>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.users.post(body as never)),
+		mutationFn: (body: UserCreate) => unwrap(client.users.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.users.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -70,26 +65,19 @@ export function useCreateUser(
 export function useUpdateUser(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ userId: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { userId: string; body: UpdateUser }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ userId, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.users({ userId }).patch(body as never),
-			),
+		mutationFn: ({ userId, body }: { userId: string; body: UpdateUser }) =>
+			unwrap(client.users({ userId }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.users.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.users.detail(vars.userId) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -101,14 +89,11 @@ export function useDeleteUser(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (userId: string) =>
-			unwrap(
-				// @ts-expect-error
-				client.users({ userId }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.users({ userId }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.users.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -123,23 +108,25 @@ export function useAddTournamentMember(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ userId: string; body: Record<string, unknown> }
+			{ userId: string; body: AddTournamentMember }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ userId, body }) =>
-			unwrap(
-				// @ts-expect-error POST /users/:userId/memberships
-				client.users({ userId }).memberships.post(body as never),
-			),
+		mutationFn: ({
+			userId,
+			body,
+		}: {
+			userId: string;
+			body: AddTournamentMember;
+		}) => unwrap(client.users({ userId }).memberships.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.memberships.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.users.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -150,22 +137,24 @@ export function useUpdateMembershipRole(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ memberId: string; body: Record<string, unknown> }
+			{ memberId: string; body: UpdateTournamentMemberRole }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ memberId, body }) =>
-			unwrap(
-				// @ts-expect-error PATCH /memberships/:memberId
-				client.memberships({ memberId }).patch(body as never),
-			),
+		mutationFn: ({
+			memberId,
+			body,
+		}: {
+			memberId: string;
+			body: UpdateTournamentMemberRole;
+		}) => unwrap(client.memberships({ memberId }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.memberships.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -177,16 +166,11 @@ export function useRemoveMembership(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (memberId: string) =>
-			unwrap(
-				// @ts-expect-error
-				client
-					.memberships({ memberId })
-					.delete(undefined as never, undefined as never),
-			),
+			unwrap(client.memberships({ memberId }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.memberships.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

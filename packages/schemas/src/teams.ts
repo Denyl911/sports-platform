@@ -1,16 +1,16 @@
 import {
+	clubs,
+	players,
+	stageTeamRegistrations,
+	teams,
+	tournamentRosters,
+} from "@sports/db/tables";
+import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import {
-	clubs,
-	teams,
-	players,
-	stageTeamRegistrations,
-	tournamentRosters,
-} from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -121,9 +121,13 @@ export type StageTeamRegistration = Static<
 	typeof selectStageTeamRegistrationSchema
 >;
 export type RegisterTeamInStage = Static<typeof registerTeamInStageSchema>;
+export type RegistrationGroupUpdate = Static<
+	typeof registrationGroupUpdateSchema
+>;
 export type TournamentRoster = Static<typeof selectTournamentRosterSchema>;
 export type UpdateTournamentRoster = Static<
 	typeof updateTournamentRosterSchema
 >;
 export type AddPlayerToRoster = Static<typeof addPlayerToRosterSchema>;
 export type TeamFilterQuery = Static<typeof teamFilterQuerySchema>;
+export type PlayerSearchQuery = Static<typeof playerSearchQuerySchema>;

@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { matchKeys, standingKeys } from "../queryKeys";
@@ -127,10 +125,10 @@ export function useMatchLive(
 			enabled: true,
 			onMessage: handleMessage,
 			onStatusChange: setStatus,
-			onError: (e) => {
-				// No propagar como LiveError, solo status
-				// Los errores de WS se manejan vía onMessage {type:"error"} del servidor
-			},
+		onError: () => {
+			// No propagar como LiveError, solo status
+			// Los errores de WS se manejan vía onMessage {type:"error"} del servidor
+		},
 		});
 
 		socketRef.current = socket;

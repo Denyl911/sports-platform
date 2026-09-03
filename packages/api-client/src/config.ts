@@ -7,6 +7,12 @@
  * 4. Fallback dev `http://localhost:3000` (resolvePort default en apps/api)
  */
 
+// Declarado aquí (no en un .d.ts aparte) para que aplique en cualquier
+// programa que importe este archivo (apps/web no incluye .d.ts no importados).
+declare global {
+	var __viteEnv: Record<string, string> | undefined;
+}
+
 export function resolveBaseUrl(
 	override?: string | (() => string) | null,
 ): string {
@@ -16,16 +22,12 @@ export function resolveBaseUrl(
 	}
 
 	// Vite / TanStack Start (SSR y CSR)
-	// `import.meta.env` existe en Vite, no en Bun/Node; acceso seguro
+	// `import.meta.env` existe en Vite, no en Bun/Node; acceso seguro.
+	// Tipos declarados en `src/vite-env.d.ts` (sin depender de `vite/client`).
 	try {
-		// @ts-ignore - import.meta puede no estar tipado en este contexto
 		const viteEnv =
-			(globalThis as unknown as { __viteEnv?: Record<string, string> })
-				.__viteEnv ??
-			// @ts-ignore
-			(typeof import.meta !== "undefined"
-				? (import.meta as unknown as { env?: Record<string, string> }).env
-				: undefined);
+			globalThis.__viteEnv ??
+			(typeof import.meta !== "undefined" ? import.meta.env : undefined);
 		if (viteEnv?.VITE_API_URL) return normalizeUrl(viteEnv.VITE_API_URL);
 	} catch {
 		// ignore

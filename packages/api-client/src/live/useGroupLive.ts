@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { standingKeys } from "../queryKeys";

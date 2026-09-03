@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
 	type UseMutationOptions,
 	useMutation,
@@ -63,14 +62,7 @@ export function useChangePassword(
 ) {
 	return useMutation({
 		mutationFn: (body: ChangePasswordBody) =>
-			// @ts-expect-error treaty auth:true ya inyecta header via client
-			unwrap(
-				(
-					client.auth as unknown as {
-						"change-password": { post: (b: unknown) => Promise<never> };
-					}
-				)["change-password"].post(body),
-			),
+			unwrap(client.auth["change-password"].post(body)),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

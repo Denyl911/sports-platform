@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { UpdateStandingRow } from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -19,11 +19,7 @@ export function useStandings(
 ) {
 	return useQuery({
 		queryKey: queryKeys.standings.byGroup(groupId),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error GET /groups/:groupId/standings
-				client.groups({ groupId }).standings.get(),
-			),
+		queryFn: () => unwrap(client.groups({ groupId }).standings.get()),
 		enabled: !!groupId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -36,16 +32,13 @@ export function useRecalculateStandings(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (groupId: string) =>
-			unwrap(
-				// @ts-expect-error POST /groups/:groupId/standings/recalculate
-				client.groups({ groupId }).standings.recalculate.post(),
-			),
+			unwrap(client.groups({ groupId }).standings.recalculate.post()),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, groupId, ...rest) => {
+		onSuccess: (data, groupId, onMutateResult, context) => {
 			qc.invalidateQueries({
-				queryKey: queryKeys.standings.byGroup(groupId as string),
+				queryKey: queryKeys.standings.byGroup(groupId),
 			});
-			(options?.onSuccess as never)?.(data, groupId, ...rest);
+			options?.onSuccess?.(data, groupId, onMutateResult, context);
 		},
 	});
 }
@@ -56,22 +49,19 @@ export function useUpdateStandingRow(
 		UseMutationOptions<
 			unknown,
 			Error,
-			{ id: string; body: Record<string, unknown> }
+			{ id: string; body: UpdateStandingRow }
 		>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error PATCH /standings/:id
-				client.standings({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateStandingRow }) =>
+			unwrap(client.standings({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.standings.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

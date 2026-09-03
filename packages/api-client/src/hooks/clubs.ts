@@ -1,4 +1,4 @@
-// @ts-nocheck
+import type { InsertClub, UpdateClub } from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -33,11 +33,7 @@ export function useClub(
 ) {
 	return useQuery({
 		queryKey: queryKeys.clubs.detail(id),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.clubs({ id }).get(),
-			),
+		queryFn: () => unwrap(client.clubs({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -45,19 +41,15 @@ export function useClub(
 
 export function useCreateClub(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, InsertClub>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.clubs.post(body as never)),
+		mutationFn: (body: InsertClub) => unwrap(client.clubs.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.clubs.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -65,26 +57,19 @@ export function useCreateClub(
 export function useUpdateClub(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateClub }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.clubs({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateClub }) =>
+			unwrap(client.clubs({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.clubs.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.clubs.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -96,14 +81,11 @@ export function useDeleteClub(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error
-				client.clubs({ id }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.clubs({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.clubs.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

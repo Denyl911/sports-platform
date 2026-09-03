@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * Hooks TanStack Query — wrappers delgados sobre `treaty<App>`.
  * Cada hook delega en `ApiClient` (createApiClient) y expone queryKeys estables.

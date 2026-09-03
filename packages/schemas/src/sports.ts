@@ -1,10 +1,10 @@
+import { sportEventTypes, sports, venues } from "@sports/db/tables";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { sportEventTypes, sports, venues } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)

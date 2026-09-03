@@ -26,6 +26,7 @@
 	"devDependencies": {
 		"@sports/db": "*",
 		"@sports/tsconfig": "*",
+		"@types/react": "^19.0.0",
 		"api": "workspace:*"
 	}
 }

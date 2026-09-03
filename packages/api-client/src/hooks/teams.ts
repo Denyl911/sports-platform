@@ -1,4 +1,8 @@
-// @ts-nocheck
+import type {
+	InsertTeam,
+	TeamFilterQuery,
+	UpdateTeam,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -11,7 +15,7 @@ import { queryKeys } from "../queryKeys";
 
 export function useTeams(
 	client: ApiClient,
-	filters?: Record<string, unknown>,
+	filters?: TeamFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
@@ -20,10 +24,7 @@ export function useTeams(
 	return useQuery({
 		queryKey: queryKeys.teams.list(filters),
 		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.teams.get({ query: (filters ?? {}) as never }),
-			),
+			unwrap(client.teams.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }
@@ -38,11 +39,7 @@ export function useTeam(
 ) {
 	return useQuery({
 		queryKey: queryKeys.teams.detail(id),
-		queryFn: () =>
-			unwrap(
-				// @ts-expect-error
-				client.teams({ id }).get(),
-			),
+		queryFn: () => unwrap(client.teams({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
@@ -50,19 +47,15 @@ export function useTeam(
 
 export function useCreateTeam(
 	client: ApiClient,
-	options?: Omit<
-		UseMutationOptions<unknown, Error, Record<string, unknown>>,
-		"mutationFn"
-	>,
+	options?: Omit<UseMutationOptions<unknown, Error, InsertTeam>, "mutationFn">,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: (body: Record<string, unknown>) =>
-			unwrap(client.teams.post(body as never)),
+		mutationFn: (body: InsertTeam) => unwrap(client.teams.post(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.teams.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }
@@ -70,26 +63,19 @@ export function useCreateTeam(
 export function useUpdateTeam(
 	client: ApiClient,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ id: string; body: Record<string, unknown> }
-		>,
+		UseMutationOptions<unknown, Error, { id: string; body: UpdateTeam }>,
 		"mutationFn"
 	>,
 ) {
 	const qc = useQueryClient();
 	return useMutation({
-		mutationFn: ({ id, body }) =>
-			unwrap(
-				// @ts-expect-error
-				client.teams({ id }).patch(body as never),
-			),
+		mutationFn: ({ id, body }: { id: string; body: UpdateTeam }) =>
+			unwrap(client.teams({ id }).patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (data, vars, ...rest) => {
+		onSuccess: (data, vars, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.teams.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.teams.detail(vars.id) });
-			(options?.onSuccess as never)?.(data, vars, ...rest);
+			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});
 }
@@ -101,14 +87,11 @@ export function useDeleteTeam(
 	const qc = useQueryClient();
 	return useMutation({
 		mutationFn: (id: string) =>
-			unwrap(
-				// @ts-expect-error
-				client.teams({ id }).delete(undefined as never, undefined as never),
-			),
+			unwrap(client.teams({ id }).delete(undefined, undefined)),
 		...((options as unknown as object) ?? ({} as object)),
-		onSuccess: (...args) => {
+		onSuccess: (data, variables, onMutateResult, context) => {
 			qc.invalidateQueries({ queryKey: queryKeys.teams.all() });
-			options?.onSuccess?.(...args);
+			options?.onSuccess?.(data, variables, onMutateResult, context);
 		},
 	});
 }

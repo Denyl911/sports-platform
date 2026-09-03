@@ -1,10 +1,10 @@
+import { matchEvents, matches, matchPeriods } from "@sports/db/tables";
 import {
 	createInsertSchema,
 	createSelectSchema,
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
-import { matches, matchEvents, matchPeriods } from "@sports/db/tables";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -29,7 +29,9 @@ export const updateMatchInfoSchema = t.Object({
 	roundNumber: t.Optional(t.Integer({ minimum: 1 })),
 	matchNumber: t.Optional(t.Union([t.Integer({ minimum: 1 }), t.Null()])),
 	groupId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
-	scheduledAt: t.Optional(t.Union([t.String({ format: "date-time" }), t.Null()])),
+	scheduledAt: t.Optional(
+		t.Union([t.String({ format: "date-time" }), t.Null()]),
+	),
 	venueId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
 	homeTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
 	awayTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),

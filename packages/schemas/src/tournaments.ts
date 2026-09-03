@@ -69,6 +69,7 @@ export const tournamentFilterQuerySchema = t.Object({
 	sportId: t.Optional(t.String({ minLength: 1, maxLength: 32 })),
 });
 
+export type TournamentFilterQuery = Static<typeof tournamentFilterQuerySchema>;
 export type Tournament = Static<typeof selectTournamentSchema>;
 export type InsertTournament = Static<typeof insertTournamentSchema>;
 export type UpdateTournament = Static<typeof updateTournamentSchema>;
