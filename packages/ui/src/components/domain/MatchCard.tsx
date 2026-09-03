@@ -70,7 +70,7 @@ export function MatchCard({
 		<Card
 			onClick={onClick}
 			className={cn(
-				"relative overflow-hidden p-4 transition hover:translate-y-[-2px]",
+				"relative overflow-hidden p-4 transition hover:-translate-y-0.5",
 				onClick && "cursor-pointer",
 				isLive &&
 					"ring-1 ring-[color-mix(in_oklab,var(--lagoon)_30%,transparent)]",
@@ -79,7 +79,7 @@ export function MatchCard({
 			{...props}
 		>
 			{roundLabel && (
-				<div className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--kicker)]">
+				<div className="mb-2 text-xs font-bold uppercase tracking-wide text-(--kicker)">
 					{roundLabel}
 				</div>
 			)}
@@ -87,15 +87,15 @@ export function MatchCard({
 				<TeamMini team={homeTeam} align="left" />
 				<div className="flex flex-col items-center gap-1.5">
 					{showScore ? (
-						<div className="flex items-baseline gap-1 font-black text-[var(--sea-ink)]">
+						<div className="flex items-baseline gap-1 font-black text-(--sea-ink)">
 							<span className="text-2xl">{homeScore}</span>
-							<span className="text-sm font-bold text-[var(--sea-ink-soft)]">
+							<span className="text-sm font-bold text-(--sea-ink-soft)">
 								:
 							</span>
 							<span className="text-2xl">{awayScore}</span>
 						</div>
 					) : (
-						<div className="text-xs font-bold text-[var(--sea-ink-soft)]">
+						<div className="text-xs font-bold text-(--sea-ink-soft)">
 							{scheduledAt
 								? new Date(scheduledAt).toLocaleString(undefined, {
 										dateStyle: "short",
@@ -106,7 +106,7 @@ export function MatchCard({
 					)}
 					<Badge variant={statusVariant[status]} className="gap-1">
 						{isLive && (
-							<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--lagoon)]" />
+							<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-(--lagoon)" />
 						)}
 						{statusLabel[status]}
 					</Badge>
@@ -114,7 +114,7 @@ export function MatchCard({
 				<TeamMini team={awayTeam} align="right" />
 			</div>
 			{venueName && (
-				<div className="mt-3 text-center text-xs text-[var(--sea-ink-soft)]">
+				<div className="mt-3 text-center text-xs text-(--sea-ink-soft)">
 					{venueName}
 				</div>
 			)}
@@ -136,7 +136,7 @@ function TeamMini({
 				align === "right" && "flex-row-reverse text-right",
 			)}
 		>
-			<div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--line)] bg-[var(--chip-bg)] text-xs font-black">
+			<div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--line) bg-(--chip-bg) text-xs font-black">
 				{team.logo ? (
 					<img
 						src={team.logo}
@@ -147,7 +147,7 @@ function TeamMini({
 					team.name.slice(0, 2).toUpperCase()
 				)}
 			</div>
-			<span className="truncate text-sm font-bold text-[var(--sea-ink)]">
+			<span className="truncate text-sm font-bold text-(--sea-ink)">
 				{team.name}
 			</span>
 		</div>
@@ -168,16 +168,16 @@ export function LiveScore({
 	return (
 		<div
 			className={cn(
-				"inline-flex items-baseline gap-1.5 rounded-full border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-1",
+				"inline-flex items-baseline gap-1.5 rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1",
 				className,
 			)}
 			{...props}
 		>
 			<span className="text-lg font-black">{homeScore}</span>
-			<span className="text-xs text-[var(--sea-ink-soft)]">:</span>
+			<span className="text-xs text-(--sea-ink-soft)">:</span>
 			<span className="text-lg font-black">{awayScore}</span>
 			{status === "in_progress" && (
-				<span className="ml-1 h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--lagoon)]" />
+				<span className="ml-1 h-1.5 w-1.5 animate-pulse rounded-full bg-(--lagoon)" />
 			)}
 		</div>
 	);

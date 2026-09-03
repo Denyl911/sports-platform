@@ -6,7 +6,8 @@ import { getQueryClient } from "../lib/queryClient";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
 	let routerQueryClient: ReturnType<typeof getQueryClient> | undefined;
-	try {
+  try {
+    // biome-ignore lint/correctness/useHookAtTopLevel: safe fallback when rendered outside RouterProvider
 		const router = useRouter({ warn: false } as never) as unknown as {
 			options?: { context?: { queryClient?: ReturnType<typeof getQueryClient> } };
 		};

@@ -70,7 +70,7 @@ function LoginPage() {
 				<Button type="submit" disabled={pending} className="w-full">
 					{pending ? "Entrando…" : "Entrar"}
 				</Button>
-				<p className="text-center text-sm text-[var(--sea-ink-soft)]">
+				<p className="text-center text-sm text-(--sea-ink-soft)">
 					¿No tienes cuenta?{" "}
 					<Link to="/auth/register" className="font-bold">
 						Regístrate

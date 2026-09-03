@@ -97,7 +97,7 @@ function RegisterPage() {
 				<Button type="submit" disabled={pending} className="w-full">
 					{pending ? "Registrando…" : "Crear cuenta"}
 				</Button>
-				<p className="text-center text-sm text-[var(--sea-ink-soft)]">
+				<p className="text-center text-sm text-(--sea-ink-soft)">
 					¿Ya tienes cuenta?{" "}
 					<Link to="/auth/login" className="font-bold">
 						Inicia sesión

@@ -43,7 +43,7 @@ export function StandingsTable({
 		return (
 			<div
 				className={cn(
-					"rounded-xl border border-[var(--line)] bg-[var(--surface)] p-6 text-center text-sm text-[var(--sea-ink-soft)]",
+					"rounded-xl border border-(--line) bg-(--surface) p-6 text-center text-sm text-(--sea-ink-soft)",
 					className,
 				)}
 				{...props}
@@ -55,7 +55,7 @@ export function StandingsTable({
 	return (
 		<div className={cn("w-full", className)} {...props}>
 			{caption && (
-				<div className="mb-2 text-sm font-bold text-[var(--sea-ink)]">
+				<div className="mb-2 text-sm font-bold text-(--sea-ink)">
 					{caption}
 				</div>
 			)}
@@ -98,7 +98,7 @@ export function StandingsTable({
 									</TableCell>
 									<TableCell>
 										<div className="flex items-center gap-2">
-											<span className="flex h-6 w-6 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--chip-bg)] text-[10px] font-black">
+											<span className="flex h-6 w-6 items-center justify-center rounded-full border border-(--line) bg-(--chip-bg) text-[10px] font-black">
 												{r.team.name.slice(0, 2).toUpperCase()}
 											</span>
 											<span className="font-semibold">{r.team.name}</span>

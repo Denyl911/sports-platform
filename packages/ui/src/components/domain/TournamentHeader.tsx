@@ -37,7 +37,7 @@ export function TournamentHeader({
 	return (
 		<div
 			className={cn(
-				"rounded-2xl border border-[var(--line)] bg-[linear-gradient(165deg,var(--surface-strong),var(--surface))] p-4 backdrop-blur-[4px]",
+				"rounded-2xl border border-(--line) bg-[linear-gradient(165deg,var(--surface-strong),var(--surface))] p-4 backdrop-blur-xs",
 				className,
 			)}
 			{...props}
@@ -52,11 +52,11 @@ export function TournamentHeader({
 				{stage && <Badge>{stage.name}</Badge>}
 				{group && <Badge variant="success">{group.name}</Badge>}
 			</div>
-			<h2 className="mt-2 text-lg font-black leading-tight text-[var(--sea-ink)]">
+			<h2 className="mt-2 text-lg font-black leading-tight text-(--sea-ink)">
 				{tournament.name}
 			</h2>
 			{edition && (
-				<p className="mt-1 text-sm text-[var(--sea-ink-soft)]">
+				<p className="mt-1 text-sm text-(--sea-ink-soft)">
 					{edition.name}{" "}
 					{edition.startDate &&
 						`· ${new Date(edition.startDate).toLocaleDateString()}`}
@@ -65,7 +65,7 @@ export function TournamentHeader({
 				</p>
 			)}
 			{stage && (
-				<p className="text-xs text-[var(--sea-ink-soft)]">
+				<p className="text-xs text-(--sea-ink-soft)">
 					Etapa {stage.sequenceOrder ?? "—"}: {stage.name}{" "}
 					{stage.stageType && `· ${stage.stageType}`}
 				</p>
@@ -86,7 +86,7 @@ export function VenuePill({
 	return (
 		<div
 			className={cn(
-				"inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-[var(--chip-bg)] px-3 py-1 text-xs font-bold text-[var(--sea-ink-soft)]",
+				"inline-flex items-center gap-1.5 rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1 text-xs font-bold text-(--sea-ink-soft)",
 				className,
 			)}
 			{...props}
@@ -115,7 +115,7 @@ export function SportIcon({
 	return (
 		<div
 			className={cn(
-				"flex h-8 w-8 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--chip-bg)] text-sm",
+				"flex h-8 w-8 items-center justify-center rounded-full border border-(--line) bg-(--chip-bg) text-sm",
 				className,
 			)}
 			{...props}

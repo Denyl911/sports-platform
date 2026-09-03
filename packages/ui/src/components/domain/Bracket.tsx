@@ -40,7 +40,7 @@ export function Bracket({
 		return (
 			<div
 				className={cn(
-					"p-6 text-center text-sm text-[var(--sea-ink-soft)]",
+					"p-6 text-center text-sm text-(--sea-ink-soft)",
 					className,
 				)}
 			>
@@ -55,8 +55,8 @@ export function Bracket({
 			{...props}
 		>
 			{rounds.map(([round, ms]) => (
-				<div key={round} className="min-w-[260px] flex-1">
-					<div className="mb-2 text-xs font-bold uppercase tracking-wide text-[var(--kicker)]">
+				<div key={round} className="min-w-65 flex-1">
+					<div className="mb-2 text-xs font-bold uppercase tracking-wide text-(--kicker)">
 						{round}
 					</div>
 					<div className="flex flex-col gap-3">
@@ -67,7 +67,7 @@ export function Bracket({
 								className={cn(
 									"p-3",
 									onMatchClick &&
-										"cursor-pointer hover:border-[var(--lagoon-deep)]",
+										"cursor-pointer hover:border-(--lagoon-deep)",
 								)}
 							>
 								<div className="flex items-center justify-between gap-2 text-sm">
@@ -81,7 +81,7 @@ export function Bracket({
 									</span>
 									<span className="font-black">{m.homeScore ?? "–"}</span>
 								</div>
-								<div className="my-1 h-px bg-[var(--line)]" />
+								<div className="my-1 h-px bg-(--line)" />
 								<div className="flex items-center justify-between gap-2 text-sm">
 									<span
 										className={cn(
@@ -106,7 +106,7 @@ export function Bracket({
 										{m.status}
 									</Badge>
 									{m.winnerTeamId && (
-										<span className="text-xs text-[var(--palm)]">✓</span>
+										<span className="text-xs text-(--palm)">✓</span>
 									)}
 								</div>
 							</Card>

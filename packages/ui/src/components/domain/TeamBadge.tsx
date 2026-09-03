@@ -35,11 +35,11 @@ export function TeamBadge({
 				<AvatarFallback>{team.name.slice(0, 2).toUpperCase()}</AvatarFallback>
 			</Avatar>
 			<div className="min-w-0">
-				<div className="truncate text-sm font-bold leading-none text-[var(--sea-ink)]">
+				<div className="truncate text-sm font-bold leading-none text-(--sea-ink)">
 					{team.name}
 				</div>
 				{(team.clubName || showCategory) && (
-					<div className="flex items-center gap-1 text-xs text-[var(--sea-ink-soft)]">
+					<div className="flex items-center gap-1 text-xs text-(--sea-ink-soft)">
 						{team.clubName && <span className="truncate">{team.clubName}</span>}
 						{team.category && showCategory && (
 							<Badge variant="outline" className="h-4 px-1 py-0 text-[10px]">
@@ -65,7 +65,7 @@ export function ClubLogo({
 	return (
 		<div
 			className={cn(
-				"flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--chip-bg)]",
+				"flex h-10 w-10 items-center justify-center rounded-xl border border-(--line) bg-(--chip-bg)",
 				className,
 			)}
 			{...props}
