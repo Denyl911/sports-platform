@@ -25,6 +25,12 @@ export const Route = createFileRoute("/stages/$stageId")({
 					api.matches.get({ query: { stageId: params.stageId } as never }),
 				),
 		});
+		await qc.query({
+			staleTime: "static",
+			queryKey: queryKeys.registrations.byStage(params.stageId),
+			queryFn: () =>
+				unwrap(api.stages({ stageId: params.stageId }).registrations.get()),
+		});
 	},
 	component: StageDetailPage,
 });
@@ -38,6 +44,10 @@ function StageDetailPage() {
 	const { data: matchesData } = useSuspenseQuery({
 		queryKey: queryKeys.matches.list({ stageId }),
 		queryFn: () => unwrap(api.matches.get({ query: { stageId } as never })),
+	});
+	const { data: regsData } = useSuspenseQuery({
+		queryKey: queryKeys.registrations.byStage(stageId),
+		queryFn: () => unwrap(api.stages({ stageId }).registrations.get()),
 	});
 
 	const groups = (
@@ -57,6 +67,16 @@ function StageDetailPage() {
 			total: number;
 		}
 	).items;
+	const registrations = (
+		regsData as {
+			items: Array<{
+				registration: { id: string; teamId: string; groupId: string | null };
+				team: { id: string; name: string };
+			}>;
+			total: number;
+		}
+	).items;
+	const groupNames = new Map(groups.map((g) => [g.id, g.name]));
 
 	return (
 		<div className="demo-page space-y-6">
@@ -67,7 +87,7 @@ function StageDetailPage() {
 					{groups.map((g) => (
 						<Link
 							key={g.id}
-							to="/groups/$groupId"
+							to="/standings/$groupId"
 							params={{ groupId: g.id }}
 							className="no-underline"
 						>
@@ -78,6 +98,37 @@ function StageDetailPage() {
 					))}
 					{groups.length === 0 && (
 						<span className="text-sm text-(--sea-ink-soft)">Sin grupos</span>
+					)}
+				</div>
+			</div>
+			<div>
+				<h2 className="demo-section-title mb-2">Inscriptos</h2>
+				<div className="flex flex-col gap-1">
+					{registrations.map(({ registration, team }) => (
+						<div
+							key={registration.id}
+							className="demo-list-item flex items-center justify-between gap-2 text-sm"
+						>
+							<Link
+								to="/teams/$teamId"
+								params={{ teamId: team.id }}
+								className="no-underline font-semibold"
+							>
+								{team.name}
+							</Link>
+							{registration.groupId && groupNames.get(registration.groupId) ? (
+								<Badge variant="secondary">
+									{groupNames.get(registration.groupId)}
+								</Badge>
+							) : (
+								<Badge variant="outline">sin grupo</Badge>
+							)}
+						</div>
+					))}
+					{registrations.length === 0 && (
+						<div className="demo-card text-center text-sm">
+							Sin inscripciones.
+						</div>
 					)}
 				</div>
 			</div>

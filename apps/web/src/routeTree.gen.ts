@@ -12,11 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
+import { Route as ClubsIndexRouteImport } from './routes/clubs/index'
+import { Route as ClubsClubIdRouteImport } from './routes/clubs/$clubId'
 import { Route as EditionsEditionIdRouteImport } from './routes/editions/$editionId'
-import { Route as GroupsGroupIdRouteImport } from './routes/groups/$groupId'
 import { Route as MatchesIndexRouteImport } from './routes/matches/index'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
 import { Route as PlayersIndexRouteImport } from './routes/players/index'
@@ -65,6 +67,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -80,14 +87,19 @@ const AuthRegisterRoute = AuthRegisterRouteImport.update({
   path: '/auth/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ClubsIndexRoute = ClubsIndexRouteImport.update({
+  id: '/clubs/',
+  path: '/clubs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
+  id: '/clubs/$clubId',
+  path: '/clubs/$clubId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EditionsEditionIdRoute = EditionsEditionIdRouteImport.update({
   id: '/editions/$editionId',
   path: '/editions/$editionId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GroupsGroupIdRoute = GroupsGroupIdRouteImport.update({
-  id: '/groups/$groupId',
-  path: '/groups/$groupId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatchesIndexRoute = MatchesIndexRouteImport.update({
@@ -256,10 +268,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
-  '/groups/$groupId': typeof GroupsGroupIdRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -269,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/clubs/': typeof ClubsIndexRoute
   '/matches/': typeof MatchesIndexRoute
   '/players/': typeof PlayersIndexRoute
   '/sports/': typeof SportsIndexRoute
@@ -297,10 +311,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/profile': typeof ProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
-  '/groups/$groupId': typeof GroupsGroupIdRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -310,6 +325,7 @@ export interface FileRoutesByTo {
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin': typeof AdminIndexRoute
+  '/clubs': typeof ClubsIndexRoute
   '/matches': typeof MatchesIndexRoute
   '/players': typeof PlayersIndexRoute
   '/sports': typeof SportsIndexRoute
@@ -340,10 +356,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
+  '/profile': typeof ProfileRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
+  '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
-  '/groups/$groupId': typeof GroupsGroupIdRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -353,6 +370,7 @@ export interface FileRoutesById {
   '/tournaments/$tournamentId': typeof TournamentsTournamentIdRoute
   '/venues/$venueId': typeof VenuesVenueIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/clubs/': typeof ClubsIndexRoute
   '/matches/': typeof MatchesIndexRoute
   '/players/': typeof PlayersIndexRoute
   '/sports/': typeof SportsIndexRoute
@@ -384,10 +402,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/profile'
     | '/auth/login'
     | '/auth/register'
+    | '/clubs/$clubId'
     | '/editions/$editionId'
-    | '/groups/$groupId'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -397,6 +416,7 @@ export interface FileRouteTypes {
     | '/tournaments/$tournamentId'
     | '/venues/$venueId'
     | '/admin/'
+    | '/clubs/'
     | '/matches/'
     | '/players/'
     | '/sports/'
@@ -425,10 +445,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
+    | '/profile'
     | '/auth/login'
     | '/auth/register'
+    | '/clubs/$clubId'
     | '/editions/$editionId'
-    | '/groups/$groupId'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -438,6 +459,7 @@ export interface FileRouteTypes {
     | '/tournaments/$tournamentId'
     | '/venues/$venueId'
     | '/admin'
+    | '/clubs'
     | '/matches'
     | '/players'
     | '/sports'
@@ -467,10 +489,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
+    | '/profile'
     | '/auth/login'
     | '/auth/register'
+    | '/clubs/$clubId'
     | '/editions/$editionId'
-    | '/groups/$groupId'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -480,6 +503,7 @@ export interface FileRouteTypes {
     | '/tournaments/$tournamentId'
     | '/venues/$venueId'
     | '/admin/'
+    | '/clubs/'
     | '/matches/'
     | '/players/'
     | '/sports/'
@@ -510,10 +534,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ProfileRoute: typeof ProfileRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
+  ClubsClubIdRoute: typeof ClubsClubIdRoute
   EditionsEditionIdRoute: typeof EditionsEditionIdRoute
-  GroupsGroupIdRoute: typeof GroupsGroupIdRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
   PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   SportsSportIdRoute: typeof SportsSportIdRoute
@@ -522,6 +547,7 @@ export interface RootRouteChildren {
   TeamsTeamIdRoute: typeof TeamsTeamIdRoute
   TournamentsTournamentIdRoute: typeof TournamentsTournamentIdRoute
   VenuesVenueIdRoute: typeof VenuesVenueIdRoute
+  ClubsIndexRoute: typeof ClubsIndexRoute
   MatchesIndexRoute: typeof MatchesIndexRoute
   PlayersIndexRoute: typeof PlayersIndexRoute
   SportsIndexRoute: typeof SportsIndexRoute
@@ -553,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -574,18 +607,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/clubs/': {
+      id: '/clubs/'
+      path: '/clubs'
+      fullPath: '/clubs/'
+      preLoaderRoute: typeof ClubsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clubs/$clubId': {
+      id: '/clubs/$clubId'
+      path: '/clubs/$clubId'
+      fullPath: '/clubs/$clubId'
+      preLoaderRoute: typeof ClubsClubIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/editions/$editionId': {
       id: '/editions/$editionId'
       path: '/editions/$editionId'
       fullPath: '/editions/$editionId'
       preLoaderRoute: typeof EditionsEditionIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/groups/$groupId': {
-      id: '/groups/$groupId'
-      path: '/groups/$groupId'
-      fullPath: '/groups/$groupId'
-      preLoaderRoute: typeof GroupsGroupIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/matches/': {
@@ -865,10 +905,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AdminRoute: AdminRouteWithChildren,
+  ProfileRoute: ProfileRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
+  ClubsClubIdRoute: ClubsClubIdRoute,
   EditionsEditionIdRoute: EditionsEditionIdRoute,
-  GroupsGroupIdRoute: GroupsGroupIdRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
   PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   SportsSportIdRoute: SportsSportIdRoute,
@@ -877,6 +918,7 @@ const rootRouteChildren: RootRouteChildren = {
   TeamsTeamIdRoute: TeamsTeamIdRoute,
   TournamentsTournamentIdRoute: TournamentsTournamentIdRoute,
   VenuesVenueIdRoute: VenuesVenueIdRoute,
+  ClubsIndexRoute: ClubsIndexRoute,
   MatchesIndexRoute: MatchesIndexRoute,
   PlayersIndexRoute: PlayersIndexRoute,
   SportsIndexRoute: SportsIndexRoute,

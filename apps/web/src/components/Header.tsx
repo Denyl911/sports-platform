@@ -47,6 +47,13 @@ export default function Header() {
 						Equipos
 					</Link>
 					<Link
+						to="/clubs"
+						className="nav-link"
+						activeProps={{ className: "nav-link is-active" }}
+					>
+						Clubes
+					</Link>
+					<Link
 						to="/players"
 						className="nav-link"
 						activeProps={{ className: "nav-link is-active" }}
@@ -84,9 +91,12 @@ export default function Header() {
 						</Link>
 					)}
 					{isAuthenticated ? (
-						<span className="hidden sm:inline text-xs text-(--sea-ink-soft)">
+						<Link
+							to="/profile"
+							className="hidden sm:inline text-xs text-(--sea-ink-soft) no-underline hover:underline"
+						>
 							{user?.fullName} · {user?.role}
-						</span>
+						</Link>
 					) : null}
 				</div>
 

@@ -167,7 +167,7 @@ function AdminStageDetailPage() {
 								className="flex items-center justify-between rounded-xl border border-(--line) bg-(--chip-bg) px-3 py-2"
 							>
 								<Link
-									to="/groups/$groupId"
+									to="/standings/$groupId"
 									params={{ groupId: g.id }}
 									className="no-underline"
 								>
