@@ -54,8 +54,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						<Footer />
 					</AuthProvider>
 					<TanStackDevtools
-            config={{
-              triggerMode: 'fixed',
+						config={{
+							triggerMode: "fixed",
 							position: "bottom-left",
 						}}
 						plugins={[

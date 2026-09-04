@@ -55,7 +55,10 @@ import {
 	listTournaments,
 	updateTournament,
 } from "../services/tournament.service";
-import { findTournamentMembership, listTournamentMembers } from "../services/user.service";
+import {
+	findTournamentMembership,
+	listTournamentMembers,
+} from "../services/user.service";
 
 export const tournamentsRoutes = new Elysia({
 	prefix: "/tournaments",

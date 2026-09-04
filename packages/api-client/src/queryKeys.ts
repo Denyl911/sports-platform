@@ -111,7 +111,12 @@ export const membershipKeys = {
 	byUser: (userId: string) =>
 		[...membershipKeys.all(), "byUser", userId] as const,
 	byTournament: (tournamentId: string, filters?: Record<string, unknown>) =>
-		[...membershipKeys.all(), "byTournament", tournamentId, filters ?? {}] as const,
+		[
+			...membershipKeys.all(),
+			"byTournament",
+			tournamentId,
+			filters ?? {},
+		] as const,
 	myMembership: (tournamentId: string) =>
 		[...membershipKeys.all(), "my", tournamentId] as const,
 } as const;

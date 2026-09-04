@@ -677,12 +677,10 @@ describe("users - listados de membresías (por usuario y por torneo)", () => {
 		}
 
 		// filtro ?role=referee
-		const filtered = await api
-			.tournaments({ tournamentId })
-			.members.get({
-				query: { role: "referee" },
-				headers: await authHeaders(organizerMember),
-			});
+		const filtered = await api.tournaments({ tournamentId }).members.get({
+			query: { role: "referee" },
+			headers: await authHeaders(organizerMember),
+		});
 		expect(filtered.status).toBe(200);
 		expect(filtered.data?.total).toBe(1);
 		expect(filtered.data?.items[0]?.membership.role).toBe("referee");

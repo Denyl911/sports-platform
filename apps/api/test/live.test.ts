@@ -23,7 +23,6 @@ import {
 	seedUser,
 } from "./helpers/db";
 
-
 // Harness de WebSocket real
 let server: ReturnType<typeof app.listen> | null = null;
 let port = 0;
