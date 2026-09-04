@@ -242,6 +242,52 @@ export async function removeTournamentMember(memberId: string) {
 	await db.delete(tournamentMembers).where(eq(tournamentMembers.id, memberId));
 }
 
+// Membresías de un usuario con el torneo de cada una (vista por usuario)
+export async function listMembershipsByUser(userId: string) {
+	await findUserById(userId);
+
+	const items = await db
+		.select({
+			membership: tournamentMembers,
+			tournament: { id: tournaments.id, name: tournaments.name },
+		})
+		.from(tournamentMembers)
+		.innerJoin(tournaments, eq(tournamentMembers.tournamentId, tournaments.id))
+		.where(eq(tournamentMembers.userId, userId))
+		.orderBy(asc(tournaments.name));
+
+	return { items, total: items.length };
+}
+
+// Miembros de un torneo con el usuario público de cada uno (vista por torneo)
+export async function listTournamentMembers(
+	tournamentId: string,
+	filter: {
+		role?: "organizer" | "referee" | "statistician" | "viewer_staff";
+	} = {},
+) {
+	const [tournament] = await db
+		.select({ id: tournaments.id })
+		.from(tournaments)
+		.where(eq(tournaments.id, tournamentId))
+		.limit(1);
+
+	if (!tournament)
+		throw DomainError.notFound(`Tournament '${tournamentId}' not found`);
+
+	const conditions = [eq(tournamentMembers.tournamentId, tournamentId)];
+	if (filter.role) conditions.push(eq(tournamentMembers.role, filter.role));
+
+	const items = await db
+		.select({ membership: tournamentMembers, user: USER_PUBLIC_COLUMNS })
+		.from(tournamentMembers)
+		.innerJoin(users, eq(tournamentMembers.userId, users.id))
+		.where(and(...conditions))
+		.orderBy(asc(users.fullName));
+
+	return { items, total: items.length };
+}
+
 /**
  * Membresía de un usuario en un torneo (o null si no existe).
  * El check de roles globales vive en el guard, que ya recibe el usuario fresco

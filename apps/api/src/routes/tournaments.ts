@@ -13,11 +13,13 @@ import {
 	selectTournamentStageSchema,
 	stageRefParamsSchema,
 	tournamentFilterQuerySchema,
+	tournamentMembersFilterQuerySchema,
 	tournamentRefParamsSchema,
 	updateStageGroupSchema,
 	updateTournamentEditionSchema,
 	updateTournamentSchema,
 	updateTournamentStageSchema,
+	userPublicSchema,
 } from "@sports/schemas";
 import { Elysia, t } from "elysia";
 import { errorMessageSchema, successSchema } from "../lib/openapi-helpers";
@@ -53,7 +55,7 @@ import {
 	listTournaments,
 	updateTournament,
 } from "../services/tournament.service";
-import { findTournamentMembership } from "../services/user.service";
+import { findTournamentMembership, listTournamentMembers } from "../services/user.service";
 
 export const tournamentsRoutes = new Elysia({
 	prefix: "/tournaments",
@@ -459,9 +461,41 @@ export const tournamentsRoutes = new Elysia({
 				409: errorMessageSchema,
 			},
 			detail: {
-				summary: "Eliminar grupo",
+				summary: "Mi membresía en el torneo",
 				description:
-					"Requiere `organizer` del grupo. 409 si tiene inscripciones o standings asociados.",
+					"Requiere auth. Retorna la membresía del usuario autenticado en el torneo, o 404 si no es miembro.",
+				tags: ["Tournaments"],
+			},
+		},
+	)
+	.get(
+		"/:tournamentId/members",
+		async ({ params, query }) =>
+			listTournamentMembers(params.tournamentId, { role: query.role }),
+		{
+			auth: true,
+			params: tournamentRefParamsSchema,
+			query: tournamentMembersFilterQuerySchema,
+			response: {
+				200: t.Object({
+					items: t.Array(
+						t.Object({
+							membership: selectTournamentMemberSchema,
+							user: userPublicSchema,
+						}),
+					),
+					total: t.Integer(),
+				}),
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			beforeHandle: requireTournamentRole("organizer"),
+			detail: {
+				summary: "Listar miembros del torneo",
+				description:
+					"Requiere `organizer` en el torneo (o `admin` global). Filtro opcional `role`. Retorna `{ items: { membership, user }[], total }` sin `passwordHash`.",
 				tags: ["Tournaments"],
 			},
 		},

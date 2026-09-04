@@ -24,6 +24,7 @@ import {
 	createUser,
 	deleteUser,
 	findUserById,
+	listMembershipsByUser,
 	listUsers,
 	removeTournamentMember,
 	updateTournamentMemberRole,
@@ -154,6 +155,39 @@ export const usersRoutes = new Elysia({ prefix: "/users", tags: ["Users"] })
 				summary: "Asignar rol de usuario en un torneo",
 				description:
 					"Requiere `organizer` en el torneo del body. 409 si ya es miembro. Roles válidos: `organizer`, `referee`, `statistician`, `viewer_staff`.",
+				tags: ["Users"],
+			},
+		},
+	)
+	.get(
+		"/:userId/memberships",
+		async ({ params }) => listMembershipsByUser(params.userId),
+		{
+			auth: true,
+			params: userRefParamsSchema,
+			response: {
+				200: t.Object({
+					items: t.Array(
+						t.Object({
+							membership: selectTournamentMemberSchema,
+							tournament: t.Object({
+								id: t.String({ format: "uuid" }),
+								name: t.String(),
+							}),
+						}),
+					),
+					total: t.Integer(),
+				}),
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			beforeHandle: requireGlobalRole("admin"),
+			detail: {
+				summary: "Listar membresías de un usuario",
+				description:
+					"Requiere `admin` global. Retorna `{ items: { membership, tournament }[], total }` con el torneo de cada membresía.",
 				tags: ["Users"],
 			},
 		},

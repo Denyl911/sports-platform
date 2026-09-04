@@ -575,3 +575,129 @@ describe("users - membresías RBAC y CRUD", () => {
 		expect(deleted.status).toBe(200);
 	});
 });
+
+describe("users - listados de membresías (por usuario y por torneo)", () => {
+	let admin: UserRow;
+	let organizerMember: UserRow;
+	let tournamentId: string;
+
+	beforeEach(async () => {
+		await resetDb();
+		admin = await seedUser({ role: "admin" });
+		organizerMember = await seedUser({ role: "viewer_staff" });
+		const tournament = await seedTournament();
+		tournamentId = tournament.id;
+		await seedMember(tournamentId, organizerMember.id, "organizer");
+	});
+
+	it("GET /users/:userId/memberships RBAC y contenido", async () => {
+		const target = await seedUser({ role: "viewer_staff" });
+		const other = await seedTournament();
+		await seedMember(tournamentId, target.id, "referee");
+		await seedMember(other.id, target.id, "viewer_staff");
+
+		// 401 sin token
+		const unauth = await api.users({ userId: target.id }).memberships.get();
+		expect(unauth.status).toBe(401);
+
+		// 403 para no admin (incluye organizer global sin rol global admin)
+		const viewer = await seedUser({ role: "viewer_staff" });
+		const globalOrganizer = await seedUser({ role: "organizer" });
+		for (const u of [viewer, globalOrganizer, organizerMember]) {
+			const res = await api
+				.users({ userId: target.id })
+				.memberships.get({ headers: await authHeaders(u) });
+			expect(res.status).toBe(403);
+		}
+
+		// 200 admin: items con torneo anidado, ordenados por nombre
+		const res = await api
+			.users({ userId: target.id })
+			.memberships.get({ headers: await authHeaders(admin) });
+		expect(res.status).toBe(200);
+		if (!res.data) throw new Error("no data");
+		expect(res.data.total).toBe(2);
+		expect(res.data.items.length).toBe(2);
+		for (const item of res.data.items) {
+			expect(item.membership.userId).toBe(target.id);
+			expect(item.tournament.id).toBe(item.membership.tournamentId);
+			expect(typeof item.tournament.name).toBe("string");
+		}
+
+		// vacío: usuario sin membresías
+		const empty = await api
+			.users({ userId: viewer.id })
+			.memberships.get({ headers: await authHeaders(admin) });
+		expect(empty.status).toBe(200);
+		expect(empty.data?.total).toBe(0);
+
+		// 404 usuario fantasma, 400 uuid inválido
+		const ghost = await api
+			.users({ userId: crypto.randomUUID() })
+			.memberships.get({ headers: await authHeaders(admin) });
+		expect(ghost.status).toBe(404);
+		const badUuid = await api
+			.users({ userId: "not-uuid" })
+			.memberships.get({ headers: await authHeaders(admin) });
+		expect(badUuid.status).toBe(400);
+	});
+
+	it("GET /tournaments/:tournamentId/members RBAC, filtro y contenido", async () => {
+		const referee = await seedUser({ role: "viewer_staff", fullName: "Ref A" });
+		const outsider = await seedUser({ role: "viewer_staff" });
+		await seedMember(tournamentId, referee.id, "referee");
+
+		// 401 sin token
+		const unauth = await api.tournaments({ tournamentId }).members.get();
+		expect(unauth.status).toBe(401);
+
+		// 403 para no miembro y para miembro sin rol organizer
+		for (const u of [outsider, referee]) {
+			const res = await api
+				.tournaments({ tournamentId })
+				.members.get({ headers: await authHeaders(u) });
+			expect(res.status).toBe(403);
+		}
+
+		// 200 organizer del torneo: items con usuario público (sin hash)
+		const res = await api
+			.tournaments({ tournamentId })
+			.members.get({ headers: await authHeaders(organizerMember) });
+		expect(res.status).toBe(200);
+		if (!res.data) throw new Error("no data");
+		expect(res.data.total).toBe(2);
+		const roles = res.data.items.map((i) => i.membership.role).sort();
+		expect(roles).toEqual(["organizer", "referee"]);
+		for (const item of res.data.items) {
+			expect(item.membership.tournamentId).toBe(tournamentId);
+			expect(item.user.id).toBe(item.membership.userId);
+			expect(
+				(item.user as Record<string, unknown>).passwordHash,
+			).toBeUndefined();
+		}
+
+		// filtro ?role=referee
+		const filtered = await api
+			.tournaments({ tournamentId })
+			.members.get({
+				query: { role: "referee" },
+				headers: await authHeaders(organizerMember),
+			});
+		expect(filtered.status).toBe(200);
+		expect(filtered.data?.total).toBe(1);
+		expect(filtered.data?.items[0]?.membership.role).toBe("referee");
+
+		// admin global bypass
+		const adminRes = await api
+			.tournaments({ tournamentId })
+			.members.get({ headers: await authHeaders(admin) });
+		expect(adminRes.status).toBe(200);
+		expect(adminRes.data?.total).toBe(2);
+
+		// 404 torneo fantasma
+		const ghost = await api
+			.tournaments({ tournamentId: crypto.randomUUID() })
+			.members.get({ headers: await authHeaders(admin) });
+		expect(ghost.status).toBe(404);
+	});
+});
