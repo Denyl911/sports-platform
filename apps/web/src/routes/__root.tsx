@@ -1,11 +1,12 @@
 import { TanStackDevtools } from "@tanstack/react-devtools";
+import { ReactQueryDevtoolsPanel } from "@tanstack/react-query-devtools/production";
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
+
 import Footer from "../components/Footer";
 import Header from "../components/Header";
 import { AuthProvider } from "../lib/auth";
 import { AppProviders } from "../providers/AppProviders";
-
 import appCss from "../styles.css?url";
 
 const THEME_INIT_SCRIPT = `(function(){try{var stored=window.localStorage.getItem('theme');var mode=(stored==='light'||stored==='dark'||stored==='auto')?stored:'auto';var prefersDark=window.matchMedia('(prefers-color-scheme: dark)').matches;var resolved=mode==='auto'?(prefersDark?'dark':'light'):mode;var root=document.documentElement;root.classList.remove('light','dark');root.classList.add(resolved);if(mode==='auto'){root.removeAttribute('data-theme')}else{root.setAttribute('data-theme',mode)}root.style.colorScheme=resolved;}catch(e){}})();`;
@@ -23,12 +24,16 @@ export const Route = createRootRoute({
 			{
 				title: "TanStack Start Starter",
 			},
-			{ scripts: [THEME_INIT_SCRIPT] },
 		],
 		links: [
 			{
 				rel: "stylesheet",
 				href: appCss,
+			},
+		],
+		scripts: [
+			{
+				children: THEME_INIT_SCRIPT,
 			},
 		],
 	}),
@@ -37,9 +42,8 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="es" suppressHydrationWarning>
 			<head>
-				{/*<script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />*/}
 				<HeadContent />
 			</head>
 			<body className="font-sans antialiased wrap-anywhere selection:bg-[rgba(79,184,178,0.24)]">
@@ -49,18 +53,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						{children}
 						<Footer />
 					</AuthProvider>
+					<TanStackDevtools
+            config={{
+              triggerMode: 'fixed',
+							position: "bottom-left",
+						}}
+						plugins={[
+							{
+								name: "Tanstack Router",
+								render: <TanStackRouterDevtoolsPanel />,
+							},
+							{
+								name: "Tanstack Query",
+								render: <ReactQueryDevtoolsPanel />,
+							},
+						]}
+					/>
 				</AppProviders>
-				<TanStackDevtools
-					config={{
-						position: "bottom-right",
-					}}
-					plugins={[
-						{
-							name: "Tanstack Router",
-							render: <TanStackRouterDevtoolsPanel />,
-						},
-					]}
-				/>
 				<Scripts />
 			</body>
 		</html>
