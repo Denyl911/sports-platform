@@ -4,6 +4,7 @@ import {
 	useDeleteSportEventType,
 	useSportEventTypes,
 	useUpdateSport,
+	useUpdateSportEventType,
 } from "@sports/api-client/hooks";
 import {
 	Badge,
@@ -11,7 +12,9 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	EditDialog,
 	Input,
+	Label,
 	Select,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -57,6 +60,9 @@ function AdminSportDetailPage() {
 	const [name, setName] = React.useState("");
 	const [affectsScore, setAffectsScore] = React.useState(false);
 	const [error, setError] = React.useState<string | null>(null);
+	const [editingEvent, setEditingEvent] = React.useState<
+		(typeof eventTypes)[number] | null
+	>(null);
 
 	if (!sport)
 		return <div className="demo-center text-sm">Cargando deporte…</div>;
@@ -67,7 +73,7 @@ function AdminSportDetailPage() {
 		try {
 			await createEvent.mutateAsync({
 				sportId,
-				body: { code, name, affectsScore } as never,
+				body: { code, name, affectsScore, sportId },
 			});
 			setCode("");
 			setName("");
@@ -97,7 +103,7 @@ function AdminSportDetailPage() {
 							try {
 								await updateSport.mutateAsync({
 									id: sportId,
-									body: { hasDraws: !sport.hasDraws } as never,
+									body: { hasDraws: !sport.hasDraws },
 								});
 							} catch (err) {
 								setError(getApiErrorMessage(err));
@@ -149,6 +155,19 @@ function AdminSportDetailPage() {
 								{et.code}
 							</Badge>
 							<span>{et.name}</span>
+							{et.defaultValue != null && et.defaultValue !== 1 && (
+								<span className="text-(--sea-ink-soft)">
+									+{et.defaultValue}
+								</span>
+							)}
+							<Button
+								variant="ghost"
+								size="sm"
+								className="h-5 px-1 text-xs"
+								onClick={() => setEditingEvent(et)}
+							>
+								Editar
+							</Button>
 							<Button
 								variant="ghost"
 								size="sm"
@@ -173,6 +192,120 @@ function AdminSportDetailPage() {
 					</div>
 				)}
 			</Card>
+			{editingEvent && (
+				<EventTypeEditDialog
+					eventType={editingEvent}
+					onClose={() => setEditingEvent(null)}
+				/>
+			)}
 		</div>
+	);
+}
+
+function EventTypeEditDialog({
+	eventType,
+	onClose,
+}: {
+	eventType: {
+		id: string;
+		code: string;
+		name: string;
+		affectsScore: boolean;
+		defaultValue?: number | null;
+	};
+	onClose: () => void;
+}) {
+	const updateEvent = useUpdateSportEventType(api);
+	const [code, setCode] = React.useState(eventType.code);
+	const [name, setName] = React.useState(eventType.name);
+	const [affectsScore, setAffectsScore] = React.useState(
+		eventType.affectsScore,
+	);
+	const [defaultValue, setDefaultValue] = React.useState(
+		eventType.defaultValue != null ? String(eventType.defaultValue) : "1",
+	);
+	const [error, setError] = React.useState<string | null>(null);
+
+	const onSubmit = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		setError(null);
+		try {
+			await updateEvent.mutateAsync({
+				eventTypeId: eventType.id,
+				body: {
+					code,
+					name,
+					affectsScore,
+					defaultValue: Number(defaultValue),
+				},
+			});
+			onClose();
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title={`Editar ${eventType.code}`}
+			description="El código debe ser único dentro del deporte."
+			error={error}
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button size="sm" onClick={onSubmit} disabled={updateEvent.isPending}>
+						Guardar
+					</Button>
+				</>
+			}
+		>
+			<form onSubmit={onSubmit} className="space-y-3">
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div>
+						<Label>Código</Label>
+						<Input
+							value={code}
+							onChange={(e) => setCode(e.target.value)}
+							required
+							maxLength={40}
+						/>
+					</div>
+					<div>
+						<Label>Nombre</Label>
+						<Input
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							required
+							maxLength={60}
+						/>
+					</div>
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div>
+						<Label>Afecta marcador</Label>
+						<Select
+							value={String(affectsScore)}
+							onChange={(e) => setAffectsScore(e.target.value === "true")}
+						>
+							<option value="true">afecta score</option>
+							<option value="false">no afecta</option>
+						</Select>
+					</div>
+					<div>
+						<Label>Valor por defecto</Label>
+						<Input
+							type="number"
+							value={defaultValue}
+							onChange={(e) => setDefaultValue(e.target.value)}
+							required
+						/>
+					</div>
+				</div>
+			</form>
+		</EditDialog>
 	);
 }

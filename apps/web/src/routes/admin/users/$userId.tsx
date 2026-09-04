@@ -1,10 +1,14 @@
 import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
 import {
 	useAddTournamentMember,
+	useMembershipsByUser,
+	useRemoveMembership,
 	useTournaments,
+	useUpdateMembershipRole,
 	useUpdateUser,
 } from "@sports/api-client/hooks";
 import {
+	Badge,
 	Button,
 	Card,
 	CardHeader,
@@ -21,6 +25,15 @@ import { api } from "../../../lib/api";
 export const Route = createFileRoute("/admin/users/$userId")({
 	component: AdminUserDetailPage,
 });
+
+type GlobalRole =
+	| "super_admin"
+	| "admin"
+	| "organizer"
+	| "referee"
+	| "statistician"
+	| "viewer_staff";
+type MemberRole = "organizer" | "referee" | "statistician" | "viewer_staff";
 
 function AdminUserDetailPage() {
 	const { userId } = Route.useParams();
@@ -48,15 +61,15 @@ function AdminUserDetailPage() {
 		)?.items ?? [];
 
 	const [fullName, setFullName] = React.useState("");
-	const [role, setRole] = React.useState("viewer_staff");
+	const [role, setRole] = React.useState<GlobalRole>("viewer_staff");
 	const [tournamentId, setTournamentId] = React.useState("");
-	const [memberRole, setMemberRole] = React.useState("organizer");
+	const [memberRole, setMemberRole] = React.useState<MemberRole>("organizer");
 	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (user) {
 			setFullName(user.fullName);
-			setRole(user.role);
+			setRole(user.role as GlobalRole);
 		}
 	}, [user]);
 	React.useEffect(() => {
@@ -71,7 +84,7 @@ function AdminUserDetailPage() {
 		e.preventDefault();
 		setError(null);
 		try {
-			await update.mutateAsync({ userId, body: { fullName, role } as never });
+			await update.mutateAsync({ userId, body: { fullName, role } });
 		} catch (err) {
 			setError(getApiErrorMessage(err));
 		}
@@ -83,7 +96,7 @@ function AdminUserDetailPage() {
 		try {
 			await addMember.mutateAsync({
 				userId,
-				body: { tournamentId, role: memberRole } as never,
+				body: { tournamentId, userId, role: memberRole },
 			});
 		} catch (err) {
 			setError(getApiErrorMessage(err));
@@ -113,7 +126,10 @@ function AdminUserDetailPage() {
 					</div>
 					<div>
 						<Label>Rol global</Label>
-						<Select value={role} onChange={(e) => setRole(e.target.value)}>
+						<Select
+							value={role}
+							onChange={(e) => setRole(e.target.value as GlobalRole)}
+						>
 							<option value="viewer_staff">viewer_staff</option>
 							<option value="organizer">organizer</option>
 							<option value="referee">referee</option>
@@ -153,7 +169,7 @@ function AdminUserDetailPage() {
 					</Select>
 					<Select
 						value={memberRole}
-						onChange={(e) => setMemberRole(e.target.value)}
+						onChange={(e) => setMemberRole(e.target.value as MemberRole)}
 						className="w-40"
 					>
 						<option value="organizer">organizer</option>
@@ -174,6 +190,110 @@ function AdminUserDetailPage() {
 					<div className="demo-alert mt-2 text-sm">Membresía asignada</div>
 				)}
 			</Card>
+
+			<Card className="p-4">
+				<h3 className="font-bold">Membresías actuales</h3>
+				<UserMemberships userId={userId} />
+			</Card>
+		</div>
+	);
+}
+
+function UserMemberships({ userId }: { userId: string }) {
+	const { data: membershipsData } = useMembershipsByUser(api, userId);
+	const memberships =
+		(
+			membershipsData as
+				| {
+						items: Array<{
+							membership: { id: string; tournamentId: string; role: string };
+							tournament: { id: string; name: string };
+						}>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
+
+	if (memberships.length === 0) {
+		return (
+			<div className="mt-2 text-sm text-(--sea-ink-soft)">Sin membresías</div>
+		);
+	}
+
+	return (
+		<div className="mt-3 space-y-1">
+			{memberships.map(({ membership, tournament }) => (
+				<MembershipRow
+					key={membership.id}
+					membership={membership}
+					tournamentName={tournament.name}
+				/>
+			))}
+		</div>
+	);
+}
+
+function MembershipRow({
+	membership,
+	tournamentName,
+}: {
+	membership: { id: string; tournamentId: string; role: string };
+	tournamentName: string;
+}) {
+	const updateRole = useUpdateMembershipRole(api);
+	const remove = useRemoveMembership(api);
+	const [role, setRole] = React.useState<MemberRole>(
+		membership.role as MemberRole,
+	);
+	const [error, setError] = React.useState<string | null>(null);
+
+	const onSave = async () => {
+		setError(null);
+		try {
+			await updateRole.mutateAsync({
+				memberId: membership.id,
+				body: { role },
+			});
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	const onRemove = async () => {
+		if (!confirm(`¿Quitar membresía en ${tournamentName}?`)) return;
+		setError(null);
+		try {
+			await remove.mutateAsync(membership.id);
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	return (
+		<div className="demo-list-item flex flex-wrap items-center justify-between gap-2 text-sm">
+			<span className="flex items-center gap-2">
+				<span>{tournamentName}</span>
+				<Badge variant="secondary">{membership.role}</Badge>
+			</span>
+			<div className="flex items-center gap-2">
+				<Select
+					value={role}
+					onChange={(e) => setRole(e.target.value as MemberRole)}
+					className="w-36"
+				>
+					<option value="organizer">organizer</option>
+					<option value="referee">referee</option>
+					<option value="statistician">statistician</option>
+					<option value="viewer_staff">viewer_staff</option>
+				</Select>
+				<Button variant="ghost" size="sm" onClick={onSave}>
+					Guardar
+				</Button>
+				<Button variant="destructive" size="sm" onClick={onRemove}>
+					Quitar
+				</Button>
+			</div>
+			{error && <div className="demo-alert-danger w-full text-xs">{error}</div>}
 		</div>
 	);
 }

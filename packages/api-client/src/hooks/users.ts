@@ -46,6 +46,50 @@ export function useUser(
 	});
 }
 
+export function useMembershipsByUser(
+	client: ApiClient,
+	userId: string,
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
+) {
+	return useQuery({
+		queryKey: queryKeys.memberships.byUser(userId),
+		queryFn: () => unwrap(client.users({ userId }).memberships.get()),
+		enabled: !!userId && options?.enabled !== false,
+		...((options as unknown as object) ?? ({} as object)),
+	});
+}
+
+export type TournamentMemberRoleFilter =
+	| "organizer"
+	| "referee"
+	| "statistician"
+	| "viewer_staff";
+
+export function useTournamentMembers(
+	client: ApiClient,
+	tournamentId: string,
+	filters?: { role?: TournamentMemberRoleFilter },
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
+) {
+	return useQuery({
+		queryKey: queryKeys.memberships.byTournament(tournamentId, filters),
+		queryFn: () =>
+			unwrap(
+				client
+					.tournaments({ tournamentId })
+					.members.get({ query: { ...(filters ?? {}) } }),
+			),
+		enabled: !!tournamentId && options?.enabled !== false,
+		...((options as unknown as object) ?? ({} as object)),
+	});
+}
+
 export function useCreateUser(
 	client: ApiClient,
 	options?: Omit<UseMutationOptions<unknown, Error, UserCreate>, "mutationFn">,

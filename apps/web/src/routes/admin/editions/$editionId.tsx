@@ -3,6 +3,7 @@ import {
 	useCreateStage,
 	useDeleteStage,
 	useStagesByEdition,
+	useUpdateStage,
 } from "@sports/api-client/hooks";
 import {
 	Badge,
@@ -10,7 +11,9 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	EditDialog,
 	Input,
+	Label,
 	Select,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -20,6 +23,13 @@ import { api } from "../../../lib/api";
 export const Route = createFileRoute("/admin/editions/$editionId")({
 	component: AdminEditionDetailPage,
 });
+
+type StageType =
+	| "round_robin"
+	| "single_elimination"
+	| "double_elimination"
+	| "swiss"
+	| "manual";
 
 function AdminEditionDetailPage() {
 	const { editionId } = Route.useParams();
@@ -44,9 +54,12 @@ function AdminEditionDetailPage() {
 		)?.items ?? [];
 
 	const [name, setName] = React.useState("");
-	const [stageType, setStageType] = React.useState("round_robin");
+	const [stageType, setStageType] = React.useState<StageType>("round_robin");
 	const [seq, setSeq] = React.useState(1);
 	const [error, setError] = React.useState<string | null>(null);
+	const [editingStage, setEditingStage] = React.useState<
+		(typeof stages)[number] | null
+	>(null);
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
@@ -54,7 +67,7 @@ function AdminEditionDetailPage() {
 		try {
 			await createStage.mutateAsync({
 				editionId,
-				body: { name, stageType, sequenceOrder: seq } as never,
+				body: { name, stageType, sequenceOrder: seq },
 			});
 			setName("");
 		} catch (err) {
@@ -81,7 +94,7 @@ function AdminEditionDetailPage() {
 					/>
 					<Select
 						value={stageType}
-						onChange={(e) => setStageType(e.target.value)}
+						onChange={(e) => setStageType(e.target.value as StageType)}
 					>
 						<option value="round_robin">round_robin</option>
 						<option value="single_elimination">single_elimination</option>
@@ -115,21 +128,29 @@ function AdminEditionDetailPage() {
 									<Badge variant="secondary">#{s.sequenceOrder}</Badge>
 								</div>
 							</Link>
-							<Button
-								variant="ghost"
-								size="sm"
-								className="mt-2 self-start"
-								onClick={async () => {
-									if (!confirm(`¿Eliminar etapa ${s.name}?`)) return;
-									try {
-										await deleteStage.mutateAsync(s.id);
-									} catch (err) {
-										setError(getApiErrorMessage(err));
-									}
-								}}
-							>
-								Eliminar
-							</Button>
+							<div className="mt-2 flex gap-2 self-start">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => setEditingStage(s)}
+								>
+									Editar
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={async () => {
+										if (!confirm(`¿Eliminar etapa ${s.name}?`)) return;
+										try {
+											await deleteStage.mutateAsync(s.id);
+										} catch (err) {
+											setError(getApiErrorMessage(err));
+										}
+									}}
+								>
+									Eliminar
+								</Button>
+							</div>
 						</Card>
 					))}
 				</div>
@@ -137,6 +158,103 @@ function AdminEditionDetailPage() {
 					<div className="text-sm text-(--sea-ink-soft) mt-2">Sin etapas</div>
 				)}
 			</Card>
+			{editingStage && (
+				<StageEditDialog
+					stage={editingStage}
+					onClose={() => setEditingStage(null)}
+				/>
+			)}
 		</div>
+	);
+}
+
+function StageEditDialog({
+	stage,
+	onClose,
+}: {
+	stage: {
+		id: string;
+		name: string;
+		stageType: string;
+		sequenceOrder: number;
+	};
+	onClose: () => void;
+}) {
+	const updateStage = useUpdateStage(api);
+	const [name, setName] = React.useState(stage.name);
+	const [stageType, setStageType] = React.useState<StageType>(
+		stage.stageType as StageType,
+	);
+	const [seq, setSeq] = React.useState(stage.sequenceOrder);
+	const [error, setError] = React.useState<string | null>(null);
+
+	const onSubmit = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		setError(null);
+		try {
+			await updateStage.mutateAsync({
+				stageId: stage.id,
+				body: { name, stageType, sequenceOrder: seq },
+			});
+			onClose();
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title={`Editar etapa ${stage.name}`}
+			description="El backend valida que el orden no se duplique dentro de la edición."
+			error={error}
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button size="sm" onClick={onSubmit} disabled={updateStage.isPending}>
+						Guardar
+					</Button>
+				</>
+			}
+		>
+			<form onSubmit={onSubmit} className="space-y-3">
+				<div>
+					<Label>Nombre</Label>
+					<Input
+						value={name}
+						onChange={(e) => setName(e.target.value)}
+						required
+					/>
+				</div>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div>
+						<Label>Tipo</Label>
+						<Select
+							value={stageType}
+							onChange={(e) => setStageType(e.target.value as StageType)}
+						>
+							<option value="round_robin">round_robin</option>
+							<option value="single_elimination">single_elimination</option>
+							<option value="double_elimination">double_elimination</option>
+							<option value="swiss">swiss</option>
+							<option value="manual">manual</option>
+						</Select>
+					</div>
+					<div>
+						<Label>Orden</Label>
+						<Input
+							type="number"
+							min={1}
+							value={seq}
+							onChange={(e) => setSeq(Number(e.target.value))}
+							required
+						/>
+					</div>
+				</div>
+			</form>
+		</EditDialog>
 	);
 }

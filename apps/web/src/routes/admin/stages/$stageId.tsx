@@ -12,9 +12,19 @@ import {
 	useRoster,
 	useTeams,
 	useUnregisterTeam,
+	useUpdateGroup,
 	useUpdateRegistrationGroup,
+	useUpdateRosterEntry,
 } from "@sports/api-client/hooks";
-import { Badge, Button, Card, Input, Select } from "@sports/ui";
+import {
+	Badge,
+	Button,
+	Card,
+	EditDialog,
+	Input,
+	Label,
+	Select,
+} from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../../../lib/api";
@@ -84,6 +94,9 @@ function AdminStageDetailPage() {
 	const [groupName, setGroupName] = React.useState("");
 	const [teamId, setTeamId] = React.useState("");
 	const [error, setError] = React.useState<string | null>(null);
+	const [editingGroup, setEditingGroup] = React.useState<
+		(typeof groups)[number] | null
+	>(null);
 
 	React.useEffect(() => {
 		if (teams.length && !teamId) setTeamId(teams[0]!.id);
@@ -160,13 +173,22 @@ function AdminStageDetailPage() {
 								>
 									<Badge variant="secondary">{g.name}</Badge>
 								</Link>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => onDeleteGroup(g.id)}
-								>
-									Eliminar
-								</Button>
+								<div className="flex gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setEditingGroup(g)}
+									>
+										Editar
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => onDeleteGroup(g.id)}
+									>
+										Eliminar
+									</Button>
+								</div>
 							</div>
 						))}
 					</div>
@@ -238,7 +260,65 @@ function AdminStageDetailPage() {
 					<span className="text-sm">Sin equipos o edición</span>
 				)}
 			</Card>
+			{editingGroup && (
+				<GroupEditDialog
+					group={editingGroup}
+					onClose={() => setEditingGroup(null)}
+				/>
+			)}
 		</div>
+	);
+}
+
+function GroupEditDialog({
+	group,
+	onClose,
+}: {
+	group: { id: string; name: string };
+	onClose: () => void;
+}) {
+	const updateGroup = useUpdateGroup(api);
+	const [name, setName] = React.useState(group.name);
+	const [error, setError] = React.useState<string | null>(null);
+
+	const onSubmit = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		setError(null);
+		try {
+			await updateGroup.mutateAsync({ groupId: group.id, body: { name } });
+			onClose();
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title={`Editar grupo ${group.name}`}
+			description="El nombre debe ser único dentro de la etapa."
+			error={error}
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button size="sm" onClick={onSubmit} disabled={updateGroup.isPending}>
+						Guardar
+					</Button>
+				</>
+			}
+		>
+			<form onSubmit={onSubmit}>
+				<Label>Nombre</Label>
+				<Input
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+					required
+				/>
+			</form>
+		</EditDialog>
 	);
 }
 
@@ -417,13 +497,21 @@ function RosterSection({
 			rosterData as
 				| {
 						items: Array<{
-							roster: { id: string };
+							roster: {
+								id: string;
+								jerseyNumber?: number | null;
+								position?: string | null;
+								isCaptain?: boolean | null;
+							};
 							player: { id: string; firstName: string; lastName: string };
 						}>;
 						total: number;
 				  }
 				| undefined
 		)?.items ?? [];
+	const [editingEntry, setEditingEntry] = React.useState<
+		(typeof roster)[number] | null
+	>(null);
 	return (
 		<div className="mt-2 space-y-3">
 			<Select
@@ -461,23 +549,144 @@ function RosterSection({
 						{roster.map(({ roster: r, player }) => (
 							<div
 								key={r.id}
-								className="demo-list-item flex items-center justify-between text-sm"
+								className="demo-list-item flex items-center justify-between gap-2 text-sm"
 							>
-								<span>
-									{player.firstName} {player.lastName}
+								<span className="flex flex-wrap items-center gap-1">
+									<span>
+										{player.firstName} {player.lastName}
+									</span>
+									{r.jerseyNumber != null && (
+										<Badge variant="outline">#{r.jerseyNumber}</Badge>
+									)}
+									{r.position && (
+										<Badge variant="secondary">{r.position}</Badge>
+									)}
+									{r.isCaptain && <Badge>capitán</Badge>}
 								</span>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => removePlayer.mutateAsync(r.id)}
-								>
-									Quitar
-								</Button>
+								<span className="flex gap-1">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setEditingEntry({ roster: r, player })}
+									>
+										Editar
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => removePlayer.mutateAsync(r.id)}
+									>
+										Quitar
+									</Button>
+								</span>
 							</div>
 						))}
 					</div>
 				)}
 			</div>
+			{editingEntry && (
+				<RosterEditDialog
+					entry={editingEntry.roster}
+					playerName={`${editingEntry.player.firstName} ${editingEntry.player.lastName}`}
+					onClose={() => setEditingEntry(null)}
+				/>
+			)}
 		</div>
+	);
+}
+
+function RosterEditDialog({
+	entry,
+	playerName,
+	onClose,
+}: {
+	entry: {
+		id: string;
+		jerseyNumber?: number | null;
+		position?: string | null;
+		isCaptain?: boolean | null;
+	};
+	playerName: string;
+	onClose: () => void;
+}) {
+	const updateEntry = useUpdateRosterEntry(api);
+	const [jersey, setJersey] = React.useState(
+		entry.jerseyNumber != null ? String(entry.jerseyNumber) : "",
+	);
+	const [position, setPosition] = React.useState(entry.position ?? "");
+	const [isCaptain, setIsCaptain] = React.useState(entry.isCaptain ?? false);
+	const [error, setError] = React.useState<string | null>(null);
+
+	const onSubmit = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		setError(null);
+		try {
+			await updateEntry.mutateAsync({
+				id: entry.id,
+				body: {
+					jerseyNumber: jersey === "" ? null : Number(jersey),
+					position: position || null,
+					isCaptain,
+				},
+			});
+			onClose();
+		} catch (err) {
+			setError(getApiErrorMessage(err));
+		}
+	};
+
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title={`Editar ${playerName}`}
+			description="El backend valida dorsal 0–99 libre y capitán único por equipo."
+			error={error}
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button size="sm" onClick={onSubmit} disabled={updateEntry.isPending}>
+						Guardar
+					</Button>
+				</>
+			}
+		>
+			<form onSubmit={onSubmit} className="space-y-3">
+				<div className="grid gap-3 sm:grid-cols-2">
+					<div>
+						<Label>Dorsal (0–99)</Label>
+						<Input
+							type="number"
+							min={0}
+							max={99}
+							value={jersey}
+							onChange={(e) => setJersey(e.target.value)}
+							placeholder="Sin dorsal"
+						/>
+					</div>
+					<div>
+						<Label>Posición</Label>
+						<Input
+							value={position}
+							onChange={(e) => setPosition(e.target.value)}
+							placeholder="DEL / DEF / ..."
+							maxLength={30}
+						/>
+					</div>
+				</div>
+				<div>
+					<Label>Capitán</Label>
+					<Select
+						value={String(isCaptain)}
+						onChange={(e) => setIsCaptain(e.target.value === "true")}
+					>
+						<option value="false">no</option>
+						<option value="true">sí</option>
+					</Select>
+				</div>
+			</form>
+		</EditDialog>
 	);
 }
