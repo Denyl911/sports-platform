@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // The repository's checks, one program with a subcommand each:
-//   layering | errors | rbac | adr | docs | gate
+//   layering | errors | rbac | adr | docs | web-fetch | gate
 //
 // **Why one program.** nilo's `checks/` pattern: each rule is a scan the
 // machine runs, not a paragraph somebody reads. A scan prints the violations
@@ -570,6 +570,47 @@ async function checks_docs(): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// web-fetch: the call-site half of ADR 003. The layering matrix pins what
+// apps/web may *import*, but a fetch() made inside a component is invisible
+// to the import graph — the door to the API and the live sockets is
+// @sports/api-client only, at runtime too (its callers pass getToken; the
+// token never lives in the web app). A case that is actually right is an
+// edit to this rule naming its reason, not a silenced check.
+// ---------------------------------------------------------------------------
+
+const WEB_NET_LINES: Array<{ label: string; re: RegExp }> = [
+	{ label: "fetch()", re: /\bfetch\s*\(/ },
+	{ label: "new WebSocket()", re: /\bnew\s+WebSocket\s*\(/ },
+	{ label: "new EventSource()", re: /\bnew\s+EventSource\s*\(/ },
+	{ label: "XMLHttpRequest", re: /\bXMLHttpRequest\b/ },
+];
+
+async function checks_web_fetch(): Promise<{
+	scanned: number;
+	violations: Violation[];
+}> {
+	const rels = await collectCodeFiles();
+	const violations: Violation[] = [];
+	let scanned = 0;
+	for (const rel of rels) {
+		if (regionFor(rel) !== "web") continue;
+		scanned += 1;
+		const text = stripComments(await Bun.file(path.join(ROOT, rel)).text());
+		const lines = text.split("\n");
+		for (const [i, line] of lines.entries()) {
+			const hit = WEB_NET_LINES.find(({ re }) => re.test(line));
+			if (hit) {
+				violations.push({
+					file: rel,
+					detail: `line ${i + 1}: raw network call (${hit.label}) — every request and socket rides @sports/api-client (ADR 003)`,
+				});
+			}
+		}
+	}
+	return { scanned, violations };
+}
+
+// ---------------------------------------------------------------------------
 // gate: every check, one summary each
 // ---------------------------------------------------------------------------
 
@@ -579,6 +620,7 @@ const CHECKS = {
 	rbac: checks_rbac,
 	adr: checks_adr,
 	docs: checks_docs,
+	"web-fetch": checks_web_fetch,
 } as const satisfies Record<
 	string,
 	() => Promise<{ scanned: number; violations: Violation[]; notes?: string[] }>
@@ -616,7 +658,7 @@ async function gate(): Promise<boolean> {
 
 function usage(): never {
 	stdout.write(
-		"usage: bun scripts/checks.ts layering|errors|rbac|adr|docs|gate\n",
+		"usage: bun scripts/checks.ts layering|errors|rbac|adr|docs|web-fetch|gate\n",
 	);
 	exit(2);
 }

@@ -16,6 +16,7 @@ All repository checks live in one Bun program, [`scripts/checks.ts`](../../scrip
 - **`rbac`** — every route file that mutates carries its `require<Role>` guard, or a `PUBLIC_MUTATIONS` row in the program names why it is public. The sweep prints the guarded inventory, so the pairing is reviewable in the same output.
 - **`adr`** — file shape (`NNN-slug.md`, `**Status:**`, `**Topic:**`, no number in the title, no `Amends:`/`Supersedes:` headers — ADR 006's edit-in-place) and every cited ADR number has its file, in the three-digit form.
 - **`docs`** — every relative markdown link from the root files and `docs/` resolves to a real path, and every `docs/todo.md` entry under a `P` tier carries its `Needs:`/`What would settle it:` line.
+- **`web-fetch`** — the call-site half of ADR 003: no raw `fetch()`, `new WebSocket()`, `new EventSource()` or `XMLHttpRequest` anywhere in `apps/web/src`. The import matrix pins what the web app may *reach*; this scan pins that the reach is the client package's too — at runtime, where imports cannot see. The live sockets and the token refresh ride `@sports/api-client` (`createApiClient`/`useMatchLive`); a web-app exception would be a row in this program naming its reason, none exists.
 
 **Refusals name the rule, not just the fact** — the output says why the shape is wrong and where the escape hatch (`PUBLIC_MUTATIONS`, an ADR edit) lives, so the next session can fix the world instead of the check.
 

@@ -30,6 +30,7 @@ Sitio público SSR + Dashboard Admin para la plataforma deportiva multideporte, 
 - **Mutaciones admin:** hooks de `@sports/api-client/hooks` con `api` de `src/lib/api.ts`; errores con `getApiErrorMessage(err)`. Bodies con tipos reales (los hooks ya están tipados con `@sports/schemas`); prohibidos `as never` y `// @ts-nocheck` en rutas nuevas.
 - **IDs padre sin GET single:** la API no tiene GET single de stage/edition; `editionId`/`tournamentId` viajan por **search params** desde la página padre (`Link … search={{ … }}`), nunca con inputs manuales ni queries a rutas inexistentes.
 - **Tiempo real:** `useMatchLive` / `useGroupLive` de `@sports/api-client/live` con `getToken: getStoredAccessToken`. Nunca pasar el token directo; siempre el getter (rota en reconexión).
+- **La red viaja por el cliente:** ni `fetch`, ni `new WebSocket`, ni `new EventSource`, ni `XMLHttpRequest` en `apps/web/src` — `bun scripts/checks.ts web-fetch` en el gate lo refusa (ADR 003). El refresh de token en `lib/api.ts` monta un *cliente desnudo* (`createApiClient` sin `getToken`/`onUnauthorized`): el 401 del refresh no puede re-disparar `onUnauthorized`.
 - **Estilos:** Tokens y utilidades en `packages/ui/src/styles.css` (SSOT). `src/styles.css` solo importa. Componentes desde `@sports/ui`.
 
 ---

@@ -21,6 +21,3 @@ Needs: a row per read as each earns scrutiny — the row is one label, one measu
 
 **The RBAC sweep is file-grained.** The guard check in `scripts/checks.ts` pairs a `require<Role>` guard with a route *file*: a file that already guarded one mutation can grow a second without one and the sweep stays green. The real contract is per endpoint, not per file.
 Needs: per-endpoint pairing (each `.post/.patch/.put/.delete` resolved to the builder chain that carries it), with the same `PUBLIC_MUTATIONS` escape; what would settle it is a test fixture with two mutations in one file, one guarded and one not, going red.
-
-**Direct `fetch` in `apps/web` is review-only.** The layering check pins what `apps/web` may *import* (`@sports/api-client`, `@sports/ui`) but cannot see a `fetch()` call made inside a component at runtime — the ADR 003 refusal is intact on the import graph, not on the call sites.
-Needs: a scan or lint pass over `apps/web` for raw network calls outside the client package; what would settle it is a `fetch( in the web app failing the gate naming the file.

@@ -1,4 +1,4 @@
-import { type ApiClient, createApiClient } from "@sports/api-client";
+import { type ApiClient, createApiClient, unwrap } from "@sports/api-client";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -48,6 +48,25 @@ export function getStoredRefreshToken(): string | null {
 	return getRefreshToken();
 }
 
+// El refresh no puede montar el propio `api`: el 401 de la llamada de
+// refresh volvería a disparar `onUnauthorized` (se engancha en `onResponse`)
+// y anidar el ciclo con el refreshToken en localStorage intacto. El cliente
+// desnudo —sin `getToken` ni `onUnauthorized`— lleva la llamada por el mismo
+// treaty tipado: la ruta de refresh tiene una sola forma en el contrato
+// (ADR 003: la red viaja por @sports/api-client, también este caso).
+const refreshClient: ApiClient = createApiClient({
+	baseUrl: import.meta.env.VITE_API_URL,
+});
+
+function redirectToLogin() {
+	if (
+		typeof window !== "undefined" &&
+		window.location.pathname !== "/auth/login"
+	) {
+		window.location.href = "/auth/login";
+	}
+}
+
 // Singleton client for CSR. For SSR, TanStack Start will call loaders with same client
 // but `getToken` reads from localStorage only on client; on server, pass token via serverFn cookie if needed.
 export const api: ApiClient = createApiClient({
@@ -58,38 +77,17 @@ export const api: ApiClient = createApiClient({
 		const refreshToken = getRefreshToken();
 		if (!refreshToken) {
 			clearTokens();
-			if (
-				typeof window !== "undefined" &&
-				window.location.pathname !== "/auth/login"
-			) {
-				window.location.href = "/auth/login";
-			}
+			redirectToLogin();
 			return;
 		}
 		try {
-			// Import dinámico para evitar ciclo con treaty
-			const res = await fetch(
-				`${import.meta.env.VITE_API_URL ?? "http://localhost:3000"}/auth/refresh`,
-				{
-					method: "POST",
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify({ refreshToken }),
-				},
+			const data = await unwrap(
+				refreshClient.auth.refresh.post({ refreshToken }),
 			);
-			if (!res.ok) throw new Error("refresh failed");
-			const data = (await res.json()) as {
-				accessToken: string;
-				refreshToken: string;
-			};
-			setTokens(data);
+			setTokens(data as { accessToken: string; refreshToken: string });
 		} catch {
 			clearTokens();
-			if (
-				typeof window !== "undefined" &&
-				window.location.pathname !== "/auth/login"
-			) {
-				window.location.href = "/auth/login";
-			}
+			redirectToLogin();
 		}
 	},
 });
