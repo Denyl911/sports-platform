@@ -21,6 +21,9 @@ export const Route = createFileRoute("/teams/")({
 			queryFn: () => unwrap(api.clubs.get()),
 		});
 	},
+	head: () => ({
+		meta: [{ title: "Equipos — Sports Platform" }],
+	}),
 	component: TeamsPage,
 });
 

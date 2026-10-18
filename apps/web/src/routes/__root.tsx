@@ -21,8 +21,15 @@ export const Route = createRootRoute({
 				name: "viewport",
 				content: "width=device-width, initial-scale=1",
 			},
+			// Título y descripción por defecto: las rutas con `head` propio los
+			// reemplazan; las que no (admin, rutas internas) caen aquí.
 			{
-				title: "TanStack Start Starter",
+				title: "Sports Platform — Torneos multideporte",
+			},
+			{
+				name: "description",
+				content:
+					"Plataforma de torneos multideporte: resultados, cruces, tablas de posiciones y marcadores en vivo.",
 			},
 		],
 		links: [

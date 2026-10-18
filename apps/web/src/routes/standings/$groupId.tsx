@@ -17,6 +17,15 @@ export const Route = createFileRoute("/standings/$groupId")({
 				unwrap(api.groups({ groupId: params.groupId }).standings.get()),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Tabla de posiciones — Sports Platform" },
+			{
+				name: "description",
+				content: "Posiciones del grupo en vivo: PJ, PG, PE, PP y puntos.",
+			},
+		],
+	}),
 	component: StandingsPage,
 });
 

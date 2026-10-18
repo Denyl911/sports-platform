@@ -7,6 +7,9 @@ import { api } from "../lib/api";
 import { useAuth } from "../lib/auth";
 
 export const Route = createFileRoute("/profile")({
+	head: () => ({
+		meta: [{ title: "Mi perfil — Sports Platform" }],
+	}),
 	component: ProfilePage,
 });
 

@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/about")({
+	head: () => ({
+		meta: [
+			{ title: "Acerca de — Sports Platform" },
+			{
+				name: "description",
+				content: "Qué es Sports Platform y cómo está construida.",
+			},
+		],
+	}),
 	component: About,
 });
 

@@ -21,11 +21,28 @@ export const Route = createFileRoute("/matches/$matchId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const match = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.matches.detail(params.matchId),
 			queryFn: () => unwrap(api.matches({ id: params.matchId }).get()),
 		});
+		return match;
+	},
+	// Título con los nombres reales: Fase 1.1 puso los equipos en el contrato.
+	head: ({ loaderData }) => {
+		const m = loaderData as MatchDetail | undefined;
+		const home = m?.homeTeam?.name ?? "Por definir";
+		const away = m?.awayTeam?.name ?? "Por definir";
+		return {
+			meta: [
+				{ title: `${home} vs ${away} — Sports Platform` },
+				{
+					name: "description",
+					content:
+						"Marcador en vivo, eventos y tabla del partido en Sports Platform.",
+				},
+			],
+		};
 	},
 	component: MatchDetailPage,
 });

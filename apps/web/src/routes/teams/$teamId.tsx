@@ -9,11 +9,24 @@ export const Route = createFileRoute("/teams/$teamId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const team = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.teams.detail(params.teamId),
 			queryFn: () => unwrap(api.teams({ id: params.teamId }).get()),
 		});
+		return team;
+	},
+	head: ({ loaderData }) => {
+		const t = loaderData as { name?: string } | undefined;
+		return {
+			meta: [
+				{ title: `${t?.name ?? "Equipo"} — Sports Platform` },
+				{
+					name: "description",
+					content: "Partidos y estadísticas del equipo en Sports Platform.",
+				},
+			],
+		};
 	},
 	component: TeamDetailPage,
 });

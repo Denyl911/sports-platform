@@ -16,6 +16,9 @@ export const Route = createFileRoute("/players/")({
 			queryFn: () => unwrap(api.players.get({ query: {} as never })),
 		});
 	},
+	head: () => ({
+		meta: [{ title: "Jugadores — Sports Platform" }],
+	}),
 	component: PlayersPage,
 });
 

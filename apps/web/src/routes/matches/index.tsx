@@ -16,6 +16,15 @@ export const Route = createFileRoute("/matches/")({
 			queryFn: () => unwrap(api.matches.get({ query: {} as never })),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Partidos — Sports Platform" },
+			{
+				name: "description",
+				content: "Resultados y partidos programados de todos los torneos.",
+			},
+		],
+	}),
 	component: MatchesPage,
 });
 

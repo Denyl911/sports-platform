@@ -16,7 +16,7 @@ export const Route = createFileRoute("/tournaments/$tournamentId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const tournament = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.tournaments.detail(params.tournamentId),
 			queryFn: () =>
@@ -30,6 +30,20 @@ export const Route = createFileRoute("/tournaments/$tournamentId")({
 					api.tournaments({ tournamentId: params.tournamentId }).editions.get(),
 				),
 		});
+		return tournament;
+	},
+	head: ({ loaderData }) => {
+		const t = loaderData as { name?: string } | undefined;
+		return {
+			meta: [
+				{ title: `${t?.name ?? "Torneo"} — Sports Platform` },
+				{
+					name: "description",
+					content:
+						"Ediciones, etapas y resultados del torneo en Sports Platform.",
+				},
+			],
+		};
 	},
 	component: TournamentDetailPage,
 });

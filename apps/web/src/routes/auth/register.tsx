@@ -4,6 +4,9 @@ import * as React from "react";
 import { useAuth } from "../../lib/auth";
 
 export const Route = createFileRoute("/auth/register")({
+	head: () => ({
+		meta: [{ title: "Crear cuenta — Sports Platform" }],
+	}),
 	component: RegisterPage,
 });
 

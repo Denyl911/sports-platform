@@ -4,6 +4,9 @@ import * as React from "react";
 import { useAuth } from "../../lib/auth";
 
 export const Route = createFileRoute("/auth/login")({
+	head: () => ({
+		meta: [{ title: "Iniciar sesión — Sports Platform" }],
+	}),
 	component: LoginPage,
 });
 

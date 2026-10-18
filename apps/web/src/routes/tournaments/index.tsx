@@ -26,6 +26,15 @@ export const Route = createFileRoute("/tournaments/")({
 			queryFn: () => unwrap(api.tournaments.get({ query: {} as never })),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Torneos — Sports Platform" },
+			{
+				name: "description",
+				content: "Todos los torneos de la plataforma, filtrables por deporte.",
+			},
+		],
+	}),
 	component: TournamentsPage,
 });
 

@@ -35,6 +35,16 @@ export const Route = createFileRoute("/")({
 			queryFn: () => unwrap(api.matches.get({ query: { ...RECENT_QUERY } })),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Sports Platform — Resultados y marcadores en vivo" },
+			{
+				name: "description",
+				content:
+					"Partidos en vivo, resultados recientes y torneos multideporte en curso.",
+			},
+		],
+	}),
 	component: HomePage,
 });
 

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/clubs/$clubId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const club = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.clubs.detail(params.clubId),
 			queryFn: () => unwrap(api.clubs({ id: params.clubId }).get()),
@@ -20,6 +20,19 @@ export const Route = createFileRoute("/clubs/$clubId")({
 			queryFn: () =>
 				unwrap(api.teams.get({ query: { clubId: params.clubId } })),
 		});
+		return club;
+	},
+	head: ({ loaderData }) => {
+		const c = loaderData as { name?: string } | undefined;
+		return {
+			meta: [
+				{ title: `${c?.name ?? "Club"} — Sports Platform` },
+				{
+					name: "description",
+					content: "Equipos del club y su actividad en los torneos.",
+				},
+			],
+		};
 	},
 	component: ClubDetailPage,
 });

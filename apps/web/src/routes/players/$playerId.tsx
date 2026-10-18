@@ -9,11 +9,27 @@ export const Route = createFileRoute("/players/$playerId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const player = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.players.detail(params.playerId),
 			queryFn: () => unwrap(api.players({ id: params.playerId }).get()),
 		});
+		return player;
+	},
+	head: ({ loaderData }) => {
+		const p = loaderData as
+			| { firstName?: string; lastName?: string }
+			| undefined;
+		const name = [p?.firstName, p?.lastName].filter(Boolean).join(" ");
+		return {
+			meta: [
+				{ title: `${name || "Jugador"} — Sports Platform` },
+				{
+					name: "description",
+					content: "Ficha del jugador: equipos e incidencias en los partidos.",
+				},
+			],
+		};
 	},
 	component: PlayerDetailPage,
 });

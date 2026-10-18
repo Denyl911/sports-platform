@@ -9,11 +9,24 @@ export const Route = createFileRoute("/venues/$venueId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const venue = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.venues.detail(params.venueId),
 			queryFn: () => unwrap(api.venues({ id: params.venueId }).get()),
 		});
+		return venue;
+	},
+	head: ({ loaderData }) => {
+		const v = loaderData as { name?: string } | undefined;
+		return {
+			meta: [
+				{ title: `${v?.name ?? "Sede"} — Sports Platform` },
+				{
+					name: "description",
+					content: "Sede deportiva: partidos programados y ubicación.",
+				},
+			],
+		};
 	},
 	component: VenueDetailPage,
 });

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/sports/$sportId")({
 		const qc = (
 			context as { queryClient: import("@tanstack/react-query").QueryClient }
 		).queryClient;
-		await qc.query({
+		const sport = await qc.query({
 			staleTime: "static",
 			queryKey: queryKeys.sports.detail(params.sportId),
 			queryFn: () => unwrap(api.sports({ id: params.sportId }).get()),
@@ -24,6 +24,19 @@ export const Route = createFileRoute("/sports/$sportId")({
 						["event-types"].get({ query: {} as never }),
 				),
 		});
+		return sport;
+	},
+	head: ({ loaderData }) => {
+		const s = loaderData as { name?: string } | undefined;
+		return {
+			meta: [
+				{ title: `${s?.name ?? "Deporte"} — Sports Platform` },
+				{
+					name: "description",
+					content: "Equipos y torneos de este deporte en Sports Platform.",
+				},
+			],
+		};
 	},
 	component: SportDetailPage,
 });

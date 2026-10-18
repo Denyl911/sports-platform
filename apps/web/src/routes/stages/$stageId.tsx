@@ -32,6 +32,15 @@ export const Route = createFileRoute("/stages/$stageId")({
 				unwrap(api.stages({ stageId: params.stageId }).registrations.get()),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Etapa y partidos — Sports Platform" },
+			{
+				name: "description",
+				content: "Grupos, equipos inscritos y cruces de la etapa.",
+			},
+		],
+	}),
 	component: StageDetailPage,
 });
 

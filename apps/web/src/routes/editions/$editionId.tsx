@@ -33,6 +33,15 @@ export const Route = createFileRoute("/editions/$editionId")({
 			queryFn: () => unwrap(api.teams.get({ query: {} })),
 		});
 	},
+	head: () => ({
+		meta: [
+			{ title: "Edición del torneo — Sports Platform" },
+			{
+				name: "description",
+				content: "Etapas y equipos de esta edición del torneo.",
+			},
+		],
+	}),
 	component: EditionDetailPage,
 });
 
