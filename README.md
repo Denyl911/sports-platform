@@ -1,159 +1,69 @@
-# Turborepo starter
+# Sports Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+Plataforma integral para la organización de torneos deportivos multideporte (fútbol, básquetbol, voleibol…): resultados, cruces, tablas de posiciones y marcadores en vivo para el público, y un dashboard para organizarlos.
 
-## Using this example
+## Qué hay dentro
 
-Run the following command:
+Todo comparte una idea: **los tipos viajan de la base de datos al cliente sin copiarse**. Tablas Drizzle → esquemas TypeBox *derivados* de esas tablas → routes Elysia validados y documentados desde los mismos esquemas → cliente Eden tipado contra el tipo de la App. Un desajuste entre capas es un error de typecheck, no un 500 en producción.
 
-```sh
-npx create-turbo@latest
+```text
+apps/
+  api/          # API Bun + Elysia: REST, WebSockets (live), OpenAPI
+  web/          # TanStack Start: sitio público SSR + dashboard admin
+packages/
+  db/           # @sports/db — esquemas Drizzle (PostgreSQL), migraciones generadas
+  schemas/      # @sports/schemas — contratos TypeBox derivados de las tablas
+  api-client/   # @sports/api-client — cliente Eden + hooks TanStack Query + live
+  ui/           # @sports/ui — componentes React compartidos (Tailwind, shadcn/ui)
+  tsconfig/     # @sports/tsconfig — tsconfig base compartidos por todos los workspaces
 ```
 
-## What's inside?
+*(Hay sin decidir: `apps/mobile` (Tauri) está planeado, no construido.)*
 
-This Turborepo includes the following packages/apps:
+## Herramientas
 
-### Apps and Packages
+- [Bun](https://bun.sh/) como runtime, gestor de paquetes y runner de tests
+- [Turborepo](https://turborepo.dev/) para el grafo de tareas y caché
+- [Biome](https://biomejs.dev/) para lint, formato y organize-imports — una sola herramienta (`docs/decided.md`)
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Empezar
 
 ```sh
-cd my-turborepo
-turbo build
+bun install
+
+# Postgres debe estar corriendo en localhost:5432 (Docker/Podman);
+# los tests usan una base efímera `sports_platform_test` que el propio
+# setup de apps/api fija.
+
+bun run dev            # ambos apps con restart al guardar
+bun run check          # biome check, todos los workspaces
+bun run check-types    # tsc --noEmit, todos los workspaces
+bun run test           # bun test, todos los workspaces
+
+# Migraciones (packages/db):
+bun run db:generate    # desde el esquema; nunca a mano
+bun run db:migrate
 ```
 
-Without global `turbo`, use your package manager:
+Un build específico, por filtro:
 
 ```sh
-cd my-turborepo
-npx turbo build
-bun exec turbo build
-bun exec turbo build
+bun run build --filter=api
+bun run test --filter=api
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+## Lectura en orden
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+| | |
+|---|---|
+| [`AGENTS.md`](./AGENTS.md) | el brief de trabajo: principios, capas, comandos, invariantes, convenciones |
+| [`CONTEXT.md`](./CONTEXT.md) | el vocabulario del dominio y del código, y las palabras que este repo no usa |
+| [`docs/adr/`](./docs/adr/) | las decisiones de diseño, cada una con la alternativa que rechazó |
+| [`docs/decided.md`](./docs/decided.md) | preguntas respondidas y features negadas con su razón |
+| [`docs/history.md`](./docs/history.md) | lecciones del camino (no un changelog) |
+| [`docs/todo.md`](./docs/todo.md) | lo que está abierto, ranked P0–P3 |
+| [`CHANGELOG.md`](./CHANGELOG.md) | lo que un usuario tiene que cambiar |
 
-```sh
-turbo build --filter=docs
-```
+## Contribuir
 
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-bun exec turbo build --filter=docs
-bun exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-bun exec turbo dev
-bun exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-bun exec turbo dev --filter=web
-bun exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-bun exec turbo login
-bun exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-bun exec turbo link
-bun exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+Se trabaja mejor con agentes que con parches a ciegas: [`AGENTS.md`](./AGENTS.md) es el brief y el [`pull request template`](./.github/PULL_REQUEST_TEMPLATE.md) es el contrato que todo cambio trae (un eje gastado, su contrato de error, sus tests y su documentación). Un cambio = una decisión = un PR.

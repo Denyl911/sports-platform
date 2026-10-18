@@ -27,6 +27,7 @@
         "@elysia/eden": "^1.4.10",
         "@sports/tsconfig": "*",
         "drizzle-seed": "1.0.0-rc.4",
+        "typescript": "^6.0.2",
       },
     },
     "apps/web": {
@@ -74,6 +75,7 @@
         "@sports/tsconfig": "*",
         "@types/react": "^19.0.0",
         "api": "workspace:*",
+        "typescript": "^6.0.2",
       },
       "peerDependencies": {
         "react": "^19.0.0",

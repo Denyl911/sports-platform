@@ -27,6 +27,7 @@
 		"@sports/db": "*",
 		"@sports/tsconfig": "*",
 		"@types/react": "^19.0.0",
-		"api": "workspace:*"
+		"api": "workspace:*",
+		"typescript": "^6.0.2"
 	}
 }
