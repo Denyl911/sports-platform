@@ -6,29 +6,21 @@ Every concrete item open in the repository, worth doing and not needed right now
 
 ---
 
-## P1
-
-**The repository has no CI.** Nothing green is checked on a PR or on `main`: `turbo run check`, `check-types` and `test` exist and run locally only, so a broken gate can be pushed and discovered at deploy — the failure the testing stack was built to prevent.
-Needs: a workflow that runs the three commands against an ephemeral Postgres on every PR; what would settle it is the first red-run-caught-on-a-PR.
-
-**The layering rule is text, not a check.** `AGENTS.md` states who imports whom (routes↛db, services-only SQL, no app-to-app runtime imports except the type-only contract import). A paragraph nobody runs is the thing that rots.
-Needs: a `check-layering` script (Biome-level import scan) whose enforcement table lives beside the layout; what would settle it is the first refusal naming a violator.
-
 ## P2
 
-**No endpoint has a declared query budget.** "A read endpoint answers with the round trips its test declares" is an `AGENTS.md` invariant with no test behind it, so an N+1 ships as silently as any green code.
-Needs: a Drizzle query-count test over the read endpoints (per-endpoint table in a visible file); what would settle it is the first test row whose count goes one up and fails red.
+**The migration ledger is empty.** `packages/db/drizzle/` has no generated migrations — `db:generate` has never been run — and every schema build today comes from `db:push` (tests, CI's service container). That is fine while nothing is deployed; the moment an environment exists that runs `db:migrate`, it has nothing to apply.
+Needs: the first `bun run db:generate` against the current schema, with the generated files committed and CI keeping `db:push` for its ephemeral base; what would settle it is `db:migrate` on a fresh instance producing the same schema `db:push` does.
 
-**The error contract has no discriminator.** "Every failure that leaves `apps/api` is a `DomainError` translated by the middleware and matches a declared `response:` shape" (ADR 004) is held by review; a service that throws a plain `Error` green-lights as a 500.
-Needs: a test that walks the route tree and either records a `DomainError` for each failure path or fails naming the route.
-
-**A systematic RBAC sweep does not exist.** `rbac.test.ts` covers the routes it names; an entity whose `require<Entity>Role` guard got skipped in a new route is found by reading, not by the suite.
-Needs: a sweep that pairs every mutating route with its guard and names the one missing it (`docs/adr/002-authorization-is-an-ownership-lookup.md` is the rule).
+**CI's `check` gate is a mutating scan.** The workspace `check` scripts run `biome check --write`; in CI the fixes are written to a throwaway filesystem and the run can pass green over formatting drift that a local run would have fixed. A gate that quietly auto-repairs the thing it checks is weaker than the same check without the flag.
+Needs: a non-mutating variant for CI (`biome check` without `--write`, keeping the local `--write` ergonomics); what would settle it is a deliberately misformatted file landing in a PR and the gate going red on it.
 
 ## P3
 
-**ADR and doc format are held by review only.** ADR naming (`NNN-slug.md`), the `Status:`/`Topic:` lines, and the `docs/` conventions of `AGENTS.md` have no check yet.
-Needs: the `adr-check` / `docs-check` scripts from the layering-check work (P1) once its pattern exists.
+**Budget rows cover the public lists only.** `apps/api/test/query-budgets.test.ts` pins the eight list calls at their measured costs (every one: 2 — items plus the envelope's total). Detail reads (`GET /matches/:id` with its relations), `GET /:id` pairings elsewhere, and filtered writes-adjacent reads have no rows, so an N+1 there ships as green as ever.
+Needs: a row per read as each earns scrutiny — the row is one label, one measured count, one call; what would settle it is any endpoint whose first row is measured and pinned.
 
-**The client's "zero weight" invariant is review-only.** No lint rule refuses a direct fetch in another app or a runtime mirror of API types outside `@sports/api-client`.
-Needs: a Biome rule/lint pass, which is the same pattern as `check-layering`.
+**The RBAC sweep is file-grained.** The guard check in `scripts/checks.ts` pairs a `require<Role>` guard with a route *file*: a file that already guarded one mutation can grow a second without one and the sweep stays green. The real contract is per endpoint, not per file.
+Needs: per-endpoint pairing (each `.post/.patch/.put/.delete` resolved to the builder chain that carries it), with the same `PUBLIC_MUTATIONS` escape; what would settle it is a test fixture with two mutations in one file, one guarded and one not, going red.
+
+**Direct `fetch` in `apps/web` is review-only.** The layering check pins what `apps/web` may *import* (`@sports/api-client`, `@sports/ui`) but cannot see a `fetch()` call made inside a component at runtime — the ADR 003 refusal is intact on the import graph, not on the call sites.
+Needs: a scan or lint pass over `apps/web` for raw network calls outside the client package; what would settle it is a `fetch( in the web app failing the gate naming the file.

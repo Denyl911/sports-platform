@@ -1,0 +1,6 @@
+[test]
+# Los tests E2E de live corren contra `api/src/app` y su base de pruebas:
+# comparten el preload de apps/api, que fija NODE_ENV, los JWT secrets y
+# DATABASE_URL (la base efímera `sports_platform_test` de la instancia
+# podman local) antes de que cualquier módulo lea el entorno.
+preload = ["../../apps/api/test/setup.ts"]

@@ -17,9 +17,10 @@
 			"inputs": ["$TURBO_DEFAULT$", "biome.json"]
 		},
 		"typecheck": {
-			"dependsOn": ["^typecheck"]
+			"dependsOn": ["^typecheck", "check"]
 		},
 		"test": {
+			"dependsOn": ["^test", "check"],
 			"inputs": ["$TURBO_DEFAULT$", "bunfig.toml", "test/**"],
 			"cache": false
 		},

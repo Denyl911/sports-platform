@@ -4,7 +4,7 @@
  */
 
 import type { Treaty } from "@elysia/eden";
-import type { App } from "../../../apps/api/src/app";
+import type { App } from "api/src/app";
 
 // ---------------------------------------------------------------------------
 // Re-exports de schemas (Single Source of Truth)

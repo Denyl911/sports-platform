@@ -22,24 +22,19 @@ export const authRoutes = new Elysia({ prefix: "/auth", tags: ["Auth"] })
 	.use(accessTokenJwt)
 	.use(refreshTokenJwt)
 	.use(jwtMiddleware)
-	.get(
-		"/me",
-		// @ts-expect-error Elysia macro `auth` injects `user` but type inference for response fails with verbatimModuleSyntax
-		async ({ user }) => user,
-		{
-			auth: true,
-			response: {
-				200: userPublicSchema,
-				401: errorMessageSchema,
-			},
-			detail: {
-				summary: "Usuario autenticado actual",
-				description:
-					"Requiere `Authorization: Bearer <accessToken>`. Retorna el usuario público sin `passwordHash`.",
-				tags: ["Auth"],
-			},
+	.get("/me", async ({ user }) => user, {
+		auth: true,
+		response: {
+			200: userPublicSchema,
+			401: errorMessageSchema,
 		},
-	)
+		detail: {
+			summary: "Usuario autenticado actual",
+			description:
+				"Requiere `Authorization: Bearer <accessToken>`. Retorna el usuario público sin `passwordHash`.",
+			tags: ["Auth"],
+		},
+	})
 	.post(
 		"/login",
 		async ({ body, set, accessToken, refreshToken }) => {

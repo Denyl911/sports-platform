@@ -6,11 +6,26 @@ Not what shipped, which is [`CHANGELOG.md`](../CHANGELOG.md), and not what is co
 
 ## Themes
 
-- **What is measured** — numbers and how they were taken (the first one will be a query-count baseline per endpoint, grouped with `docs/todo.md` P2).
+- **What is measured** — numbers and how they were taken.
 - **Measuring** — ways the instrument lied and how it was caught.
 - **Where it came from** — what the architecture was modelled on, and what changed that mind.
+- **Health** — failures of the gate and of the ground it stands on, caught by actually running things.
+
+## What is measured
+
+**Every list endpoint costs exactly 2 round trips, and that is now the floor, not a coincidence.** Measured on `main` with the query ledger (`apps/api/test/query-budgets.test.ts`) when the budgets were first pinned: `GET /matches` (empty and seeded), `/tournaments`, `/sports`, `/venues`, `/clubs`, `/teams`, `/players` — all 2. The count is not data-dependent plus one free `count(*)`: it is the `{ items, total }` envelope's own shape, two selects (`Promise.all`'d, still two round trips). Any row moving off 2 is the first real conversation about the envelope's cost, with the number already named.
+
+## Measuring
+
+**A test that builds its own fixture with `Date.now()` can lie about which side misbehaved.** The error-contract test initially reported the duplicate-club 409 as missing: the two `POST /clubs` calls each interpolated `Date.now()` into the name, and within the same millisecond the names differed by nothing or by a millisecond at the clock's whim — the first red run read as "the service does not enforce uniqueness", when `createClub`'s conflict check had never been touched. The fix is the shape the budget rows already use: capture the constant once above the calls, so the assertion exercises the case it names, not the clock.
+
 
 ## Health
 
 **A gate that is never run is not a gate — it is a script people believe in.** The root `check-types` entry called `turbo run check-types`, and Turbo's task is named `typecheck`: the type gate had been red-on-name from wherever it was introduced, invisible because nothing at the root ran it until it was walked as part of writing the working brief. The same indirection hid a second layer: two workspaces ran `tsc` without declaring `typescript` and passed through a hoisted binary they did not ask for. Both are one-line honest fixes (point the root script at the real task; declare the dependency where it runs), and the lesson compiles to a habit: every command the brief tells an agent to trust is run once, on `main`, before it becomes an instruction.
+
+**A local gate lives inside an idle container, and an idle container dies.** Hours after a green suite, the same suite failed with `connection refused` on every seed: the Postgres podman container had exited (host restart at some point) and nobody was told — the gate was fat, the environment under it was not. CI's service container exists exactly because of this failure mode; locally, the response to "every test failing to connect at once" is `podman ps` first, `bun test` second.
+
+**The gate found a suite nobody had counted.** The first full gate run failed in `@sports/api-client`: its live E2E suite had all along run under the root `test` task without its own test-environment preload, reaching the database with whatever ambient credentials the machine had. Adding it to the gate is why it was found; the fix (one buried `bunfig.toml` preload borrowed from `apps/api`, plus Turbo `^test` ordering so the two suites sharing one database run in sequence) took minutes after it was visible.
+
 

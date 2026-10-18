@@ -1,12 +1,10 @@
-import { db } from "@sports/db";
-import { users } from "@sports/db/tables";
-import { eq } from "drizzle-orm";
 import { Elysia, t } from "elysia";
 import { accessTokenJwt } from "../lib/jwt";
 import { DomainError } from "../services/errors";
+import { findAuthUser, type UserPublic } from "../services/user.service";
 
-// Usuario autenticado sin el hash de contraseña
-export type AuthUser = Omit<typeof users.$inferSelect, "passwordHash">;
+// Usuario autenticado, sin el hash de contraseña (el service ya lo omite)
+export type AuthUser = UserPublic;
 
 // Guard de autenticación activable por ruta con `auth: true`.
 // Consulta la DB en cada request: rol siempre fresco y valida isActive.
@@ -42,17 +40,7 @@ export const jwtMiddleware = new Elysia({ name: "jwt-auth" })
 					throw DomainError.unauthorized("Token inválido");
 				}
 
-				const [user] = await db
-					.select({
-						id: users.id,
-						email: users.email,
-						fullName: users.fullName,
-						role: users.role,
-						isActive: users.isActive,
-					})
-					.from(users)
-					.where(eq(users.id, payload.sub))
-					.limit(1);
+				const user = await findAuthUser(payload.sub).catch(() => null);
 
 				if (!user) {
 					throw DomainError.unauthorized("Usuario no encontrado");

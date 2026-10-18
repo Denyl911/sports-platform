@@ -30,7 +30,7 @@ These come before everything below, and a proposal that breaks one says which an
 1. **The contract travels.** Adding a field never needs three edits in three places. A hand-written mirror of anything derivable is the bug, and adding one is a regression even if it compiles.
 2. **Be objective.** A claim rests on code read or a number measured, and says which. Report a result that went the wrong way as plainly as one that went the right way.
 3. **The clean solution over the quick one.** A bad shape that gets fixed instead of replaced keeps producing more of itself. Breaking changes are allowed and must be paid now, in a `CHANGELOG.md` entry, rather than carried forever.
-4. **Nothing load-bearing lives only in your head, only in a commit body, or only in this session.** A decision goes in an ADR, a lesson in `docs/history.md`, and anything that is a rule gets scheduled to be enforced: prefer a rule the machine runs over one a paragraph states. Today the type system and the test suite run the rules; the checks that will enforce layering and budgets are designed and open ([`docs/todo.md`](./docs/todo.md)).
+4. **Nothing load-bearing lives only in your head, only in a commit body, or only in this session.** A decision goes in an ADR, a lesson in `docs/history.md`, and anything that is a rule gets enforced by a scan: `scripts/checks.ts` runs the layering matrix, the raw-throw scan, the RBAC pairing, the ADR shape and the doc links (`docs/adr/007`); the type system and the test suite run the rest.
 5. **Health before feature.** A test that cannot run, a failing `bun run check-types`, or a CI that does not exist beats any new endpoint. You may not commit on top of a red gate.
 
 ## Who works here
@@ -39,7 +39,7 @@ The repository is written to be worked on by somebody who did not write it, a pe
 
 ## Layout
 
-The repository is apps and packages, not one library. One question decides where code goes: **does it talk to the database?** Services do; routes never touch it; no app imports another app's code — the single exception is the type-only import of `api/src/app` in `@sports/api-client`, which is what makes the contract travel.
+The repository is apps and packages, not one library. One question decides where code goes: **does it talk to the database?** Services do; routes never touch it; no app imports another app's code — the only door is type-only imports of `api/src/*` inside `@sports/api-client` (ADR 003), which is what makes the contract travel. All of this is a check, not a paragraph: `bun run layering` ([`docs/adr/007`](./docs/adr/007-the-gate-is-one-program-of-scans.md)).
 
 | Layer | Files | What it is |
 |---|---|---|
@@ -51,7 +51,7 @@ The repository is apps and packages, not one library. One question decides where
 | **Package (ui)** | `packages/ui/` | Shared React components (Tailwind, shadcn/ui). No domain logic, no API calls. |
 | **Package (tsconfig)** | `packages/tsconfig/` | Base `tsconfig.json`s (`base.json`) every workspace extends. Type rules live here, once. |
 
-Internal boundaries of `apps/api/src/` (the layering rule before the check that will enforce it exists):
+Internal boundaries of `apps/api/src/` (enforced by `bun run layering`):
 
 - **routes/** import schemas, services, middlewares and `lib/` only. A route never touches `@sports/db`, never calls another route, never holds domain logic.
 - **services/** import `@sports/db`, `@sports/schemas` and other services. They throw `DomainError` and are the only place SQL is written.
@@ -68,16 +68,19 @@ bun install                            # once
 bun run check                          # biome check, every workspace
 bun run check-types                    # tsc --noEmit, every workspace
 bun run test                           # bun test, every workspace (real Postgres, see below)
+bun run layering                       # import matrix check (scripts/checks.ts layering)
+bun run checks                         # every scan: layering, errors, rbac, adr, docs
+bun run gate                           # checks + check + check-types + test — what CI runs
+
 bun run dev                            # both apps, turbo-managed
 bun run dev --filter=api               # one app (the web dev server re-checks types on save)
 
-cd packages/db && bun run db:generate  # drizzle-kit generate (never hand-edit drizzle/)
-cd packages/db && bun run db:migrate   # apply migrations
-cd packages/db && bun run db:push      # push schema straight (local dev only)
+cd packages/db && bun run db:generate  # drizzle-kit generate (the ledger is empty — docs/todo.md P2)
+cd packages/db && bun run db:push      # push schema straight (that is how tests build it today)
 cd packages/db && bun run db:studio    # drizzle studio
 ```
 
-**The tests run against a real Postgres.** `apps/api/test/setup.ts` pins `DATABASE_URL` to `sports_platform_test` on the local instance (`postgresql://sports_user:sports_user_password@localhost:5432`) unless the variable already targets that database. A Postgres reachable at `localhost:5432` (Docker/Podman) is the only external dependency; nothing is mocked (see [`docs/decided.md`](./docs/decided.md)). Read the exit code, not the word "failed": one green run needs `turbo run check`, `check-types` and `test` all passing.
+**The tests run against a real Postgres.** `apps/api/test/setup.ts` pins `DATABASE_URL` to `sports_platform_test` on the local instance (`postgresql://sports_user:sports_user_password@localhost:5432`) unless the variable already targets that database, and `packages/api-client`'s E2E suite preloads the same setup via its own `bunfig.toml` — one test world, one database, which is why Turbo's `^test` ordering runs the suites in sequence. A Postgres reachable at `localhost:5432` (Docker/Podman) is the only external dependency; nothing is mocked (see [`docs/decided.md`](./docs/decided.md)). Read the exit code, not the word "failed": one green run needs `bun run gate` passing.
 
 ## Invariants that are load-bearing
 
@@ -85,10 +88,10 @@ These are the four axes a change may spend, the analogue of a performance budget
 
 | Axis | Rule | Held today by |
 |---|---|---|
-| Queries per request | A read endpoint answers with the round trips its test declares. A new N+1 is a regression, even if it passes end-to-end. | review today; a query-count test is designed and open (`docs/todo.md` P2) |
-| Authorization rides the row | Every write names its tournament and the guard resolves it through the chain entity → stage → edition → tournament (ADR 002). List queries filter the same chain; there is no endpoint whose security lives only in the client. | `apps/api/test/rbac.test.ts` and `integrity.test.ts`; a systematic sweep is open (`docs/todo.md` P2) |
-| The error contract is single | Services throw `DomainError` only, with a status and a user-readable message. Routes never throw raw errors; each route's `response:` map declares which statuses it can answer and with which shape (`errorMessageSchema`) (ADR 004). | code review today; a discriminator test is open (`docs/todo.md` P2) |
-| The client weight is zero | No runtime mirror of API types outside `@sports/api-client`. A web component never fetches directly, mobile included when it lands (ADR 003). | review today; a no-direct-fetch lint rule is open (`docs/todo.md` P3) |
+| Queries per request | A read endpoint answers with the round trips its test declares. A new N+1 is a regression, even if it passes end-to-end ([`docs/adr/008`](./docs/adr/008-read-endpoints-pin-their-round-trip-budget.md)). | `apps/api/test/query-budgets.test.ts` — the public lists are pinned at 2 (items + envelope total); detail reads are open (`docs/todo.md` P3) |
+| Authorization rides the row | Every write names its tournament and the guard resolves it through the chain entity → stage → edition → tournament (ADR 002). List queries filter the same chain; there is no endpoint whose security lives only in the client. | `apps/api/test/rbac.test.ts` and `integrity.test.ts` (behaviour), `bun run rbac-check` (the pairing sweep; file-grained today, `docs/todo.md` P3) |
+| The error contract is single | Services throw `DomainError` only, with a status and a user-readable message. Routes never throw raw errors; each route's `response:` map declares which statuses it can answer and with which shape (`errorMessageSchema`) (ADR 004). | `bun run errors-check` (static) + `apps/api/test/error-contract.test.ts` (through the real app) |
+| The client weight is zero | No runtime mirror of API types outside `@sports/api-client`. A web component never fetches directly, mobile included when it lands (ADR 003). | `bun run layering` (the import matrix — web reaches the API only through the client); direct `fetch` inside components is review today (`docs/todo.md` P3) |
 
 Plus one standing rule about change shape: **a column change is one commit** that touches `packages/db`, lets `@sports/schemas` re-derive, and acknowledges the effects in routes and client hooks — not a series of separate patches hoping they meet.
 
@@ -130,5 +133,5 @@ None of this is closed company policy: a refusal is one ADR away from being a de
 `bun run dev` starts both apps under turbo and restarts on save. Prefer it over running one dev server in the background: with one server you only see that server's output, and the error is usually in another one. When a test run fails to connect, suspect the Postgres container before suspecting the test.
 
 - Posts a live connection? `apps/api` exposes `/live` for match WebSocket fanout; start the API first when driving it by hand.
-- Migrations: `db:migrate` in `packages/db` before the first test run on a fresh instance.
-- A red gate is a stop, not a note: never commit on top of failing `check-types` or `test`.
+- Migrations: today the schema is built with `db:push` — the migration ledger is empty and `db:generate` has never run (`docs/todo.md` P2); do not tell anybody `db:migrate` yet.
+- A red gate is a stop, not a note: never commit on top of a failing `bun run gate`.

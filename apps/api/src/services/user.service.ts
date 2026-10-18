@@ -67,6 +67,19 @@ export async function findUserRecordById(id: string) {
 	return user;
 }
 
+// Usuario activo para el guard JWT del macro `auth`: null si no existe.
+// El 401 lo responde el middleware para autenticación, no aquí — este service
+// solo responde la pregunta "¿qué usuario es este id?".
+export async function findAuthUser(id: string): Promise<UserPublic | null> {
+	const [user] = await db
+		.select(USER_PUBLIC_COLUMNS)
+		.from(users)
+		.where(eq(users.id, id))
+		.limit(1);
+
+	return user ?? null;
+}
+
 export async function findUserByEmail(email: string) {
 	const [user] = await db
 		.select()

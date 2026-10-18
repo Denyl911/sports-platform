@@ -8,7 +8,14 @@
 		"format": "turbo run format",
 		"check": "turbo run check",
 		"check-types": "turbo run typecheck",
-		"test": "turbo run test"
+		"test": "turbo run test",
+		"layering": "bun scripts/checks.ts layering",
+		"errors-check": "bun scripts/checks.ts errors",
+		"rbac-check": "bun scripts/checks.ts rbac",
+		"adr-check": "bun scripts/checks.ts adr",
+		"docs-check": "bun scripts/checks.ts docs",
+		"checks": "bun scripts/checks.ts gate",
+		"gate": "bun scripts/checks.ts gate && turbo run check typecheck test"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.5.10",
