@@ -14,7 +14,8 @@
 
 import { beforeEach, describe, expect, it } from "bun:test";
 import { treaty } from "@elysia/eden";
-import { queryLedger } from "@sports/db";
+import { db, queryLedger } from "@sports/db";
+import { matchEvents, matchPeriods } from "@sports/db/tables";
 import { app } from "../src/app";
 import {
 	resetDb,
@@ -99,6 +100,53 @@ describe("query budgets", () => {
 				call: () => api.teams.get({ query: {} }),
 			},
 			{ label: "GET /players", budget: 2, call: () => api.players.get() },
+		];
+
+		for (const row of rows) {
+			const measure = countQueries(row.label, row.budget, row.call);
+			await measure();
+		}
+	});
+
+	it("detail reads pin their first rows as each earns scrutiny", async () => {
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		const home = await seedTeam();
+		const away = await seedTeam();
+		await seedRegistration(stage.id, home.id);
+		await seedRegistration(stage.id, away.id);
+		const match = await seedMatch(stage.id, {
+			homeTeamId: home.id,
+			awayTeamId: away.id,
+		});
+		// Partido con su relato poblado: el caso realista de un detalle leído
+		// en vivo (periodos + eventos), que es lo que la fila fija.
+		await db.insert(matchPeriods).values({
+			matchId: match.id,
+			periodNumber: 1,
+			periodType: "regular",
+			homeScore: 1,
+			awayScore: 0,
+		});
+		await db.insert(matchEvents).values({
+			matchId: match.id,
+			teamId: home.id,
+			periodNumber: 1,
+			minuteOrSecond: 12,
+			eventType: "goal",
+			eventValue: 1,
+		});
+
+		const rows: Row[] = [
+			{
+				label: "GET /matches/:id (detail with relations)",
+				budget: 1,
+				call: async () => {
+					queryLedger.length = 0;
+					return api.matches({ id: match.id }).get();
+				},
+			},
 		];
 
 		for (const row of rows) {

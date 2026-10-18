@@ -1,4 +1,4 @@
-import { queryKeys, unwrap } from "@sports/api-client";
+import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import { Badge, Card, CardHeader, CardTitle, Select } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -26,17 +26,7 @@ function MatchesPage() {
 		queryFn: () =>
 			unwrap(api.matches.get({ query: (status ? { status } : {}) as never })),
 	});
-	const matches = (
-		data as {
-			items: Array<{
-				id: string;
-				status: string;
-				homeScore: number;
-				awayScore: number;
-			}>;
-			total: number;
-		}
-	).items;
+	const matches = (data as { items: MatchWithTeams[]; total: number }).items;
 
 	return (
 		<div className="demo-page space-y-4">
@@ -68,7 +58,8 @@ function MatchesPage() {
 						<Card className="p-4 hover:border-(--lagoon-deep)">
 							<CardHeader className="p-0">
 								<CardTitle className="text-sm">
-									Partido {m.id.slice(0, 8)}
+									{m.homeTeam?.name ?? "Por definir"} vs{" "}
+									{m.awayTeam?.name ?? "Por definir"}
 								</CardTitle>
 							</CardHeader>
 							<div className="flex gap-2 mt-1">

@@ -5,6 +5,7 @@ import {
 	matchPeriods,
 	sportEventTypes,
 	stageTeamRegistrations,
+	teams,
 	tournamentEditions,
 	tournamentStages,
 	tournaments,
@@ -17,7 +18,8 @@ import type {
 	UpdateMatchInfo,
 	UpdateMatchScore,
 } from "@sports/schemas";
-import { and, asc, count, eq, getColumns, sql } from "drizzle-orm";
+import { and, asc, count, eq, getTableColumns, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { publishMatch } from "../lib/live";
 import { DomainError } from "./errors";
 import { getStageTournamentId } from "./scoped-ids.service";
@@ -27,6 +29,14 @@ import { findTeamById } from "./team.service";
 import { findVenueById } from "./venue.service";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Identidad de los participantes en el listado: la fila de la lista paga los
+// participantes con dos LEFT JOIN con alias (mismo round trip), no con
+// consultas cliente-side (ADR 008 — la fila de GET /matches sigue en 2).
+type MatchListItem = typeof matches.$inferSelect & {
+	homeTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
+	awayTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
+};
 
 // Transiciones válidas de estado de un partido
 const MATCH_STATUS_TRANSITIONS: Record<string, string[]> = {
@@ -66,7 +76,7 @@ const MATCH_RELATIONS = {
 
 export async function listMatches(
 	filter: MatchFilterQuery,
-): Promise<PaginatedResponse<typeof matches.$inferSelect>> {
+): Promise<PaginatedResponse<MatchListItem>> {
 	const conditions = [];
 	if (filter.stageId) conditions.push(eq(matches.stageId, filter.stageId));
 	if (filter.groupId) conditions.push(eq(matches.groupId, filter.groupId));
@@ -80,34 +90,41 @@ export async function listMatches(
 	const where = conditions.length ? and(...conditions) : undefined;
 	const needsScopeJoin = Boolean(filter.editionId || filter.tournamentId);
 
-	const itemsQuery = needsScopeJoin
-		? db
-				.select({ ...getColumns(matches) })
-				.from(matches)
-				.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
-				.innerJoin(
-					tournamentEditions,
-					eq(tournamentStages.editionId, tournamentEditions.id),
-				)
-				.where(where)
-				.orderBy(
-					asc(matches.roundNumber),
-					asc(matches.matchNumber),
-					asc(matches.scheduledAt),
-				)
-				.limit(filter.limit ?? 20)
-				.offset(filter.offset ?? 0)
-		: db
-				.select()
-				.from(matches)
-				.where(where)
-				.orderBy(
-					asc(matches.roundNumber),
-					asc(matches.matchNumber),
-					asc(matches.scheduledAt),
-				)
-				.limit(filter.limit ?? 20)
-				.offset(filter.offset ?? 0);
+	const homeTeams = alias(teams, "home_team");
+	const awayTeams = alias(teams, "away_team");
+
+	const itemSelection = {
+		...getTableColumns(matches),
+		homeTeam: { id: homeTeams.id, name: homeTeams.name },
+		awayTeam: { id: awayTeams.id, name: awayTeams.name },
+	};
+	const orderBy = [
+		asc(matches.roundNumber),
+		asc(matches.matchNumber),
+		asc(matches.scheduledAt),
+	];
+
+	// Left join: un partido de llave puede no tener equipos definidos aún.
+	const baseItems = db
+		.select(itemSelection)
+		.from(matches)
+		.leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
+		.leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id));
+
+	const itemsQuery = (
+		needsScopeJoin
+			? baseItems
+					.innerJoin(tournamentStages, eq(matches.stageId, tournamentStages.id))
+					.innerJoin(
+						tournamentEditions,
+						eq(tournamentStages.editionId, tournamentEditions.id),
+					)
+			: baseItems
+	)
+		.where(where)
+		.orderBy(...orderBy)
+		.limit(filter.limit ?? 20)
+		.offset(filter.offset ?? 0);
 
 	const totalQuery = needsScopeJoin
 		? db

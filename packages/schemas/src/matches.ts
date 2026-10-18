@@ -5,6 +5,8 @@ import {
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
+import { selectVenueSchema } from "./sports";
+import { selectTeamSchema } from "./teams";
 
 // ==========================================
 // 1. ESQUEMAS CRUD BASE (Generados desde DB)
@@ -55,6 +57,42 @@ export const insertMatchPeriodSchema = createInsertSchema(matchPeriods);
 
 export const selectMatchEventSchema = createSelectSchema(matchEvents);
 export const insertMatchEventSchema = createInsertSchema(matchEvents);
+
+// ==========================================
+// 1bis. RESPUESTAS DE LECTURA CON RELACIONES
+// ==========================================
+// Lo que viaja en una respuesta de partido se declara aquí: la relación no
+// declarada hace que el cliente reciba el campo por casualidad y lo mate un
+// cast. Cada relación extra es presupuesto — su fila en query-budgets la
+// paga (ADR 008).
+
+// Referencia ligera para listados: la lista de partidos no necesita el cuerpo
+// completo del equipo, solo la identidad que muestra la tarjeta.
+export const matchTeamRefSchema = t.Pick(selectTeamSchema, ["id", "name"]);
+
+// GET /matches (lista): partido con los dos participantes resueltos
+// (nullable: en llaves los equipos pueden definirse después).
+// NOTA: la composición es un único t.Object (spread de properties del esquema
+// derivado); t.Intersect rompe el compilador de validación de respuesta de
+// Elysia aquí ("Could not create expected value" → 400 en runtime).
+export const matchWithTeamsSchema = t.Object({
+	...selectMatchSchema.properties,
+	homeTeam: t.Union([matchTeamRefSchema, t.Null()]),
+	awayTeam: t.Union([matchTeamRefSchema, t.Null()]),
+});
+
+// GET /matches/:id (detalle): las relaciones que MATCH_RELATIONS ya trae de
+// vuelta, declaradas. Es el detalle por página: una sola llamada, sin
+// consultas client-side para venue ni nombres.
+export const matchDetailSchema = t.Object({
+	...selectMatchSchema.properties,
+	homeTeam: t.Union([selectTeamSchema, t.Null()]),
+	awayTeam: t.Union([selectTeamSchema, t.Null()]),
+	winnerTeam: t.Union([selectTeamSchema, t.Null()]),
+	venue: t.Union([selectVenueSchema, t.Null()]),
+	periods: t.Array(selectMatchPeriodSchema),
+	events: t.Array(selectMatchEventSchema),
+});
 
 // ==========================================
 // 2. DTOs PARA ENDPOINTS Y FORMULARIOS
@@ -137,6 +175,8 @@ export const matchScheduleUpdateSchema = t.Object({
 // ==========================================
 
 export type Match = Static<typeof selectMatchSchema>;
+export type MatchWithTeams = Static<typeof matchWithTeamsSchema>;
+export type MatchDetail = Static<typeof matchDetailSchema>;
 export type InsertMatch = Static<typeof insertMatchSchema>;
 export type CreateMatch = Static<typeof createMatchSchema>;
 export type UpdateMatch = Static<typeof updateMatchSchema>;

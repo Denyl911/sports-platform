@@ -1,4 +1,4 @@
-import { queryKeys, unwrap } from "@sports/api-client";
+import { type MatchDetail, queryKeys, unwrap } from "@sports/api-client";
 import { useGroupLive, useMatchLive } from "@sports/api-client/live";
 import {
 	Badge,
@@ -11,7 +11,7 @@ import {
 	StandingsTable,
 	VenuePill,
 } from "@sports/ui";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { api, getStoredAccessToken } from "../../lib/api";
@@ -36,34 +36,7 @@ function MatchDetailPage() {
 		queryKey: queryKeys.matches.detail(matchId),
 		queryFn: () => unwrap(api.matches({ id: matchId }).get()),
 	});
-	const match = matchData as {
-		id: string;
-		stageId: string;
-		groupId: string | null;
-		homeTeamId: string | null;
-		awayTeamId: string | null;
-		homeScore: number;
-		awayScore: number;
-		status:
-			| "scheduled"
-			| "in_progress"
-			| "paused"
-			| "finished"
-			| "cancelled"
-			| "walkover";
-		scheduledAt: string | null;
-		venueId: string | null;
-	};
-	const { data: venueData } = useQuery({
-		queryKey: match.venueId
-			? queryKeys.venues.detail(match.venueId)
-			: ["venues", "none"],
-		queryFn: () => unwrap(api.venues({ id: match.venueId! }).get()),
-		enabled: !!match.venueId,
-	});
-	const venue = venueData as
-		| { name: string; address?: string | null }
-		| undefined;
+	const match = matchData as MatchDetail;
 
 	const live = useMatchLive(matchId, {
 		getToken: getStoredAccessToken,
@@ -91,12 +64,12 @@ function MatchDetailPage() {
 		<div className="demo-page space-y-6">
 			<MatchCard
 				homeTeam={{
-					id: match.homeTeamId ?? "home",
-					name: match.homeTeamId?.slice(0, 8) ?? "Local",
+					id: match.homeTeam?.id ?? match.homeTeamId ?? "home",
+					name: match.homeTeam?.name ?? "Por definir",
 				}}
 				awayTeam={{
-					id: match.awayTeamId ?? "away",
-					name: match.awayTeamId?.slice(0, 8) ?? "Visitante",
+					id: match.awayTeam?.id ?? match.awayTeamId ?? "away",
+					name: match.awayTeam?.name ?? "Por definir",
 				}}
 				homeScore={match.homeScore}
 				awayScore={match.awayScore}
@@ -105,7 +78,9 @@ function MatchDetailPage() {
 				live={live.isOpen}
 				roundLabel={live.status}
 			/>
-			{venue && <VenuePill name={venue.name} address={venue.address} />}
+			{match.venue && (
+				<VenuePill name={match.venue.name} address={match.venue.address} />
+			)}
 
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">

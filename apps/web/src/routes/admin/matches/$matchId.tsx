@@ -1,10 +1,14 @@
-import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
+import {
+	getApiErrorMessage,
+	type MatchDetail,
+	queryKeys,
+	unwrap,
+} from "@sports/api-client";
 import {
 	useAssignVenue,
 	useDeleteMatch,
 	useRecordLiveEvent,
 	useScheduleMatch,
-	useTeams,
 	useUpdateMatch,
 	useUpdateMatchScore,
 	useVenues,
@@ -35,31 +39,10 @@ function AdminMatchLivePage() {
 		queryKey: queryKeys.matches.detail(matchId),
 		queryFn: () => unwrap(api.matches({ id: matchId }).get()),
 	});
-	const match = matchData as
-		| {
-				id: string;
-				stageId: string;
-				groupId: string | null;
-				homeTeamId: string | null;
-				awayTeamId: string | null;
-				homeScore: number;
-				awayScore: number;
-				status: string;
-				venueId: string | null;
-				scheduledAt: string | null;
-				winnerTeamId?: string | null;
-		  }
-		| undefined;
-
-	const { data: teamsData } = useTeams(api);
-	const teams =
-		(
-			teamsData as
-				| { items: Array<{ id: string; name: string }>; total: number }
-				| undefined
-		)?.items ?? [];
-	const getTeamName = (id: string | null) =>
-		teams.find((t) => t.id === id)?.name ?? (id ? id.slice(0, 8) : "—");
+	const match = matchData as MatchDetail | undefined;
+	const scheduledAtIso = match?.scheduledAt
+		? new Date(match.scheduledAt).toISOString()
+		: null;
 
 	const updateScore = useUpdateMatchScore(api);
 	const live = useMatchLive(matchId, {
@@ -115,16 +98,16 @@ function AdminMatchLivePage() {
 
 			<MatchCard
 				homeTeam={{
-					id: match.homeTeamId ?? "home",
-					name: getTeamName(match.homeTeamId),
+					id: match.homeTeam?.id ?? match.homeTeamId ?? "home",
+					name: match.homeTeam?.name ?? "Por definir",
 				}}
 				awayTeam={{
-					id: match.awayTeamId ?? "away",
-					name: getTeamName(match.awayTeamId),
+					id: match.awayTeam?.id ?? match.awayTeamId ?? "away",
+					name: match.awayTeam?.name ?? "Por definir",
 				}}
 				homeScore={match.homeScore}
 				awayScore={match.awayScore}
-				status={match.status as never}
+				status={match.status}
 				scheduledAt={match.scheduledAt}
 				live={live.isOpen}
 				roundLabel={
@@ -175,16 +158,21 @@ function AdminMatchLivePage() {
 					{tab === "events" && (
 						<EventsTab
 							matchId={matchId}
-							homeTeamId={match.homeTeamId}
-							awayTeamId={match.awayTeamId}
-							teams={teams}
+							participants={[
+								...(match.homeTeam
+									? [{ id: match.homeTeam.id, name: match.homeTeam.name }]
+									: []),
+								...(match.awayTeam
+									? [{ id: match.awayTeam.id, name: match.awayTeam.name }]
+									: []),
+							]}
 						/>
 					)}
 					{tab === "venue" && (
 						<VenueTab matchId={matchId} venueId={match.venueId} />
 					)}
 					{tab === "schedule" && (
-						<ScheduleTab matchId={matchId} scheduledAt={match.scheduledAt} />
+						<ScheduleTab matchId={matchId} scheduledAt={scheduledAtIso} />
 					)}
 					{tab === "info" && (
 						<InfoTab
@@ -290,29 +278,25 @@ function ScoreTab({
 
 function EventsTab({
 	matchId,
-	homeTeamId,
-	awayTeamId,
-	teams,
+	participants,
 }: {
 	matchId: string;
-	homeTeamId: string | null;
-	awayTeamId: string | null;
-	teams: Array<{ id: string; name: string }>;
+	participants: Array<{ id: string; name: string }>;
 }) {
 	const recordEvent = useRecordLiveEvent(api);
 	const live = useMatchLive(matchId, {
 		getToken: getStoredAccessToken,
 		updateCache: true,
 	});
-	const [teamId, setTeamId] = React.useState(homeTeamId ?? "");
+	const [teamId, setTeamId] = React.useState(participants[0]?.id ?? "");
 	const [eventType, setEventType] = React.useState("goal");
 	const [periodNumber, setPeriodNumber] = React.useState(1);
 	const [minuteOrSecond, setMinuteOrSecond] = React.useState(0);
 	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
-		if (homeTeamId) setTeamId(homeTeamId);
-	}, [homeTeamId]);
+		if (participants[0]) setTeamId(participants[0].id);
+	}, [matchId, participants]);
 
 	const onSend = async (viaWs: boolean) => {
 		setError(null);
@@ -347,16 +331,12 @@ function EventsTab({
 				<div>
 					<Label>Equipo</Label>
 					<Select value={teamId} onChange={(e) => setTeamId(e.target.value)}>
-						{teams
-							.filter((t) => t.id === homeTeamId || t.id === awayTeamId)
-							.map((t) => (
-								<option key={t.id} value={t.id}>
-									{t.name}
-								</option>
-							))}
-						{!homeTeamId && !awayTeamId && (
-							<option value="">Sin equipos</option>
-						)}
+						{participants.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
+						{participants.length === 0 && <option value="">Sin equipos</option>}
 					</Select>
 				</div>
 				<div>
@@ -477,7 +457,7 @@ function ScheduleTab({
 	scheduledAt,
 }: {
 	matchId: string;
-	scheduledAt: string | null;
+	scheduledAt: Date | string | null;
 }) {
 	const scheduleMatch = useScheduleMatch(api);
 	const [dt, setDt] = React.useState(
@@ -514,7 +494,7 @@ function ScheduleTab({
 				<div className="demo-alert text-sm">Programado</div>
 			)}
 			<div className="text-xs text-(--sea-ink-soft)">
-				Actual: {scheduledAt ?? "—"}
+				Actual: {scheduledAt ? new Date(scheduledAt).toLocaleString() : "—"}
 			</div>
 		</div>
 	);

@@ -1,4 +1,4 @@
-import { queryKeys, unwrap } from "@sports/api-client";
+import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -53,20 +53,8 @@ function StageDetailPage() {
 	const groups = (
 		groupsData as { items: Array<{ id: string; name: string }>; total: number }
 	).items;
-	const matches = (
-		matchesData as {
-			items: Array<{
-				id: string;
-				homeTeamId: string | null;
-				awayTeamId: string | null;
-				status: string;
-				roundNumber?: number | null;
-				homeScore?: number | null;
-				awayScore?: number | null;
-			}>;
-			total: number;
-		}
-	).items;
+	const matches = (matchesData as { items: MatchWithTeams[]; total: number })
+		.items;
 	const registrations = (
 		regsData as {
 			items: Array<{
@@ -144,7 +132,10 @@ function StageDetailPage() {
 						>
 							<Card className="p-4">
 								<CardHeader className="p-0">
-									<CardTitle className="text-sm">{m.id.slice(0, 8)}</CardTitle>
+									<CardTitle className="text-sm">
+										{m.homeTeam?.name ?? "Por definir"} vs{" "}
+										{m.awayTeam?.name ?? "Por definir"}
+									</CardTitle>
 								</CardHeader>
 								<CardContent className="p-0">
 									<Badge>{m.status}</Badge>

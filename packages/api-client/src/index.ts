@@ -37,4 +37,6 @@ export { getDefaultApiUrl, resolveBaseUrl } from "./config";
 export * from "./live";
 export * from "./queryKeys";
 export { queryKeys } from "./queryKeys";
-export type { ApiErrorBody, App, Paginated, TreatyApp } from "./types";
+// Barrel completo del módulo de tipos: todo lo que @sports/schemas deriva
+// viaja al consumidor (el contrato no se reimprime aquí por partes).
+export type * from "./types";

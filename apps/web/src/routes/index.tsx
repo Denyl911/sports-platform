@@ -1,4 +1,4 @@
-import { queryKeys, unwrap } from "@sports/api-client";
+import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import { Badge, Card, CardHeader, CardTitle } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -9,13 +9,6 @@ type TournamentItem = {
 	name: string;
 	sportId: string;
 	description?: string | null;
-};
-
-type MatchItem = {
-	id: string;
-	status: string;
-	homeScore: number;
-	awayScore: number;
 };
 
 const LIVE_QUERY = { status: "in_progress", limit: 6 } as const;
@@ -62,9 +55,11 @@ function HomePage() {
 	const tournaments = (
 		tournamentsData as { items: TournamentItem[]; total: number }
 	).items.slice(0, 6);
-	const liveMatches = (liveData as { items: MatchItem[]; total: number }).items;
-	const recentMatches = (recentData as { items: MatchItem[]; total: number })
+	const liveMatches = (liveData as { items: MatchWithTeams[]; total: number })
 		.items;
+	const recentMatches = (
+		recentData as { items: MatchWithTeams[]; total: number }
+	).items;
 
 	return (
 		<main className="page-wrap space-y-8 px-4 pb-8 pt-6">
@@ -139,7 +134,7 @@ function HomePage() {
 				</div>
 				<div className="grid gap-3 sm:grid-cols-2">
 					{liveMatches.map((m) => (
-						<MatchCard key={m.id} match={m} live />
+						<LiveMatchCard key={m.id} match={m} live />
 					))}
 				</div>
 				{liveMatches.length === 0 && (
@@ -153,7 +148,7 @@ function HomePage() {
 				<h2 className="demo-section-title mb-3">Resultados recientes</h2>
 				<div className="grid gap-3 sm:grid-cols-2">
 					{recentMatches.map((m) => (
-						<MatchCard key={m.id} match={m} />
+						<LiveMatchCard key={m.id} match={m} />
 					))}
 				</div>
 				{recentMatches.length === 0 && (
@@ -166,11 +161,11 @@ function HomePage() {
 	);
 }
 
-function MatchCard({
+function LiveMatchCard({
 	match: m,
 	live = false,
 }: {
-	match: MatchItem;
+	match: MatchWithTeams;
 	live?: boolean;
 }) {
 	return (
@@ -181,7 +176,10 @@ function MatchCard({
 		>
 			<Card className="p-4 hover:border-(--lagoon-deep)">
 				<CardHeader className="p-0">
-					<CardTitle className="text-sm">Partido {m.id.slice(0, 8)}</CardTitle>
+					<CardTitle className="text-sm">
+						{m.homeTeam?.name ?? "Por definir"} vs{" "}
+						{m.awayTeam?.name ?? "Por definir"}
+					</CardTitle>
 				</CardHeader>
 				<div className="mt-1 flex gap-2">
 					<Badge variant={live ? "success" : "secondary"}>{m.status}</Badge>

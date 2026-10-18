@@ -2,10 +2,12 @@
 
 import {
 	createMatchSchema,
+	matchDetailSchema,
 	matchFilterQuerySchema,
 	matchIdParamsSchema,
 	matchScheduleUpdateSchema,
 	matchVenueUpdateSchema,
+	matchWithTeamsSchema,
 	recordLiveEventSchema,
 	selectMatchEventSchema,
 	selectMatchSchema,
@@ -39,27 +41,30 @@ export const matchesRoutes = new Elysia({
 	.get("/", async ({ query }) => listMatches(query), {
 		query: matchFilterQuerySchema,
 		response: {
-			200: t.Object({ items: t.Array(selectMatchSchema), total: t.Integer() }),
+			200: t.Object({
+				items: t.Array(matchWithTeamsSchema),
+				total: t.Integer(),
+			}),
 			400: errorMessageSchema,
 		},
 		detail: {
 			summary: "Listar partidos",
 			description:
-				"Lectura pública. Filtros: `stageId`, `groupId`, `tournamentId`, `editionId`, `status`. Paginado con `limit`/`offset`. Retorna `{ items, total }`.",
+				"Lectura pública. Filtros: `stageId`, `groupId`, `tournamentId`, `editionId`, `status`. Paginado con `limit`/`offset`. Retorna `{ items, total }` con `items[].homeTeam` y `items[].awayTeam` resueltos (`{ id, name }`, null si aún no se definen).",
 			tags: ["Matches"],
 		},
 	})
 	.get("/:id", async ({ params }) => findMatchById(params.id), {
 		params: matchIdParamsSchema,
 		response: {
-			200: selectMatchSchema,
+			200: matchDetailSchema,
 			400: errorMessageSchema,
 			404: errorMessageSchema,
 		},
 		detail: {
 			summary: "Obtener partido por ID",
 			description:
-				"Lectura pública. Incluye periodos, eventos y relaciones. 404 si no existe.",
+				"Lectura pública. Incluye periodos, eventos, sede y equipos resueltos (`homeTeam`, `awayTeam`, `winnerTeam`; null si aún no se definen). 404 si no existe.",
 			tags: ["Matches"],
 		},
 	})
