@@ -1,4 +1,4 @@
-import { boolean, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import { boolean, integer, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
 import { index } from "drizzle-orm/pg-core/indexes";
 import { pgTable } from "drizzle-orm/pg-core/table";
 import { users } from "./users";

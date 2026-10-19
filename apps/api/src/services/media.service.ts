@@ -16,7 +16,7 @@ const S3_ENDPOINT = process.env.S3_ENDPOINT ?? "http://localhost:9000";
 const S3_REGION = process.env.S3_REGION ?? "us-east-1";
 const S3_BUCKET = process.env.S3_BUCKET ?? "sports-platform-dev";
 const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY ?? "minioadmin";
-
+const S3_SECRET_KEY = process.env.S3_SECRET_KEY ?? "minioadmin";
 const S3_PUBLIC_URL =
 	process.env.S3_PUBLIC_URL ?? "http://localhost:9000/sports-platform-dev";
 const PRESIGNED_URL_EXPIRY = 300; // 5 minutos
@@ -106,7 +106,7 @@ export async function getMediaAsset(id: string): Promise<MediaAssetResponse> {
 		originalName: asset.originalName,
 		mimeType: asset.mimeType,
 		sizeBytes: asset.sizeBytes,
-		mediaType: asset.mediaType as "image" | "video",
+		mediaType: asset.mediaType,
 		publicUrl: `${S3_PUBLIC_URL}/${asset.key}`,
 		createdAt: asset.createdAt.toISOString(),
 	};
