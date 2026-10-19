@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind detecta las fuentes desde el CSS de la app (`apps/web/src`), así
+ * que este paquete queda fuera de esa raíz: una clase que solo existe aquí
+ * (`size-12`, `h-8 w-8`, `rounded-md`) se descarta y el componente sale sin
+ * el estilo que declara. Declarar las fuentes del paquete en su propia hoja
+ * las suma a cualquier app que la importe.
+ */
+@source "./components";
+
 @theme {
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
