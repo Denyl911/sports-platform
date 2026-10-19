@@ -73,6 +73,12 @@ export const advanceStageResultSchema = t.Object({
 	registered: t.Integer({ minimum: 0 }),
 });
 
+export const generateBracketResultSchema = t.Object({
+	created: t.Integer({ minimum: 0 }),
+	rounds: t.Integer({ minimum: 1 }),
+	byes: t.Integer({ minimum: 0 }),
+});
+
 // ==========================================
 // DTOs PARA ENDPOINTS Y FORMULARIOS
 // ==========================================
@@ -137,3 +143,4 @@ export type AdvancementRulesInput = Static<typeof advancementRulesSchema>;
 export type StageQualifier = Static<typeof stageQualifierSchema>;
 export type StageQualifiers = Static<typeof stageQualifiersSchema>;
 export type AdvanceStageResult = Static<typeof advanceStageResultSchema>;
+export type GenerateBracketResult = Static<typeof generateBracketResultSchema>;

@@ -9,39 +9,26 @@ import {
 } from "@sports/db/tables";
 import type { AdvancementRulesInput, StageQualifiers } from "@sports/schemas";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import { findNextStage, findStageById } from "./stage.service";
+import { DomainError } from "./errors";
+import {
+	findNextStage,
+	findPreviousStage,
+	findStageById,
+} from "./stage.service";
 
 // ==========================================
 // Avance entre etapas
 // ==========================================
-//
-// La etapa no "recuerda" a quién movió: la previa es una función de lo que
-// la tabla dice hoy más la regla que la etapa declara. Esto es la mitad de
-// lectura; materializar los clasificados en la etapa siguiente vive acá
-// mismo cuando entre (misma fuente, un solo normalizador de regla).
 
 /**
  * Previa de clasificados: la posición de cada equipo inscrito **con grupo**
  * en la etapa, ordenada como la tabla (puntos, diferencia, a favor, id) y con
  * la regla de avance aplicada.
- *
- * Se arma desde `stage_standings` con `leftJoin`: un grupo que todavía no
- * jugó no tiene filas de tabla y sus equipos igual tienen que figurar — son
- * los que están compitiendo por el puesto. El orden no confía en
- * `rankPosition` (lo asigna el recálculo y puede faltar) y termina en el id
- * del equipo: dos equipos idénticos en los tres criterios tienen que salir
- * siempre en el mismo orden, o el avance no es reproducible.
- *
- * Round trips: la etapa (404 y regla) y las filas ordenadas — 2, la fila de
- * `query-budgets.test.ts` lo fija (ADR 008).
  */
 export async function listStageQualifiers(
 	stageId: string,
 ): Promise<StageQualifiers> {
 	const stage = await findStageById(stageId);
-	// `advancementRules` es jsonb: la forma la pone el contrato. El cast es la
-	// única frontera donde el dominio lee la regla (el round-trip test paga
-	// que la forma que se escribe vuelva con la misma forma).
 	const rule = normalizeAdvancementRules(
 		stage.advancementRules as AdvancementRules,
 	);
@@ -75,7 +62,6 @@ export async function listStageQualifiers(
 			asc(teams.id),
 		);
 
-	// La posición es un contador por grupo en el orden que ya trae la query.
 	const positions = new Map<string, number>();
 	const items: StageQualifiers["items"] = [];
 	for (const row of rows) {
@@ -94,10 +80,6 @@ export async function listStageQualifiers(
 	return { rule, items };
 }
 
-/**
- * La regla con forma, o `null` cuando la etapa no alimenta a nadie: `{}` (el
- * default de la columna) y "sin clasificados" son lo mismo.
- */
 export function normalizeAdvancementRules(
 	raw: AdvancementRules,
 ): AdvancementRulesInput | null {
@@ -119,19 +101,6 @@ export interface SyncAdvancementResult {
 	registered: number;
 }
 
-/**
- * Mueve los clasificados de `sourceStageId` a la etapa siguiente (la de
- * menor `sequenceOrder` mayor en la misma edición), **solo si la etapa
- * siguiente no ha empezado**: una etapa con partidos en curso o terminados
- * ya tiene resultados y reescribir sus equipos rompería la integridad.
- *
- * La inscripción del destino pasa a ser *derivada*: se insertan los
- * faltantes, se ajusta el `seedNumber` y se quitan los que ya no clasifican.
- * Idempotente: correrla dos veces deja el mismo conjunto.
- *
- * Round trips: etapa origen (regla), etapa siguiente, partidos del destino
- * (seguridad) y las filas de clasificados — 4, medidos cuando se fije la fila.
- */
 export async function syncAdvancement(
 	sourceStageId: string,
 ): Promise<SyncAdvancementResult> {
@@ -144,8 +113,6 @@ export async function syncAdvancement(
 	const next = await findNextStage(source.editionId, source.sequenceOrder);
 	if (!next) return { synced: false, reason: "no_next_stage", registered: 0 };
 
-	// Seguridad: si la etapa siguiente ya tiene partidos no programados, no
-	// se toca — los equipos ya están compitiendo.
 	const started = await db
 		.select({ id: matches.id })
 		.from(matches)
@@ -181,7 +148,6 @@ export async function syncAdvancement(
 		const currentByTeam = new Map(current.map((r) => [r.teamId, r.id]));
 		const qualifiedIds = new Set(qualified.map((q) => q.team.id));
 
-		// Insertar / actualizar los que clasifican, con seedNumber por orden.
 		let seed = 1;
 		for (const q of qualified) {
 			const existingId = currentByTeam.get(q.team.id);
@@ -200,7 +166,6 @@ export async function syncAdvancement(
 			seed++;
 		}
 
-		// Quitar los que ya no clasifican.
 		for (const r of current) {
 			if (!qualifiedIds.has(r.teamId)) {
 				await tx
@@ -211,4 +176,204 @@ export async function syncAdvancement(
 	});
 
 	return { synced: true, reason: null, registered: qualified.length };
+}
+
+// ==========================================
+// Generación de la llave de eliminación directa
+// ==========================================
+
+export interface GenerateBracketResult {
+	created: number;
+	rounds: number;
+	byes: number;
+}
+
+export async function advanceBracketWinner(matchId: string): Promise<void> {
+	const [match] = await db
+		.select()
+		.from(matches)
+		.where(eq(matches.id, matchId))
+		.limit(1);
+	if (!match || !match.nextMatchId || !match.nextMatchSlot) return;
+	if (match.status !== "finished" && match.status !== "walkover") return;
+	if (!match.winnerTeamId) return;
+
+	const [next] = await db
+		.select()
+		.from(matches)
+		.where(eq(matches.id, match.nextMatchId))
+		.limit(1);
+	if (!next) return;
+	if (next.status !== "scheduled") {
+		throw DomainError.conflict(
+			"El partido siguiente ya empezó; no se puede propagar el ganador automáticamente",
+		);
+	}
+	await db
+		.update(matches)
+		.set(
+			match.nextMatchSlot === "home"
+				? { homeTeamId: match.winnerTeamId }
+				: { awayTeamId: match.winnerTeamId },
+		)
+		.where(eq(matches.id, next.id));
+}
+
+function nextPow2(n: number): number {
+	let s = 1;
+	while (s < n) s *= 2;
+	return s;
+}
+
+export async function generateBracket(
+	stageId: string,
+	force: boolean,
+): Promise<GenerateBracketResult> {
+	const stage = await findStageById(stageId);
+	if (stage.stageType !== "single_elimination") {
+		throw DomainError.badRequest(
+			"La llave solo se genera para etapas de eliminación directa",
+		);
+	}
+
+	let entrants: { teamId: string; seed: number }[] = [];
+	const source = await findPreviousStage(stage.editionId, stage.sequenceOrder);
+	if (source) {
+		const rule = normalizeAdvancementRules(
+			source.advancementRules as AdvancementRules,
+		);
+		if (rule) {
+			const { items } = await listStageQualifiers(source.id);
+			entrants = items
+				.filter((q) => q.qualified)
+				.map((q, i) => ({ teamId: q.team.id, seed: i + 1 }));
+		}
+	}
+	if (entrants.length === 0) {
+		const regs = await db
+			.select({
+				teamId: stageTeamRegistrations.teamId,
+				seedNumber: stageTeamRegistrations.seedNumber,
+			})
+			.from(stageTeamRegistrations)
+			.where(eq(stageTeamRegistrations.stageId, stageId))
+			.orderBy(
+				asc(stageTeamRegistrations.seedNumber),
+				asc(stageTeamRegistrations.teamId),
+			);
+		entrants = regs.map((r, i) => ({
+			teamId: r.teamId,
+			seed: r.seedNumber ?? i + 1,
+		}));
+	}
+	if (entrants.length < 2) {
+		throw DomainError.badRequest(
+			"Se necesitan al menos 2 clasificados para generar la llave",
+		);
+	}
+
+	const existing = await db
+		.select({ id: matches.id, status: matches.status })
+		.from(matches)
+		.where(eq(matches.stageId, stageId));
+	if (existing.length > 0) {
+		if (existing.some((m) => m.status !== "scheduled")) {
+			throw DomainError.conflict("La llave ya empezó; no se puede regenerar");
+		}
+		if (!force) {
+			throw DomainError.conflict(
+				"La etapa ya tiene partidos; usa force para regenerar",
+			);
+		}
+		await db.delete(matches).where(eq(matches.stageId, stageId));
+	}
+
+	entrants.sort((a, b) => a.seed - b.seed);
+
+	const S = nextPow2(entrants.length);
+	const byes = S - entrants.length;
+	const rounds = Math.log2(S);
+
+	function seedPositions(size: number): number[] {
+		if (size === 1) return [0];
+		const prev = seedPositions(size / 2);
+		const result: number[] = [];
+		for (const p of prev) {
+			result.push(p);
+			result.push(size - 1 - p);
+		}
+		return result;
+	}
+	const positions = seedPositions(S);
+	const leaves: (string | null)[] = Array(S).fill(null);
+	for (let i = 0; i < entrants.length; i++) {
+		leaves[positions[i]] = entrants[i].teamId;
+	}
+
+	const roundMatches: string[][] = Array.from({ length: rounds + 1 }, () => []);
+
+	for (let r = rounds; r >= 1; r--) {
+		const numMatches = S / 2 ** r;
+		for (let j = 0; j < numMatches; j++) {
+			let homeTeamId: string | null = null;
+			let awayTeamId: string | null = null;
+			let status: "scheduled" | "finished" = "scheduled";
+			let winnerTeamId: string | null = null;
+
+			if (r === 1) {
+				const left = leaves[2 * j];
+				const right = leaves[2 * j + 1];
+				homeTeamId = left;
+				awayTeamId = right;
+				if (left && !right) {
+					status = "finished";
+					winnerTeamId = left;
+				} else if (!left && right) {
+					status = "finished";
+					winnerTeamId = right;
+				} else if (!left && !right) {
+					// Doble bye: no hay partido.
+					continue;
+				}
+			}
+
+			const nextMatchId =
+				r < rounds ? roundMatches[r + 1][Math.floor(j / 2)] : null;
+			const nextMatchSlot = r < rounds ? (j % 2 === 0 ? "home" : "away") : null;
+
+			const [created] = await db
+				.insert(matches)
+				.values({
+					stageId,
+					roundNumber: r,
+					matchNumber: j + 1,
+					homeTeamId,
+					awayTeamId,
+					status,
+					winnerTeamId,
+					homeScore: 0,
+					awayScore: 0,
+					nextMatchId: nextMatchId ?? null,
+					nextMatchSlot: (nextMatchSlot as "home" | "away" | null) ?? null,
+				})
+				.returning();
+			roundMatches[r].push(created.id);
+
+			if (r === 1 && winnerTeamId && nextMatchId && nextMatchSlot) {
+				await db
+					.update(matches)
+					.set(
+						nextMatchSlot === "home"
+							? { homeTeamId: winnerTeamId }
+							: { awayTeamId: winnerTeamId },
+					)
+					.where(eq(matches.id, nextMatchId));
+			}
+		}
+	}
+
+	let created = 0;
+	for (let r = 1; r <= rounds; r++) created += roundMatches[r].length;
+
+	return { created, rounds, byes };
 }

@@ -339,3 +339,214 @@ describe("avance - materialización en la etapa siguiente", () => {
 		void source;
 	});
 });
+
+describe("avance - generación de llave", () => {
+	async function setup(n: number) {
+		const organizer = await seedUser({ role: "organizer" });
+		const sport = await seedSport();
+		const tournament = await seedTournament(sport.id);
+		const edition = await seedEdition(tournament.id);
+		const target = await seedStage(edition.id, 1, "single_elimination");
+		await seedMember(tournament.id, organizer.id, "organizer");
+		const teams = [];
+		for (let i = 0; i < n; i++) {
+			const t = await seedTeam(`T${i}`);
+			teams.push(t);
+			await seedRegistration(target.id, t.id);
+		}
+		return { organizer, target, teams };
+	}
+
+	it("genera la llave con byes para cupos no potencia de 2", async () => {
+		const { organizer, target } = await setup(6);
+		const res = await api
+			.stages({ stageId: target.id })
+			.bracket.post(undefined, { headers: await h(organizer) });
+		expect(res.status).toBe(200);
+		if (!res.data) throw new Error("no data");
+		expect(res.data.created).toBe(7);
+		expect(res.data.byes).toBe(2);
+		expect(res.data.rounds).toBe(3);
+
+		const matches = await api.matches.get({
+			query: { stageId: target.id } as never,
+		});
+		expect(matches.status).toBe(200);
+		if (!matches.data) throw new Error("no data");
+		const r1 = matches.data.items.filter((m) => m.roundNumber === 1);
+		expect(r1).toHaveLength(4);
+		const byes = r1.filter(
+			(m) => m.homeTeamId === null || m.awayTeamId === null,
+		);
+		expect(byes).toHaveLength(2);
+		expect(byes.every((m) => m.winnerTeamId !== null)).toBe(true);
+		const r2 = matches.data.items.filter((m) => m.roundNumber === 2);
+		expect(r2).toHaveLength(2);
+		expect(
+			r2.every((m) => m.homeTeamId !== null || m.awayTeamId !== null),
+		).toBe(true);
+		const r3 = matches.data.items.filter((m) => m.roundNumber === 3);
+		expect(r3).toHaveLength(1);
+		expect(r3[0]!.homeTeamId).toBeNull();
+		expect(r3[0]!.awayTeamId).toBeNull();
+	});
+
+	it("rechaza si ya hay partidos (sin force)", async () => {
+		const { organizer, target } = await setup(4);
+		const first = await api
+			.stages({ stageId: target.id })
+			.bracket.post(undefined, { headers: await h(organizer) });
+		expect(first.status).toBe(200);
+		const second = await api
+			.stages({ stageId: target.id })
+			.bracket.post(undefined, { headers: await h(organizer) });
+		expect(second.status).toBe(409);
+	});
+
+	it("force regenera si no empezó", async () => {
+		const { organizer, target } = await setup(4);
+		await api.stages({ stageId: target.id }).bracket.post(undefined, {
+			headers: await h(organizer),
+		});
+		const regen = await api
+			.stages({ stageId: target.id })
+			.bracket.post(undefined, {
+				query: { force: "true" },
+				headers: await h(organizer),
+			} as never);
+		expect(regen.status).toBe(200);
+		if (!regen.data) throw new Error("no data");
+		expect(regen.data.created).toBe(3);
+	});
+
+	it("rechaza si la etapa no es de eliminación", async () => {
+		const organizer = await seedUser({ role: "organizer" });
+		const sport = await seedSport();
+		const tournament = await seedTournament(sport.id);
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id, 1, "round_robin");
+		await seedMember(tournament.id, organizer.id, "organizer");
+		const res = await api
+			.stages({ stageId: stage.id })
+			.bracket.post(undefined, { headers: await h(organizer) });
+		expect(res.status).toBe(400);
+	});
+
+	it("rechaza con menos de 2 clasificados", async () => {
+		const organizer = await seedUser({ role: "organizer" });
+		const sport = await seedSport();
+		const tournament = await seedTournament(sport.id);
+		const edition = await seedEdition(tournament.id);
+		const target = await seedStage(edition.id, 1, "single_elimination");
+		await seedMember(tournament.id, organizer.id, "organizer");
+		const team = await seedTeam("Solo");
+		await seedRegistration(target.id, team.id);
+		const res = await api
+			.stages({ stageId: target.id })
+			.bracket.post(undefined, { headers: await h(organizer) });
+		expect(res.status).toBe(400);
+	});
+});
+
+describe("avance - propagación del ganador", () => {
+	async function setup() {
+		const organizer = await seedUser({ role: "organizer" });
+		const referee = await seedUser({ role: "viewer_staff" });
+		const sport = await seedSport();
+		const tournament = await seedTournament(sport.id);
+		const edition = await seedEdition(tournament.id);
+		const target = await seedStage(edition.id, 1, "single_elimination");
+		await seedMember(tournament.id, organizer.id, "organizer");
+		await seedMember(tournament.id, referee.id, "referee");
+		const teams = [];
+		for (let i = 0; i < 4; i++) {
+			const t = await seedTeam(`T${i}`);
+			teams.push(t);
+			await seedRegistration(target.id, t.id);
+		}
+		await api.stages({ stageId: target.id }).bracket.post(undefined, {
+			headers: await h(organizer),
+		});
+		const matches = await api.matches.get({
+			query: { stageId: target.id } as never,
+		});
+		if (!matches.data) throw new Error("no data");
+		const r1 = matches.data.items.filter((m) => m.roundNumber === 1);
+		const final = matches.data.items.find((m) => m.roundNumber === 2)!;
+		return { organizer, referee, target, teams, r1, final };
+	}
+
+	async function finish(
+		matchId: string,
+		homeScore: number,
+		awayScore: number,
+		referee: UserRow,
+	) {
+		await api
+			.matches({ id: matchId })
+			.score.patch(
+				{ homeScore, awayScore, status: "in_progress" },
+				{ headers: await h(referee) },
+			);
+		return api
+			.matches({ id: matchId })
+			.score.patch(
+				{ homeScore, awayScore, status: "finished" },
+				{ headers: await h(referee) },
+			);
+	}
+
+	it("al finalizar un partido de llave, el ganador ocupa el slot del siguiente", async () => {
+		const { referee, r1, final } = await setup();
+		const m0 = r1[0]!;
+		const score = await finish(m0.id, 2, 1, referee);
+		expect(score.status).toBe(200);
+
+		const finalAfter = await api.matches({ id: final.id }).get();
+		expect(finalAfter.status).toBe(200);
+		if (!finalAfter.data) throw new Error("no data");
+		const winnerId = m0.homeTeamId;
+		expect(
+			finalAfter.data.homeTeamId === winnerId ||
+				finalAfter.data.awayTeamId === winnerId,
+		).toBe(true);
+	});
+
+	it("finalizar el otro partido completa la final", async () => {
+		const { referee, r1, final } = await setup();
+		const m0 = r1[0]!;
+		const m1 = r1[1]!;
+		await finish(m0.id, 1, 0, referee);
+		await finish(m1.id, 0, 1, referee);
+		const finalAfter = await api.matches({ id: final.id }).get();
+		expect(finalAfter.status).toBe(200);
+		if (!finalAfter.data) throw new Error("no data");
+		expect(finalAfter.data.homeTeamId).not.toBeNull();
+		expect(finalAfter.data.awayTeamId).not.toBeNull();
+	});
+
+	it("corregir el ganador re-propaga si el siguiente no empezó", async () => {
+		const { referee, r1, final } = await setup();
+		const m0 = r1[0]!;
+		await finish(m0.id, 1, 0, referee);
+		const finalAfter1 = await api.matches({ id: final.id }).get();
+		const firstWinner =
+			finalAfter1.data!.homeTeamId === m0.homeTeamId
+				? m0.homeTeamId
+				: m0.awayTeamId;
+		await finish(m0.id, 0, 1, referee);
+		const finalAfter2 = await api.matches({ id: final.id }).get();
+		if (!finalAfter2.data) throw new Error("no data");
+		const secondWinner = m0.awayTeamId;
+		expect(
+			finalAfter2.data.homeTeamId === secondWinner ||
+				finalAfter2.data.awayTeamId === secondWinner,
+		).toBe(true);
+		if (firstWinner !== secondWinner) {
+			const slotHadFirst =
+				finalAfter2.data.homeTeamId === firstWinner ||
+				finalAfter2.data.awayTeamId === firstWinner;
+			expect(slotHadFirst).toBe(false);
+		}
+	});
+});

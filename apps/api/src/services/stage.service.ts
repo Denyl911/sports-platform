@@ -10,7 +10,7 @@ import type {
 	UpdateStageGroup,
 	UpdateTournamentStage,
 } from "@sports/schemas";
-import { and, asc, count, eq, gt } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================
@@ -112,6 +112,24 @@ export async function findNextStage(editionId: string, sequenceOrder: number) {
 			),
 		)
 		.orderBy(asc(tournamentStages.sequenceOrder))
+		.limit(1);
+	return stage ?? null;
+}
+
+export async function findPreviousStage(
+	editionId: string,
+	sequenceOrder: number,
+) {
+	const [stage] = await db
+		.select()
+		.from(tournamentStages)
+		.where(
+			and(
+				eq(tournamentStages.editionId, editionId),
+				lt(tournamentStages.sequenceOrder, sequenceOrder),
+			),
+		)
+		.orderBy(desc(tournamentStages.sequenceOrder))
 		.limit(1);
 	return stage ?? null;
 }
