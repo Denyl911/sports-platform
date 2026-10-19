@@ -166,9 +166,12 @@ const EVENT_ICONS: Record<string, string> = {
 export function MatchTimeline({
 	events,
 	teams,
+	labels,
 }: {
 	events: TimelineEvent[];
 	teams: Array<{ id: string; name: string }>;
+	/** Código de evento → nombre del catálogo del deporte ("goal" → "Gol"). */
+	labels?: Record<string, string>;
 }) {
 	if (events.length === 0) return null;
 	const teamName = (id?: string | null) =>
@@ -181,6 +184,7 @@ export function MatchTimeline({
 			{ordered.map((ev) => {
 				const name = teamName(ev.teamId);
 				const glyph = EVENT_ICONS[ev.eventType];
+				const label = labels?.[ev.eventType] ?? ev.eventType;
 				return (
 					<li
 						key={ev.id}
@@ -193,7 +197,7 @@ export function MatchTimeline({
 						>
 							{glyph ?? <CircleDot {...DECORATIVE} className="size-4" />}
 						</span>
-						<span className="font-bold text-(--sea-ink)">{ev.eventType}</span>
+						<span className="font-bold text-(--sea-ink)">{label}</span>
 						{name && (
 							<span className="truncate text-(--sea-ink-soft)">{name}</span>
 						)}

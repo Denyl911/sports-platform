@@ -360,6 +360,8 @@ describe("matches P4 - GET :id (pública)", () => {
 		expect(res.status).toBe(200);
 		expect(res.data?.id).toBe(match.id);
 		expect(res.data?.stageId).toBe(stage.id);
+		// El deporte viaja en el detalle (el cliente lo necesita para el catálogo de eventos)
+		expect(res.data?.sportId).toBe(tournament.sportId);
 		// findMatchById incluye relaciones (periods, events) cuando existen
 		expect(res.data).toBeDefined();
 	});

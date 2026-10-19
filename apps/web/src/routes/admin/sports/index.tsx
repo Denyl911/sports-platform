@@ -169,7 +169,7 @@ function AdminSportsPage() {
 					<EmptyState
 						icon={Dumbbell}
 						title="No hay deportes"
-						description="Crea el primer deporte con el formulario de arriba."
+						description="Creá el primero con el formulario de arriba, o cargá el catálogo preconfigurado con `bun run db:seed:sports`."
 					/>
 				)
 			) : (

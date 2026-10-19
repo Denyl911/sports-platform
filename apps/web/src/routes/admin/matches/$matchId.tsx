@@ -9,6 +9,7 @@ import {
 	useDeleteMatch,
 	useRecordLiveEvent,
 	useScheduleMatch,
+	useSportEventTypes,
 	useUpdateMatch,
 	useUpdateMatchScore,
 	useVenues,
@@ -186,6 +187,7 @@ function AdminMatchLivePage() {
 					{tab === "events" && (
 						<EventsTab
 							matchId={matchId}
+							sportId={match.sportId}
 							live={live}
 							events={match.events}
 							participants={[
@@ -369,18 +371,36 @@ function ScorePad({
 
 function EventsTab({
 	matchId,
+	sportId,
 	live,
 	events,
 	participants,
 }: {
 	matchId: string;
+	sportId: string;
 	live: ReturnType<typeof useMatchLive>;
 	events: MatchDetail["events"];
 	participants: Array<{ id: string; name: string }>;
 }) {
 	const recordEvent = useRecordLiveEvent(api);
+	// El catálogo de tipos de evento es del deporte, no del partido: la API
+	// rechaza con 400 cualquier `eventType` que no esté en él.
+	const { data: eventTypesData } = useSportEventTypes(api, sportId);
+	const eventTypes =
+		(
+			eventTypesData as
+				| {
+						items: Array<{
+							code: string;
+							name: string;
+							affectsScore: boolean;
+							defaultValue: number;
+						}>;
+				  }
+				| undefined
+		)?.items ?? [];
 	const [teamId, setTeamId] = React.useState(participants[0]?.id ?? "");
-	const [eventType, setEventType] = React.useState("goal");
+	const [eventType, setEventType] = React.useState("");
 	const [periodNumber, setPeriodNumber] = React.useState(1);
 	const [minuteOrSecond, setMinuteOrSecond] = React.useState(0);
 
@@ -388,7 +408,21 @@ function EventsTab({
 		if (participants[0]) setTeamId(participants[0].id);
 	}, [matchId, participants]);
 
+	React.useEffect(() => {
+		if (eventTypes.length === 0) return;
+		if (!eventTypes.some((t) => t.code === eventType)) {
+			setEventType(eventTypes[0]!.code);
+		}
+	}, [eventTypes, eventType]);
+
 	const onSend = async (viaWs: boolean) => {
+		if (!eventType) {
+			toast.error(
+				"No hay tipo de evento para registrar",
+				"El deporte no tiene catálogo de eventos, o todavía no elegiste uno.",
+			);
+			return;
+		}
 		const payload = {
 			teamId,
 			eventType,
@@ -431,18 +465,26 @@ function EventsTab({
 					</Select>
 				</div>
 				<div>
-					<Label>Tipo de evento</Label>
-					<Input
-						value={eventType}
-						onChange={(e) => setEventType(e.target.value)}
-						list="match-event-types"
-						placeholder="goal, tarjeta_amarilla…"
-					/>
-					<datalist id="match-event-types">
-						{COMMON_EVENT_TYPES.map((t) => (
-							<option key={t} value={t} />
-						))}
-					</datalist>
+					<Label htmlFor="match-event-type">Tipo de evento</Label>
+					{eventTypes.length === 0 ? (
+						<p className="text-xs text-(--sea-ink-soft)">
+							El deporte no tiene tipos de evento configurados. Cargalos en la
+							pantalla Deportes del admin, o corré `bun run db:seed:sports`.
+						</p>
+					) : (
+						<Select
+							id="match-event-type"
+							value={eventType}
+							onChange={(e) => setEventType(e.target.value)}
+						>
+							{eventTypes.map((t) => (
+								<option key={t.code} value={t.code}>
+									{t.name}
+									{t.affectsScore ? ` · +${t.defaultValue}` : ""}
+								</option>
+							))}
+						</Select>
+					)}
 				</div>
 				<div>
 					<Label>Periodo</Label>
@@ -464,13 +506,16 @@ function EventsTab({
 				</div>
 			</div>
 			<div className="flex gap-2">
-				<Button onClick={() => onSend(true)} disabled={!live.isOpen}>
+				<Button
+					onClick={() => onSend(true)}
+					disabled={!live.isOpen || !eventType}
+				>
 					Envío en vivo (WS)
 				</Button>
 				<Button
 					variant="secondary"
 					onClick={() => onSend(false)}
-					disabled={recordEvent.isPending}
+					disabled={recordEvent.isPending || !eventType}
 				>
 					{recordEvent.isPending ? "Enviando…" : "Registrar (REST)"}
 				</Button>
@@ -484,22 +529,19 @@ function EventsTab({
 							Sin eventos registrados todavía.
 						</p>
 					) : (
-						<MatchTimeline events={events} teams={participants} />
+						<MatchTimeline
+							events={events}
+							teams={participants}
+							labels={Object.fromEntries(
+								eventTypes.map((t) => [t.code, t.name]),
+							)}
+						/>
 					)}
 				</div>
 			</div>
 		</div>
 	);
 }
-
-const COMMON_EVENT_TYPES = [
-	"goal",
-	"yellow_card",
-	"red_card",
-	"substitution",
-	"timeout",
-	"foul",
-];
 
 function VenueTab({
 	matchId,

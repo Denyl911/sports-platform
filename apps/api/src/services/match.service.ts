@@ -68,6 +68,16 @@ const MATCH_RELATIONS = {
 	awayTeam: true,
 	winnerTeam: true,
 	venue: true,
+	// El deporte del partido viaja por la cadena etapa → edición → torneo
+	// dentro de la misma lectura: el detalle sigue pagando una consulta
+	// (ADR 008, `query-budgets.test.ts`). Se aplana al shape del contrato.
+	stage: {
+		with: {
+			edition: {
+				with: { tournament: { columns: { sportId: true } } },
+			},
+		},
+	},
 } as const;
 
 // ==========================================
@@ -149,7 +159,14 @@ export async function findMatchById(id: string) {
 	});
 
 	if (!match) throw DomainError.notFound(`Match '${id}' not found`);
-	return match;
+
+	// La etapa existe por FK y cuelga de la edición y del torneo: si la cadena
+	// no tiene deporte, el partido no está bien formado.
+	const { stage, ...matchFields } = match;
+	const sportId = stage?.edition?.tournament?.sportId;
+	if (!sportId) throw DomainError.notFound(`Match '${id}' not found`);
+
+	return { ...matchFields, sportId };
 }
 
 // ==========================================
