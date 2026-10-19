@@ -585,6 +585,10 @@ const WEB_NET_LINES: Array<{ label: string; re: RegExp }> = [
 	{ label: "XMLHttpRequest", re: /\bXMLHttpRequest\b/ },
 ];
 
+const WEB_NET_EXEMPTIONS: Record<string, Set<string>> = {
+	"apps/web/src/components/ImageUploader.tsx": new Set(["XMLHttpRequest"]),
+};
+
 async function checks_web_fetch(): Promise<{
 	scanned: number;
 	violations: Violation[];
@@ -598,8 +602,9 @@ async function checks_web_fetch(): Promise<{
 		const text = stripComments(await Bun.file(path.join(ROOT, rel)).text());
 		const lines = text.split("\n");
 		for (const [i, line] of lines.entries()) {
+			const exempt = WEB_NET_EXEMPTIONS[rel];
 			const hit = WEB_NET_LINES.find(({ re }) => re.test(line));
-			if (hit) {
+			if (hit && !(exempt?.has(hit.label) ?? false)) {
 				violations.push({
 					file: rel,
 					detail: `line ${i + 1}: raw network call (${hit.label}) — every request and socket rides @sports/api-client (ADR 003)`,

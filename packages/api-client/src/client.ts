@@ -30,7 +30,7 @@ export function isApiError(e: unknown): e is ApiError {
 	return e instanceof ApiError;
 }
 
-type TreatyResponse = {
+export type TreatyResponse = {
 	data: unknown;
 	error: { status: number | string; value: unknown } | null;
 	status: number;

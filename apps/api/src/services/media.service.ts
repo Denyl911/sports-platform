@@ -71,17 +71,14 @@ export async function createPresignedUploadUrl(
 
 	// Registrar el asset en la DB
 	const mediaTypeValue = data.mediaType;
-	const [asset] = await db
-		.insert(mediaAssets)
-		.values({
-			key,
-			originalName: data.fileName,
-			mimeType: data.mimeType,
-			sizeBytes: data.fileSize,
-			mediaType: sql`${mediaTypeValue}`,
-			uploadedBy: userId,
-		})
-		.returning();
+	await db.insert(mediaAssets).values({
+		key,
+		originalName: data.fileName,
+		mimeType: data.mimeType,
+		sizeBytes: data.fileSize,
+		mediaType: sql`${mediaTypeValue}`,
+		uploadedBy: userId,
+	});
 
 	return {
 		uploadUrl,
@@ -119,7 +116,8 @@ export async function attachMediaToEntity(data: AttachMediaToEntity) {
 		.from(mediaAssets)
 		.where(eq(mediaAssets.id, data.mediaId))
 		.limit(1);
-	if (!asset) throw DomainError.notFound(`Media asset '${data.mediaId}' not found`);
+	if (!asset)
+		throw DomainError.notFound(`Media asset '${data.mediaId}' not found`);
 
 	const [created] = await db
 		.insert(entityMedia)
