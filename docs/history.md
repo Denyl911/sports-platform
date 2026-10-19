@@ -12,6 +12,8 @@ Not what shipped, which is [`CHANGELOG.md`](../CHANGELOG.md), and not what is co
 - **Health** — failures of the gate and of the ground it stands on, caught by actually running things.
 
 ## What is measured
+**The shadcn CLI vendoring a foreign registry drops files where it wants and rewrites deps — realign by hand after every add.** `bunx shadcn add "@react-bits/…" --cwd packages/ui` landed the components in `src/components/` instead of the `ui` alias (`bits/`) the repo configured, and downgraded a dependency the same session had just pinned (`motion` 14 → 12). Each add is not an install but a merge: move the file, realign `package.json`, and read what the bit drags in — the `SplitText` bit entered with `gsap` and two `@hugeicons` packages behind its back, which is what forced the one-runtime rewrite (ADR 009, [`components.json`](../packages/ui/components.json)).
+
 
 **Every list endpoint costs exactly 2 round trips, and that is now the floor, not a coincidence.** Measured on `main` with the query ledger (`apps/api/test/query-budgets.test.ts`) when the budgets were first pinned: `GET /matches` (empty and seeded), `/tournaments`, `/sports`, `/venues`, `/clubs`, `/teams`, `/players` — all 2. The count is not data-dependent plus one free `count(*)`: it is the `{ items, total }` envelope's own shape, two selects (`Promise.all`'d, still two round trips). Any row moving off 2 is the first real conversation about the envelope's cost, with the number already named.
 
@@ -21,6 +23,8 @@ Not what shipped, which is [`CHANGELOG.md`](../CHANGELOG.md), and not what is co
 
 
 ## Health
+**Biome suppressions inside JSX children do not anchor where the rule lives — a scoped override beats a whack-a-mole of comments.** `noArrayIndexKey`'s diagnostics for the vendored react-bits engines sit on the `.map` callback and its `key={index}` attributes, positions where `// biome-ignore` inside JSX children is literally text (`noCommentText`) and element-level comments fix only the a11y half. After three comment shapes refused to stick, the honest shape was an override in `biome.json` setting `noArrayIndexKey: "warn"` for `packages/ui/src/components/bits/**` alone — the engines identify rows positionally by design, the docs say so (ADR 009), and the rule stays strict everywhere else ([ADR 009](./adr/009-react-bits-comes-in-vendored-on-one-runtime-in-tokens.md)).
+
 
 **A gate that is never run is not a gate — it is a script people believe in.** The root `check-types` entry called `turbo run check-types`, and Turbo's task is named `typecheck`: the type gate had been red-on-name from wherever it was introduced, invisible because nothing at the root ran it until it was walked as part of writing the working brief. The same indirection hid a second layer: two workspaces ran `tsc` without declaring `typescript` and passed through a hoisted binary they did not ask for. Both are one-line honest fixes (point the root script at the real task; declare the dependency where it runs), and the lesson compiles to a habit: every command the brief tells an agent to trust is run once, on `main`, before it becomes an instruction.
 

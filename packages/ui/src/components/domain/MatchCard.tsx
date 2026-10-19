@@ -1,7 +1,11 @@
+import { type HTMLMotionProps, motion } from "motion/react";
 import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
 import { Card } from "../ui/card";
+
+/** La tarjeta viva: lift muelle en hover (ADR 009 — runtime único motion). */
+const LiftCard = motion.create(Card);
 
 export type MatchStatus =
 	| "scheduled"
@@ -11,7 +15,7 @@ export type MatchStatus =
 	| "cancelled"
 	| "walkover";
 
-export interface MatchCardProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface MatchCardProps extends HTMLMotionProps<"div"> {
 	homeTeam: { id: string; name: string; logo?: string | null };
 	awayTeam: { id: string; name: string; logo?: string | null };
 	homeScore?: number | null;
@@ -67,10 +71,11 @@ export function MatchCard({
 		awayScore !== undefined;
 
 	return (
-		<Card
+		<LiftCard
+			whileHover={{ y: -2 }}
 			onClick={onClick}
 			className={cn(
-				"relative overflow-hidden p-4 transition hover:-translate-y-0.5",
+				"relative overflow-hidden p-4",
 				onClick && "cursor-pointer",
 				isLive &&
 					"ring-1 ring-[color-mix(in_oklab,var(--lagoon)_30%,transparent)]",
@@ -116,7 +121,7 @@ export function MatchCard({
 					{venueName}
 				</div>
 			)}
-		</Card>
+		</LiftCard>
 	);
 }
 

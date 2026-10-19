@@ -2,6 +2,7 @@ import { Sheet } from "@sports/ui";
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../lib/auth";
+import LiveTicker from "./LiveTicker";
 import ThemeToggle from "./ThemeToggle";
 
 interface NavItem {
@@ -206,6 +207,7 @@ export default function Header() {
 					)}
 				</SheetSection>
 			</Sheet>
+			<LiveTicker />
 		</header>
 	);
 }

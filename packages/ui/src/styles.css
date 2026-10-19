@@ -461,3 +461,72 @@ a {
     transform: translateY(0);
   }
 }
+
+/* Fondo animado del hero, variante CSS: el gradiente decorativo deriva
+   lentamente en vez de un WebGL. Respeta movimiento reducido. */
+.hero-drift {
+  animation: hero-drift 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.hero-drift-slow {
+  animation-duration: 22s;
+  animation-delay: -8s;
+}
+
+@keyframes hero-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(22px, 14px, 0) scale(1.12);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-drift {
+    animation: none;
+  }
+}
+
+/* Ticker de marcadores en vivo (Header): cinta en marquee; la copia doble
+   hace el loop sin costura. Pausa al pasar el puntero, scroll con movimiento
+   reducido. */
+.live-ticker {
+  border-top: 1px solid var(--line);
+  background: color-mix(in oklab, var(--chip-bg) 70%, transparent);
+  overflow: hidden;
+}
+
+.live-ticker .ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-roll 36s linear infinite;
+}
+
+.live-ticker:hover .ticker-track {
+  animation-play-state: paused;
+}
+
+@keyframes ticker-roll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-ticker {
+    overflow-x: auto;
+  }
+  .live-ticker .ticker-track {
+    animation: none;
+  }
+  .live-ticker .ticker-dup {
+    display: none;
+  }
+}
+
+/* Micro-interacción de standings: el color de fila reacciona suave. */
+.demo-table td {
+  transition: background-color 160ms ease;
+}

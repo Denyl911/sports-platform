@@ -1,3 +1,4 @@
+export * from "./components/bits";
 export * from "./components/domain/Bracket";
 export * from "./components/domain/MatchCard";
 export * from "./components/domain/PlayerRow";

@@ -1,7 +1,17 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
+import {
+	AnimatedList,
+	Badge,
+	Card,
+	CardHeader,
+	CardTitle,
+	CountUp,
+	EmptyState,
+	SplitText,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { MATCH_STATUS_LABELS } from "../components/live-ui";
 import { api } from "../lib/api";
 
 type TournamentItem = {
@@ -49,6 +59,7 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+	const navigate = useNavigate();
 	const { data: tournamentsData } = useSuspenseQuery({
 		queryKey: queryKeys.tournaments.list(),
 		queryFn: () => unwrap(api.tournaments.get({ query: {} })),
@@ -74,12 +85,19 @@ function HomePage() {
 	return (
 		<main className="page-wrap space-y-8 px-4 pb-8 pt-6">
 			<section className="island-shell rise-in relative overflow-hidden rounded-4xl px-6 py-10 sm:px-10 sm:py-14">
-				<div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.32),transparent_66%)]" />
-				<div className="pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(47,106,74,0.18),transparent_66%)]" />
+				<div className="hero-drift pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(79,184,178,0.32),transparent_66%)]" />
+				<div className="hero-drift hero-drift-slow pointer-events-none absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(47,106,74,0.18),transparent_66%)]" />
 				<p className="island-kicker mb-3">Plataforma multideporte</p>
-				<h1 className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-(--sea-ink) sm:text-6xl">
-					Sports Platform
-				</h1>
+				<SplitText
+					tag="h1"
+					text="Sports Platform"
+					className="display-title mb-5 max-w-3xl text-4xl leading-[1.02] font-bold tracking-tight text-(--sea-ink) sm:text-6xl"
+					textAlign="left"
+					effect="rise"
+					staggerSeconds={0.04}
+					durationSeconds={0.9}
+					accentColor="var(--lagoon)"
+				/>
 				<p className="mb-8 max-w-2xl text-base text-(--sea-ink-soft) sm:text-lg">
 					Resultados, tablas de posiciones y marcadores en vivo de todos tus
 					torneos.
@@ -143,12 +161,37 @@ function HomePage() {
 						Ver fixture
 					</Link>
 				</div>
-				<div className="grid gap-3 sm:grid-cols-2">
-					{liveMatches.map((m) => (
-						<LiveMatchCard key={m.id} match={m} live />
-					))}
-				</div>
-				{liveMatches.length === 0 && (
+				{liveMatches.length > 0 ? (
+					<AnimatedList
+						items={liveMatches.map((m) => ({
+							id: m.id,
+							icon: <span className="h-2 w-2 rounded-full bg-(--lagoon)" />,
+							title: `${m.homeTeam?.name ?? "Por definir"} vs ${
+								m.awayTeam?.name ?? "Por definir"
+							}`,
+							description: MATCH_STATUS_LABELS[m.status] ?? m.status,
+							meta: (
+								<span className="inline-flex items-baseline gap-1 font-black text-(--sea-ink) tabular-nums">
+									<CountUp to={m.homeScore} duration={1.2} />
+									<span className="text-xs text-(--sea-ink-soft)">:</span>
+									<CountUp to={m.awayScore} duration={1.2} />
+								</span>
+							),
+						}))}
+						onItemSelect={(item) => {
+							if (typeof item === "object" && item && "id" in item) {
+								void navigate({
+									to: "/matches/$matchId",
+									params: { matchId: String(item.id) },
+								});
+							}
+						}}
+						width="100%"
+						maxHeight={400}
+						animation="pop"
+						stagger={0.06}
+					/>
+				) : (
 					<EmptyState
 						title="Sin partidos en vivo ahora"
 						description="Cuando un partido esté en marcha, aparece aquí con su marcador en directo."
@@ -174,13 +217,7 @@ function HomePage() {
 	);
 }
 
-function LiveMatchCard({
-	match: m,
-	live = false,
-}: {
-	match: MatchWithTeams;
-	live?: boolean;
-}) {
+function LiveMatchCard({ match: m }: { match: MatchWithTeams }) {
 	return (
 		<Link
 			to="/matches/$matchId"
@@ -195,9 +232,11 @@ function LiveMatchCard({
 					</CardTitle>
 				</CardHeader>
 				<div className="mt-1 flex gap-2">
-					<Badge variant={live ? "success" : "secondary"}>{m.status}</Badge>
-					<Badge variant="outline">
-						{m.homeScore} : {m.awayScore}
+					<Badge variant="outline">{m.status}</Badge>
+					<Badge variant="outline" className="gap-1.5 tabular-nums">
+						<CountUp to={m.homeScore} duration={1.1} />
+						<span>:</span>
+						<CountUp to={m.awayScore} duration={1.1} />
 					</Badge>
 				</div>
 			</Card>
