@@ -7,6 +7,7 @@ import { authRoutes } from "./routes/auth";
 import { clubsRoutes } from "./routes/clubs";
 import { invitationRoutes } from "./routes/invitations";
 import { liveRoutes } from "./routes/live";
+import { mediaRoutes } from "./routes/media";
 import { matchesRoutes } from "./routes/matches";
 import { playersRoutes } from "./routes/players";
 import {
@@ -75,6 +76,7 @@ export const app = new Elysia({
 	.use(membershipItemRoutes)
 	.use(matchesRoutes)
 	.use(invitationRoutes)
+	.use(mediaRoutes)
 	.use(liveRoutes)
 	.get("/", () => "Hello Elysia");
 

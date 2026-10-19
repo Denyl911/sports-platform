@@ -1,4 +1,5 @@
 export * from "./clubs";
+export * from "./media-assets";
 export * from "./enums";
 export * from "./match-events";
 export * from "./match-periods";
