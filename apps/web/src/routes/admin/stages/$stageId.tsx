@@ -3,6 +3,7 @@ import {
 	useAddPlayerToRoster,
 	useClubs,
 	useCreateGroup,
+	useCreateInvitation,
 	useCreateMatch,
 	useCreateTeam,
 	useDeleteGroup,
@@ -37,9 +38,9 @@ import {
 	toast,
 	Users,
 	useConfirm,
-	X,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { QRCodeSVG } from "qrcode.react";
 import * as React from "react";
 import {
 	AdminBreadcrumbs,
@@ -129,6 +130,9 @@ function AdminStageDetailPage() {
 	const [showCreateTeam, setShowCreateTeam] = React.useState(false);
 	const [newTeamName, setNewTeamName] = React.useState("");
 	const [newTeamClubId, setNewTeamClubId] = React.useState("");
+	const [showInviteDialog, setShowInviteDialog] = React.useState(false);
+	const [inviteLink, setInviteLink] = React.useState<string | null>(null);
+	const createInvitation = useCreateInvitation(api);
 
 	React.useEffect(() => {
 		if (teams.length && !teamId) setTeamId(teams[0]!.id);
@@ -176,10 +180,10 @@ function AdminStageDetailPage() {
 	const onCreateTeam = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		try {
-			const team = await createTeam.mutateAsync({
+			const team = (await createTeam.mutateAsync({
 				name: newTeamName,
 				clubId: newTeamClubId || undefined,
-			});
+			})) as { id: string };
 			// Inscribir automáticamente el equipo recién creado
 			await registerTeam.mutateAsync({ stageId, body: { teamId: team.id } });
 			toast.success("Equipo creado e inscrito");
@@ -188,6 +192,21 @@ function AdminStageDetailPage() {
 			setNewTeamClubId("");
 		} catch (err) {
 			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
+		}
+	};
+
+	const onCreateInvitation = async () => {
+		try {
+			const result = await createInvitation.mutateAsync({
+				stageId,
+				maxUses: null,
+			});
+			const baseUrl = window.location.origin;
+			const link = `${baseUrl}/invite/${result.token}`;
+			setInviteLink(link);
+			toast.success("Link de invitación creado");
+		} catch (err) {
+			toast.error("No se pudo crear la invitación", getApiErrorMessage(err));
 		}
 	};
 
@@ -351,9 +370,9 @@ function AdminStageDetailPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
-					Crea un partido entre dos equipos ya inscritos en la etapa. El
-					grupo es opcional. Para el fixture completo (todas las jornadas),
-					usa la vista de cada grupo.
+					Crea un partido entre dos equipos ya inscritos en la etapa. El grupo
+					es opcional. Para el fixture completo (todas las jornadas), usa la
+					vista de cada grupo.
 				</p>
 				{registrations.length < 2 ? (
 					<div className="mt-3 rounded-xl border border-(--line) bg-(--chip-bg) p-3 text-sm text-(--sea-ink-soft)">
@@ -388,6 +407,26 @@ function AdminStageDetailPage() {
 					<span className="text-sm">Sin equipos o edición</span>
 				)}
 			</Card>
+
+			<Card className="p-4">
+				<h3 className="font-bold">Invitar equipos</h3>
+				<p className="mt-1 text-sm text-(--sea-ink-soft)">
+					Genera un link para que los capitanes inscriban sus equipos
+					directamente. Puedes compartirlo o generar un código QR.
+				</p>
+				<div className="mt-3">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							setInviteLink(null);
+						 setShowInviteDialog(true);
+						}}
+					>
+						Crear link de invitación
+					</Button>
+				</div>
+			</Card>
 			{editingGroup && (
 				<GroupEditDialog
 					group={editingGroup}
@@ -407,6 +446,14 @@ function AdminStageDetailPage() {
 					onClose={() => setShowCreateTeam(false)}
 					onSubmit={onCreateTeam}
 					isPending={createTeam.isPending}
+				/>
+			)}
+			{showInviteDialog && (
+				<InviteDialog
+					inviteLink={inviteLink}
+					onClose={() => setShowInviteDialog(false)}
+					onCreate={onCreateInvitation}
+					isPending={createInvitation.isPending}
 				/>
 			)}
 		</div>
@@ -498,12 +545,7 @@ function CreateTeamDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button
-						size="sm"
-						icon={Save}
-						onClick={onSubmit}
-						disabled={isPending}
-					>
+					<Button size="sm" icon={Save} onClick={onSubmit} disabled={isPending}>
 						Crear e inscribir
 					</Button>
 				</>
@@ -534,6 +576,94 @@ function CreateTeamDialog({
 					</Select>
 				</Field>
 			</form>
+		</EditDialog>
+	);
+}
+
+function InviteDialog({
+	inviteLink,
+	onClose,
+	onCreate,
+	isPending,
+}: {
+	inviteLink: string | null;
+	onClose: () => void;
+	onCreate: () => void;
+	isPending: boolean;
+}) {
+	const [copied, setCopied] = React.useState(false);
+
+	const copyToClipboard = async () => {
+		if (!inviteLink) return;
+		await navigator.clipboard.writeText(inviteLink);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	};
+
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title="Invitar equipos"
+			description="Comparte este link con los capitanes para que inscriban sus equipos."
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cerrar
+					</Button>
+					{!inviteLink && (
+						<Button
+							size="sm"
+							icon={Save}
+							onClick={onCreate}
+							disabled={isPending}
+						>
+							{isPending ? "Creando..." : "Crear link"}
+						</Button>
+					)}
+				</>
+			}
+		>
+			{inviteLink ? (
+				<div className="space-y-4">
+					<div className="flex items-center gap-2">
+						<Input
+							value={inviteLink}
+							readOnly
+							className="flex-1 font-mono text-xs"
+						/>
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={copyToClipboard}
+							className="shrink-0"
+						>
+							{copied ? "Copiado" : "Copiar"}
+						</Button>
+					</div>
+					<div className="flex justify-center">
+						<div className="rounded-xl border border-(--line) bg-white p-4">
+							<QRCodeSVG
+								value={inviteLink}
+								size={180}
+								level="M"
+								includeMargin
+							/>
+						</div>
+					</div>
+					<p className="text-center text-xs text-(--sea-ink-soft)">
+						Este link es de un solo uso y expira en 7 días. Los capitanes
+						podrán crear un equipo nuevo o inscribir uno existente.
+					</p>
+				</div>
+			) : (
+				<div className="space-y-4">
+					<p className="text-sm text-(--sea-ink-soft)">
+						Al crear el link, se generará un código QR que puedes compartir
+						con los capitanes de equipo.
+					</p>
+				</div>
+			)}
 		</EditDialog>
 	);
 }

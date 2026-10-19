@@ -19,6 +19,7 @@ import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as ClubsIndexRouteImport } from './routes/clubs/index'
 import { Route as ClubsClubIdRouteImport } from './routes/clubs/$clubId'
 import { Route as EditionsEditionIdRouteImport } from './routes/editions/$editionId'
+import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as MatchesIndexRouteImport } from './routes/matches/index'
 import { Route as MatchesMatchIdRouteImport } from './routes/matches/$matchId'
 import { Route as PlayersIndexRouteImport } from './routes/players/index'
@@ -100,6 +101,11 @@ const ClubsClubIdRoute = ClubsClubIdRouteImport.update({
 const EditionsEditionIdRoute = EditionsEditionIdRouteImport.update({
   id: '/editions/$editionId',
   path: '/editions/$editionId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MatchesIndexRoute = MatchesIndexRouteImport.update({
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/clubs/$clubId': typeof ClubsClubIdRoute
   '/editions/$editionId': typeof EditionsEditionIdRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/matches/$matchId': typeof MatchesMatchIdRoute
   '/players/$playerId': typeof PlayersPlayerIdRoute
   '/sports/$sportId': typeof SportsSportIdRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/clubs/$clubId'
     | '/editions/$editionId'
+    | '/invite/$token'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -450,6 +460,7 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/clubs/$clubId'
     | '/editions/$editionId'
+    | '/invite/$token'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -494,6 +505,7 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/clubs/$clubId'
     | '/editions/$editionId'
+    | '/invite/$token'
     | '/matches/$matchId'
     | '/players/$playerId'
     | '/sports/$sportId'
@@ -539,6 +551,7 @@ export interface RootRouteChildren {
   AuthRegisterRoute: typeof AuthRegisterRoute
   ClubsClubIdRoute: typeof ClubsClubIdRoute
   EditionsEditionIdRoute: typeof EditionsEditionIdRoute
+  InviteTokenRoute: typeof InviteTokenRoute
   MatchesMatchIdRoute: typeof MatchesMatchIdRoute
   PlayersPlayerIdRoute: typeof PlayersPlayerIdRoute
   SportsSportIdRoute: typeof SportsSportIdRoute
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       path: '/editions/$editionId'
       fullPath: '/editions/$editionId'
       preLoaderRoute: typeof EditionsEditionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/matches/': {
@@ -910,6 +930,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterRoute: AuthRegisterRoute,
   ClubsClubIdRoute: ClubsClubIdRoute,
   EditionsEditionIdRoute: EditionsEditionIdRoute,
+  InviteTokenRoute: InviteTokenRoute,
   MatchesMatchIdRoute: MatchesMatchIdRoute,
   PlayersPlayerIdRoute: PlayersPlayerIdRoute,
   SportsSportIdRoute: SportsSportIdRoute,
@@ -929,12 +950,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

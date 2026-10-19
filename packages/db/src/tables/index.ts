@@ -7,6 +7,7 @@ export * from "./players";
 export * from "./sport-event-types";
 export * from "./sports";
 export * from "./stage-groups";
+export * from "./stage-invitation-tokens";
 export * from "./stage-standings";
 export * from "./stage-team-registrations";
 export * from "./teams";
