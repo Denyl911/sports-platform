@@ -13,6 +13,7 @@ import {
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import { VenueMap } from "../../../components/VenueMap";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
@@ -33,18 +34,24 @@ function AdminVenueDetailPage() {
 				name: string;
 				address?: string | null;
 				fieldCount?: number | null;
+				latitude?: number | null;
+				longitude?: number | null;
 		  }
 		| undefined;
 	const update = useUpdateVenue(api);
 	const [name, setName] = React.useState("");
 	const [address, setAddress] = React.useState("");
 	const [fieldCount, setFieldCount] = React.useState(1);
+	const [latitude, setLatitude] = React.useState<number | null>(null);
+	const [longitude, setLongitude] = React.useState<number | null>(null);
 
 	React.useEffect(() => {
 		if (venue) {
 			setName(venue.name);
 			setAddress(venue.address ?? "");
 			setFieldCount(venue.fieldCount ?? 1);
+			setLatitude(venue.latitude ?? null);
+			setLongitude(venue.longitude ?? null);
 		}
 	}, [venue]);
 
@@ -57,7 +64,7 @@ function AdminVenueDetailPage() {
 		try {
 			await update.mutateAsync({
 				id: venueId,
-				body: { name, address: address || null, fieldCount } as never,
+				body: { name, address: address || null, fieldCount, latitude, longitude } as never,
 			});
 			toast.success("Sede guardada");
 		} catch (err) {
@@ -94,6 +101,24 @@ function AdminVenueDetailPage() {
 							onChange={(e) => setAddress(e.target.value)}
 						/>
 					</div>
+					<div>
+						<Label>Ubicación</Label>
+						<VenueMap
+							latitude={latitude}
+							longitude={longitude}
+							name={venue.name}
+							onLocationSelect={(lat, lng) => {
+								setLatitude(lat);
+								setLongitude(lng);
+							}}
+								height="250px"
+							/>
+							<p className="text-xs text-(--sea-ink-soft)">
+							{latitude && longitude
+								? `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+								: "Haz clic en el mapa para seleccionar la ubicación"}
+							</p>
+						</div>
 					<div>
 						<Label>Canchas</Label>
 						<Input

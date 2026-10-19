@@ -21,6 +21,7 @@ import {
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { VenueMap } from "../../../components/VenueMap";
 import * as React from "react";
 import { AdminListPager } from "../../../components/AdminListPager";
 import {
@@ -65,6 +66,8 @@ function AdminVenuesPage() {
 	const [name, setName] = React.useState("");
 	const [address, setAddress] = React.useState("");
 	const [fieldCount, setFieldCount] = React.useState(1);
+	const [latitude, setLatitude] = React.useState<number | null>(null);
+	const [longitude, setLongitude] = React.useState<number | null>(null);
 	const [errors, setErrors] = React.useState<Record<string, string | null>>({});
 
 	const onCreate = async (e: React.SyntheticEvent) => {
@@ -78,6 +81,8 @@ function AdminVenuesPage() {
 				name,
 				address: address || null,
 				fieldCount,
+				latitude,
+				longitude,
 			} as never);
 			setName("");
 			setAddress("");
@@ -129,6 +134,23 @@ function AdminVenuesPage() {
 							min={1}
 						/>
 					</Field>
+					<div className="w-full">
+						<p className="mb-1 text-sm font-medium">Ubicación (opcional)</p>
+						<VenueMap
+							latitude={latitude}
+							longitude={longitude}
+							onLocationSelect={(lat, lng) => {
+								setLatitude(lat);
+								setLongitude(lng);
+							}}
+							height="200px"
+						/>
+						<p className="mt-1 text-xs text-(--sea-ink-soft)">
+							{latitude && longitude
+								? `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
+								: "Haz clic en el mapa para seleccionar la ubicación"}
+						</p>
+					</div>
 					<div className="flex items-end">
 						<Button type="submit" icon={Plus} disabled={create.isPending}>
 							Crear
