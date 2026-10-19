@@ -37,7 +37,6 @@ import {
 	toast,
 	Users,
 	useConfirm,
-	X,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -176,10 +175,10 @@ function AdminStageDetailPage() {
 	const onCreateTeam = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		try {
-			const team = await createTeam.mutateAsync({
+			const team = (await createTeam.mutateAsync({
 				name: newTeamName,
 				clubId: newTeamClubId || undefined,
-			});
+			})) as { id: string };
 			// Inscribir automáticamente el equipo recién creado
 			await registerTeam.mutateAsync({ stageId, body: { teamId: team.id } });
 			toast.success("Equipo creado e inscrito");
@@ -351,9 +350,9 @@ function AdminStageDetailPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
-					Crea un partido entre dos equipos ya inscritos en la etapa. El
-					grupo es opcional. Para el fixture completo (todas las jornadas),
-					usa la vista de cada grupo.
+					Crea un partido entre dos equipos ya inscritos en la etapa. El grupo
+					es opcional. Para el fixture completo (todas las jornadas), usa la
+					vista de cada grupo.
 				</p>
 				{registrations.length < 2 ? (
 					<div className="mt-3 rounded-xl border border-(--line) bg-(--chip-bg) p-3 text-sm text-(--sea-ink-soft)">
@@ -498,12 +497,7 @@ function CreateTeamDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button
-						size="sm"
-						icon={Save}
-						onClick={onSubmit}
-						disabled={isPending}
-					>
+					<Button size="sm" icon={Save} onClick={onSubmit} disabled={isPending}>
 						Crear e inscribir
 					</Button>
 				</>
