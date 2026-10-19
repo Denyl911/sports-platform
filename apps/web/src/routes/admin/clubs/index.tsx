@@ -92,7 +92,10 @@ function AdminClubsPage() {
 	return (
 		<div className="space-y-6">
 			<h1 className="demo-title">Clubes</h1>
-			<p className="text-sm text-(--sea-ink-soft)">Los clubes son instituciones que agrupan equipos. Cada club puede tener múltiples equipos en diferentes categorías.</p>
+			<p className="text-sm text-(--sea-ink-soft)">
+				Los clubes son instituciones que agrupan equipos. Cada club puede tener
+				múltiples equipos en diferentes categorías.
+			</p>
 			<Card className="p-4">
 				<h3 className="font-bold">Crear club</h3>
 				<form onSubmit={onCreate} className="mt-2 flex gap-2">
