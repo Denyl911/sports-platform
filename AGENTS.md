@@ -30,7 +30,7 @@ These come before everything below, and a proposal that breaks one says which an
 1. **The contract travels.** Adding a field never needs three edits in three places. A hand-written mirror of anything derivable is the bug, and adding one is a regression even if it compiles.
 2. **Be objective.** A claim rests on code read or a number measured, and says which. Report a result that went the wrong way as plainly as one that went the right way.
 3. **The clean solution over the quick one.** A bad shape that gets fixed instead of replaced keeps producing more of itself. Breaking changes are allowed and must be paid now, in a `CHANGELOG.md` entry, rather than carried forever.
-4. **Nothing load-bearing lives only in your head, only in a commit body, or only in this session.** A decision goes in an ADR, a lesson in `docs/history.md`, and anything that is a rule gets enforced by a scan: `scripts/checks.ts` runs the layering matrix, the raw-throw scan, the RBAC pairing, the ADR shape, the doc links and the web raw-fetch sweep (`docs/adr/007`); the type system and the test suite run the rest.
+4. **Nothing load-bearing lives only in your head, only in a commit body, or only in this session.** A decision goes in an ADR, a lesson in `docs/history.md`, and anything that is a rule gets enforced by a scan: `scripts/checks.ts` runs the layering matrix, the raw-throw scan, the RBAC pairing, the ADR shape, the doc links, the web raw-fetch sweep and the raw-glyph sweep (`docs/adr/007`); the type system and the test suite run the rest.
 5. **Health before feature.** A test that cannot run, a failing `bun run check-types`, or a CI that does not exist beats any new endpoint. You may not commit on top of a red gate.
 
 ## Who works here

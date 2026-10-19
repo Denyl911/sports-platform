@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 // The repository's checks, one program with a subcommand each:
-//   layering | errors | rbac | adr | docs | web-fetch | gate
+//   layering | errors | rbac | adr | docs | web-fetch | glyphs | gate
 //
 // **Why one program.** nilo's `checks/` pattern: each rule is a scan the
 // machine runs, not a paragraph somebody reads. A scan prints the violations
@@ -611,6 +611,58 @@ async function checks_web_fetch(): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// glyphs: the other half of the icon rule. An icon is `lucide` through
+// `@sports/ui` (ADR 009): restyleable, resizable, and silenced to the screen
+// reader while the control keeps its name. A `→`, a `✓` or a `☰` typed into
+// JSX is none of those — and it is what every admin affordance used before
+// this scan. The one shape the rule cannot reach is `<option>`: a select label
+// holds text, not elements, so the "A → Z" sort labels keep their arrow.
+// ---------------------------------------------------------------------------
+
+const TEXT_GLYPHS: Array<{ glyph: string; name: string }> = [
+	{ glyph: "→", name: "flecha" },
+	{ glyph: "←", name: "flecha" },
+	{ glyph: "▸", name: "triángulo" },
+	{ glyph: "▾", name: "triángulo" },
+	{ glyph: "›", name: "chevron" },
+	{ glyph: "‹", name: "chevron" },
+	{ glyph: "✓", name: "check" },
+	{ glyph: "✔", name: "check" },
+	{ glyph: "✕", name: "cruz" },
+	{ glyph: "×", name: "cruz" },
+	{ glyph: "☰", name: "hamburguesa" },
+	{ glyph: "ℹ", name: "info" },
+	{ glyph: "•", name: "punto" },
+];
+
+async function checks_glyphs(): Promise<{
+	scanned: number;
+	violations: Violation[];
+}> {
+	const rels = await collectCodeFiles();
+	const violations: Violation[] = [];
+	let scanned = 0;
+	for (const rel of rels) {
+		const region = regionFor(rel);
+		if (region !== "web" && region !== "pkg-ui") continue;
+		scanned += 1;
+		const text = stripComments(await Bun.file(path.join(ROOT, rel)).text());
+		for (const [i, line] of text.split("\n").entries()) {
+			// Un `<option>` no admite hijos: la etiqueta del select es texto.
+			if (line.includes("<option")) continue;
+			const hit = TEXT_GLYPHS.find(({ glyph }) => line.includes(glyph));
+			if (hit) {
+				violations.push({
+					file: rel,
+					detail: `line ${i + 1}: '${hit.glyph}' (${hit.name}) drawn as text — an icon comes from @sports/ui, the barrel in packages/ui/src/components/ui/icon.ts`,
+				});
+			}
+		}
+	}
+	return { scanned, violations };
+}
+
+// ---------------------------------------------------------------------------
 // gate: every check, one summary each
 // ---------------------------------------------------------------------------
 
@@ -621,6 +673,7 @@ const CHECKS = {
 	adr: checks_adr,
 	docs: checks_docs,
 	"web-fetch": checks_web_fetch,
+	glyphs: checks_glyphs,
 } as const satisfies Record<
 	string,
 	() => Promise<{ scanned: number; violations: Violation[]; notes?: string[] }>
@@ -658,7 +711,7 @@ async function gate(): Promise<boolean> {
 
 function usage(): never {
 	stdout.write(
-		"usage: bun scripts/checks.ts layering|errors|rbac|adr|docs|web-fetch|gate\n",
+		"usage: bun scripts/checks.ts layering|errors|rbac|adr|docs|web-fetch|glyphs|gate\n",
 	);
 	exit(2);
 }

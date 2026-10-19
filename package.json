@@ -31,6 +31,7 @@
 		"rbac-check": "bun scripts/checks.ts rbac",
 		"adr-check": "bun scripts/checks.ts adr",
 		"docs-check": "bun scripts/checks.ts docs",
+		"glyphs-check": "bun scripts/checks.ts glyphs",
 		"checks": "bun scripts/checks.ts gate",
 		"gate": "bun scripts/checks.ts gate && turbo run check typecheck test"
 	},
