@@ -107,6 +107,7 @@ function AdminTeamsPage() {
 	return (
 		<div className="space-y-6">
 			<h1 className="demo-title">Equipos</h1>
+			<p className="text-sm text-(--sea-ink-soft)">Los equipos son los grupos que compiten en los torneos. Cada equipo pertenece a un club y puede tener diferentes categorías (ej: 2015, 2016, etc.).</p>
 			<Card className="p-4">
 				<h3 className="font-bold">Crear equipo</h3>
 				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
@@ -120,7 +121,7 @@ function AdminTeamsPage() {
 							id="team-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							placeholder="Equipo A"
+							placeholder="Ej: River Plate 2015"
 							className="w-full"
 						/>
 					</Field>
