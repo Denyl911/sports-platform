@@ -32,6 +32,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
+import { resolveSportIcon } from "../../../lib/sport-icon";
 
 export const Route = createFileRoute("/admin/sports/$sportId")({
 	component: AdminSportDetailPage,
@@ -56,6 +57,7 @@ function AdminSportDetailPage() {
 				hasDraws?: boolean | null;
 				periodName?: string | null;
 				regularPeriods?: number | null;
+				icon?: string | null;
 				scoringRules?: Record<string, number> | null;
 		  }
 		| undefined;
@@ -181,7 +183,13 @@ function AdminSportDetailPage() {
 			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
-					<CardTitle>{sport.name}</CardTitle>
+					<div className="flex items-center gap-2">
+						{(() => {
+							const Icon = resolveSportIcon(sport.name, sport.icon);
+							return <Icon className="h-5 w-5 text-(--sea-ink)" />;
+						})()}
+						<CardTitle>{sport.name}</CardTitle>
+					</div>
 				</CardHeader>
 				<div className="mb-4 flex flex-wrap gap-2">
 					<Badge variant="outline">{sport.id}</Badge>

@@ -68,7 +68,9 @@ export const mediaRoutes = new Elysia({ prefix: "/media", tags: ["Media"] })
 	.get(
 		"/entity/:entityType/:entityId",
 		async ({ params }) => {
-			return { items: await listEntityMedia(params.entityType, params.entityId) };
+			return {
+				items: await listEntityMedia(params.entityType, params.entityId),
+			};
 		},
 		{
 			response: {
@@ -83,22 +85,18 @@ export const mediaRoutes = new Elysia({ prefix: "/media", tags: ["Media"] })
 			},
 		},
 	)
-	.get(
-		"/:id",
-		async ({ params }) => getMediaAsset(params.id),
-		{
-			response: {
-				200: mediaAssetResponseSchema,
-				400: errorMessageSchema,
-				404: errorMessageSchema,
-			},
-			detail: {
-				summary: "Obtener un asset multimedia",
-				description: "Obtiene la información de un asset multimedia por su ID.",
-				tags: ["Media"],
-			},
+	.get("/:id", async ({ params }) => getMediaAsset(params.id), {
+		response: {
+			200: mediaAssetResponseSchema,
+			400: errorMessageSchema,
+			404: errorMessageSchema,
 		},
-	)
+		detail: {
+			summary: "Obtener un asset multimedia",
+			description: "Obtiene la información de un asset multimedia por su ID.",
+			tags: ["Media"],
+		},
+	})
 	.delete(
 		"/entity-media/:id",
 		async ({ params }) => removeMediaFromEntity(params.id),
@@ -123,7 +121,10 @@ export const mediaRoutes = new Elysia({ prefix: "/media", tags: ["Media"] })
 	.patch(
 		"/entity-media/:id",
 		async ({ params, body }) => {
-			await updateEntityMedia(params.id, body as { isFeatured?: boolean; displayOrder?: number });
+			await updateEntityMedia(
+				params.id,
+				body as { isFeatured?: boolean; displayOrder?: number },
+			);
 			return { success: true };
 		},
 		{

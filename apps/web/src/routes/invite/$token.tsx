@@ -1,9 +1,9 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import {
+	useClubs,
 	useInvitationInfo,
 	useRegisterWithInvitation,
 	useTeams,
-	useClubs,
 } from "@sports/api-client/hooks";
 import {
 	Button,
@@ -24,7 +24,8 @@ export const Route = createFileRoute("/invite/$token")({
 			{ title: "Inscripción de equipo — Sports Platform" },
 			{
 				name: "description",
-				content: "Inscribe tu equipo en el torneo usando un link de invitación.",
+				content:
+					"Inscribe tu equipo en el torneo usando un link de invitación.",
 			},
 		],
 	}),
@@ -44,11 +45,9 @@ function InvitePage() {
 	const [newTeamClubId, setNewTeamClubId] = React.useState("");
 
 	const teams =
-		(teamsData as { items: Array<{ id: string; name: string }> })?.items ??
-		[];
+		(teamsData as { items: Array<{ id: string; name: string }> })?.items ?? [];
 	const clubs =
-		(clubsData as { items: Array<{ id: string; name: string }> })?.items ??
-		[];
+		(clubsData as { items: Array<{ id: string; name: string }> })?.items ?? [];
 
 	React.useEffect(() => {
 		if (teams.length && !selectedTeamId) setSelectedTeamId(teams[0]!.id);
@@ -204,8 +203,8 @@ function InvitePage() {
 				</Card>
 
 				<p className="text-center text-xs text-(--sea-ink-soft)">
-					Al inscribir tu equipo, aceptas las reglas del torneo. El
-					organizador revisará tu inscripción.
+					Al inscribir tu equipo, aceptas las reglas del torneo. El organizador
+					revisará tu inscripción.
 				</p>
 			</div>
 		</main>

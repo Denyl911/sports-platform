@@ -188,9 +188,9 @@ function AdminStageDetailPage() {
 			// Inscribir automáticamente el equipo recién creado
 			await registerTeam.mutateAsync({ stageId, body: { teamId: team.id } });
 			toast.success("Equipo creado e inscribe equipos para crear el fixture");
-					setShowCreateTeam(false);
-					setNewTeamName("");
-					setNewTeamClubId("");
+			setShowCreateTeam(false);
+			setNewTeamName("");
+			setNewTeamClubId("");
 		} catch (err) {
 			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
 		}
@@ -292,11 +292,11 @@ function AdminStageDetailPage() {
 						</div>
 					) : groups.length === 0 ? (
 						<EmptyState
-												icon={Table2}
-												title="Sin grupos todavía"
-												description="Los grupos son opcionales. Crea uno solo si tu etapa necesita fase de grupos o tablas separadas."
-												className="mt-3"
-											/>
+							icon={Table2}
+							title="Sin grupos todavía"
+							description="Los grupos son opcionales. Crea uno solo si tu etapa necesita fase de grupos o tablas separadas."
+							className="mt-3"
+						/>
 					) : (
 						<div className="mt-3 flex flex-col gap-2">
 							{groups.map((g) => (
@@ -337,10 +337,10 @@ function AdminStageDetailPage() {
 
 				<Card className="p-4">
 					<h3 className="font-bold">Equipos</h3>
-									<p className="mt-1 text-sm text-(--sea-ink-soft)">
-										Inscribe los equipos de la etapa. Asignarlos a un grupo es opcional
-										solo si la etapa usa grupos.
-									</p>
+					<p className="mt-1 text-sm text-(--sea-ink-soft)">
+						Inscribe los equipos de la etapa. Asignarlos a un grupo es opcional
+						solo si la etapa usa grupos.
+					</p>
 					<form onSubmit={onRegister} className="mt-2 flex gap-2">
 						<Select
 							value={teamId}
@@ -542,7 +542,9 @@ function CreateTeamDialog({
 	const onCreateClub = async () => {
 		if (!newClubName.trim()) return;
 		try {
-			const club = (await createClubHook.mutateAsync({ name: newClubName.trim() })) as {
+			const club = (await createClubHook.mutateAsync({
+				name: newClubName.trim(),
+			})) as {
 				id: string;
 			};
 			setNewTeamClubId(club.id);
@@ -720,15 +722,15 @@ function InviteDialog({
 						</div>
 					</div>
 					<p className="text-center text-xs text-(--sea-ink-soft)">
-						Este link es de un solo uso y expira en 7 días. Los capitanes
-						podrán crear un equipo nuevo o inscribir uno existente.
+						Este link es de un solo uso y expira en 7 días. Los capitanes podrán
+						crear un equipo nuevo o inscribir uno existente.
 					</p>
 				</div>
 			) : (
 				<div className="space-y-4">
 					<p className="text-sm text-(--sea-ink-soft)">
-						Al crear el link, se generará un código QR que puedes compartir
-						con los capitanes de equipo.
+						Al crear el link, se generará un código QR que puedes compartir con
+						los capitanes de equipo.
 					</p>
 				</div>
 			)}

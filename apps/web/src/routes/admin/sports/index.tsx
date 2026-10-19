@@ -29,6 +29,7 @@ import {
 	adminListFilters,
 } from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
+import { resolveSportIcon } from "../../../lib/sport-icon";
 
 export const Route = createFileRoute("/admin/sports/")({
 	component: AdminSportsPage,
@@ -55,6 +56,7 @@ function AdminSportsPage() {
 				items: Array<{
 					id: string;
 					name: string;
+					icon?: string | null;
 					hasDraws?: boolean | null;
 					periodName?: string | null;
 					regularPeriods?: number | null;
@@ -185,6 +187,10 @@ function AdminSportsPage() {
 							>
 								<CardHeader className="p-0">
 									<CardTitle className="flex items-center gap-2 text-base">
+										{(() => {
+											const Icon = resolveSportIcon(s.name, s.icon);
+											return <Icon className="h-5 w-5 text-(--sea-ink-soft)" />;
+										})()}
 										<Dumbbell
 											{...DECORATIVE}
 											className="size-4 shrink-0 text-(--sea-ink-soft)"

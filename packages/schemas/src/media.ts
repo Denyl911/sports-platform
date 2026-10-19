@@ -4,7 +4,10 @@ import { type Static, t } from "elysia";
  * Schemas TypeBox para el sistema de imágenes y videos.
  */
 
-export const mediaTypeSchema = t.Union([t.Literal("image"), t.Literal("video")]);
+export const mediaTypeSchema = t.Union([
+	t.Literal("image"),
+	t.Literal("video"),
+]);
 
 export const presignedUrlRequestSchema = t.Object({
 	fileName: t.String({ minLength: 1, maxLength: 255 }),
