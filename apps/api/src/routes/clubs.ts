@@ -1,6 +1,7 @@
 // @ts-nocheck
 
 import {
+	clubFilterQuerySchema,
 	clubIdParamsSchema,
 	insertClubSchema,
 	selectClubSchema,
@@ -20,7 +21,8 @@ import {
 
 export const clubsRoutes = new Elysia({ prefix: "/clubs", tags: ["Clubs"] })
 	.use(jwtMiddleware)
-	.get("/", async () => listClubs(), {
+	.get("/", async ({ query }) => listClubs(query), {
+		query: clubFilterQuerySchema,
 		response: {
 			200: t.Object({ items: t.Array(selectClubSchema), total: t.Integer() }),
 		},

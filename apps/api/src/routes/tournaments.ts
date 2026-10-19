@@ -65,7 +65,7 @@ export const tournamentsRoutes = new Elysia({
 	tags: ["Tournaments"],
 })
 	.use(jwtMiddleware)
-	.get("/", async ({ query }) => listTournaments(query.sportId), {
+	.get("/", async ({ query }) => listTournaments(query), {
 		query: tournamentFilterQuerySchema,
 		response: {
 			200: t.Object({

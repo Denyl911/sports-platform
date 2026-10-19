@@ -22,6 +22,11 @@ import {
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import {
+	AdminBreadcrumbs,
+	useEditionName,
+	useTournamentName,
+} from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/editions/$editionId")({
@@ -67,6 +72,8 @@ function AdminEditionDetailPage() {
 	const [editingStage, setEditingStage] = React.useState<
 		(typeof stages)[number] | null
 	>(null);
+	const tournamentName = useTournamentName(tournamentId);
+	const editionName = useEditionName(tournamentId, editionId);
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
@@ -84,13 +91,22 @@ function AdminEditionDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/tournaments" className="text-sm text-(--sea-ink-soft)">
-				← Torneos
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Torneos", to: "/admin/tournaments" },
+					...(tournamentId
+						? [
+								{
+									label: tournamentName,
+									to: `/admin/tournaments/${tournamentId}`,
+								},
+							]
+						: []),
+					{ label: editionName },
+				]}
+			/>
 			<Card className="p-4">
-				<h3 className="font-bold">
-					Etapas de la edición {editionId.slice(0, 8)}
-				</h3>
+				<h3 className="font-bold">Etapas de la edición {editionName}</h3>
 				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
 					<Input
 						value={name}

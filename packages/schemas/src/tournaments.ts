@@ -67,6 +67,10 @@ export const groupRefParamsSchema = t.Object({
 // Query params para filtros: /tournaments?sportId=...
 export const tournamentFilterQuerySchema = t.Object({
 	sportId: t.Optional(t.String({ minLength: 1, maxLength: 32 })),
+	sort: t.Optional(t.Union([t.Literal("name"), t.Literal("createdAt")])),
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
 });
 
 export type TournamentFilterQuery = Static<typeof tournamentFilterQuerySchema>;

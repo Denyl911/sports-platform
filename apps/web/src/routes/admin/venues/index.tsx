@@ -10,14 +10,19 @@ import {
 	CardHeader,
 	CardTitle,
 	EmptyState,
+	Field,
 	Input,
-	Label,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/venues/")({
@@ -25,30 +30,45 @@ export const Route = createFileRoute("/admin/venues/")({
 });
 
 function AdminVenuesPage() {
-	const { data: venuesData, isPending } = useVenues(api);
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/venues",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	const { data: venuesData, isPending } = useVenues(
+		api,
+		adminListFilters(search),
+	);
 	const create = useCreateVenue(api);
 	const del = useDeleteVenue(api);
 	const confirm = useConfirm();
-	const venues =
-		(
-			venuesData as
-				| {
-						items: Array<{
-							id: string;
-							name: string;
-							address?: string | null;
-							fieldCount?: number | null;
-						}>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const envelope = venuesData as
+		| {
+				items: Array<{
+					id: string;
+					name: string;
+					address?: string | null;
+					fieldCount?: number | null;
+				}>;
+				total: number;
+		  }
+		| undefined;
+	const venues = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const [name, setName] = React.useState("");
 	const [address, setAddress] = React.useState("");
 	const [fieldCount, setFieldCount] = React.useState(1);
+	const [errors, setErrors] = React.useState<Record<string, string | null>>({});
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		if (!name.trim()) {
+			setErrors({ name: "El nombre es obligatorio." });
+			return;
+		}
 		try {
 			await create.mutateAsync({
 				name,
@@ -57,8 +77,10 @@ function AdminVenuesPage() {
 			} as never);
 			setName("");
 			setAddress("");
+			setErrors({});
 			toast.success("Sede creada");
 		} catch (err) {
+			setErrors({ name: getApiErrorMessage(err) });
 			toast.error("No se pudo crear la sede", getApiErrorMessage(err));
 		}
 	};
@@ -69,32 +91,40 @@ function AdminVenuesPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Crear sede</h3>
 				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
-					<div className="flex-1 min-w-40">
-						<Label>Nombre</Label>
+					<Field
+						label="Nombre"
+						htmlFor="venue-name"
+						className="flex-1 min-w-40"
+						error={errors.name}
+					>
 						<Input
+							id="venue-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							required
 							placeholder="Estadio Municipal"
 						/>
-					</div>
-					<div className="flex-1 min-w-40">
-						<Label>Dirección</Label>
+					</Field>
+					<Field
+						label="Dirección"
+						htmlFor="venue-address"
+						className="flex-1 min-w-40"
+					>
 						<Input
+							id="venue-address"
 							value={address}
 							onChange={(e) => setAddress(e.target.value)}
 							placeholder="Av. Principal 123"
 						/>
-					</div>
-					<div className="w-24">
-						<Label>Canchas</Label>
+					</Field>
+					<Field label="Canchas" htmlFor="venue-fields" className="w-24">
 						<Input
+							id="venue-fields"
 							type="number"
 							value={fieldCount}
 							onChange={(e) => setFieldCount(Number(e.target.value))}
 							min={1}
 						/>
-					</div>
+					</Field>
 					<div className="flex items-end">
 						<Button type="submit" disabled={create.isPending}>
 							Crear
@@ -102,6 +132,14 @@ function AdminVenuesPage() {
 					</div>
 				</form>
 			</Card>
+			<AdminListPager
+				search={search}
+				total={total}
+				onPage={(p) => setAdminSearch({ page: p })}
+				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+				hasSearch
+			/>
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
 					<Skeleton className="h-28 rounded-xl" />
@@ -110,10 +148,17 @@ function AdminVenuesPage() {
 					<Skeleton className="h-28 rounded-xl" />
 				</div>
 			) : venues.length === 0 ? (
-				<EmptyState
-					title="No hay sedes"
-					description="Crea la primera sede con el formulario de arriba."
-				/>
+				search.q ? (
+					<EmptyState
+						title={`Nada coincide con «${search.q}»`}
+						description="Prueba con otro nombre o borra la búsqueda."
+					/>
+				) : (
+					<EmptyState
+						title="No hay sedes"
+						description="Crea la primera sede con el formulario de arriba."
+					/>
+				)
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{venues.map((v) => (

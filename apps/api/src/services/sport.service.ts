@@ -4,20 +4,39 @@ import type {
 	InsertSport,
 	InsertSportEventType,
 	SportEventTypeFilterQuery,
+	SportFilterQuery,
 	UpdateSport,
 	UpdateSportEventType,
 } from "@sports/schemas";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================
 // Deportes
 // ==========================================
 
-export async function listSports() {
+export async function listSports(filter: SportFilterQuery) {
+	// search recorta el nombre (ilike, sin case); `order` invierte el orden
+	// natural y el id desempata las páginas.
+	const where = filter.search
+		? ilike(sports.name, `%${filter.search}%`)
+		: undefined;
+	let itemsQuery = db
+		.select()
+		.from(sports)
+		.where(where)
+		.$dynamic()
+		.orderBy(
+			filter.order === "desc" ? desc(sports.name) : asc(sports.name),
+			asc(sports.id),
+		);
+	if (filter.limit !== undefined) itemsQuery = itemsQuery.limit(filter.limit);
+	if (filter.offset !== undefined)
+		itemsQuery = itemsQuery.offset(filter.offset);
+
 	const [items, totalRows] = await Promise.all([
-		db.select().from(sports).orderBy(asc(sports.name)),
-		db.select({ count: count() }).from(sports),
+		itemsQuery,
+		db.select({ count: count() }).from(sports).where(where),
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };

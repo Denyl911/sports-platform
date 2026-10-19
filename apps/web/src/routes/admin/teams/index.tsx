@@ -12,14 +12,20 @@ import {
 	CardHeader,
 	CardTitle,
 	EmptyState,
+	Field,
 	Input,
 	Select,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/teams/")({
@@ -27,25 +33,41 @@ export const Route = createFileRoute("/admin/teams/")({
 });
 
 function AdminTeamsPage() {
-	const { data: teamsData, isPending } = useTeams(api);
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/teams",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	// El filtro por club viaja en search params (server-side en el contrato).
+	const clubFilter = (
+		Route.useSearch() as AdminListSearch & { clubId?: string }
+	).clubId;
+	const { data: teamsData, isPending } = useTeams(
+		api,
+		clubFilter
+			? { ...adminListFilters(search, 20), clubId: clubFilter }
+			: adminListFilters(search, 20),
+	);
 	const { data: clubsData } = useClubs(api);
 	const create = useCreateTeam(api);
 	const del = useDeleteTeam(api);
 	const confirm = useConfirm();
-	const teams =
-		(
-			teamsData as
-				| {
-						items: Array<{
-							id: string;
-							name: string;
-							clubId: string;
-							category?: string | null;
-						}>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const envelope = teamsData as
+		| {
+				items: Array<{
+					id: string;
+					name: string;
+					clubId: string;
+					category?: string | null;
+				}>;
+				total: number;
+		  }
+		| undefined;
+	const teams = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const clubs =
 		(
 			clubsData as
@@ -55,6 +77,7 @@ function AdminTeamsPage() {
 	const [name, setName] = React.useState("");
 	const [clubId, setClubId] = React.useState("");
 	const [category, setCategory] = React.useState("open");
+	const [nameError, setNameError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (clubs.length && !clubId) setClubId(clubs[0]!.id);
@@ -62,11 +85,17 @@ function AdminTeamsPage() {
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		if (!name.trim()) {
+			setNameError("El nombre es obligatorio.");
+			return;
+		}
 		try {
 			await create.mutateAsync({ name, clubId, category } as never);
 			setName("");
+			setNameError(null);
 			toast.success("Equipo creado");
 		} catch (err) {
+			setNameError(getApiErrorMessage(err));
 			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
 		}
 	};
@@ -77,38 +106,98 @@ function AdminTeamsPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Crear equipo</h3>
 				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
-					<Input
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Equipo A"
-						required
+					<Field
+						label="Nombre"
+						htmlFor="team-name"
 						className="flex-1 min-w-40"
-					/>
-					<Select
-						value={clubId}
-						onChange={(e) => setClubId(e.target.value)}
-						className="w-40"
+						error={nameError}
 					>
-						{clubs.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</Select>
-					<Select
-						value={category}
-						onChange={(e) => setCategory(e.target.value)}
-						className="w-32"
+						<Input
+							id="team-name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Equipo A"
+							className="w-full"
+						/>
+					</Field>
+					<div className="w-40">
+						<label
+							htmlFor="team-club"
+							className="text-sm font-semibold leading-none text-(--sea-ink)"
+						>
+							Club
+						</label>
+						<Select
+							id="team-club"
+							value={clubId}
+							onChange={(e) => setClubId(e.target.value)}
+						>
+							{clubs.map((c) => (
+								<option key={c.id} value={c.id}>
+									{c.name}
+								</option>
+							))}
+						</Select>
+					</div>
+					<div className="w-32">
+						<label
+							htmlFor="team-category"
+							className="text-sm font-semibold leading-none text-(--sea-ink)"
+						>
+							Categoría
+						</label>
+						<Select
+							id="team-category"
+							value={category}
+							onChange={(e) => setCategory(e.target.value)}
+						>
+							<option value="open">open</option>
+							<option value="u18">u18</option>
+							<option value="senior">senior</option>
+						</Select>
+					</div>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={create.isPending}
 					>
-						<option value="open">open</option>
-						<option value="u18">u18</option>
-						<option value="senior">senior</option>
-					</Select>
-					<Button type="submit" disabled={create.isPending}>
 						Crear
 					</Button>
 				</form>
 			</Card>
+			<div className="flex flex-wrap items-end gap-2">
+				<label
+					htmlFor="teams-club-filter"
+					className="text-xs font-bold text-(--sea-ink-soft)"
+				>
+					Filtrar por club
+				</label>
+				<Select
+					id="teams-club-filter"
+					value={clubFilter ?? ""}
+					onChange={(e) =>
+						setAdminSearch({
+							clubId: e.target.value || undefined,
+							page: undefined,
+						})
+					}
+					className="w-56"
+				>
+					<option value="">Todos los clubes</option>
+					{clubs.map((c) => (
+						<option key={c.id} value={c.id}>
+							{c.name}
+						</option>
+					))}
+				</Select>
+				<AdminListPager
+					search={search}
+					total={total}
+					onPage={(p) => setAdminSearch({ page: p })}
+					onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+					onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+				/>
+			</div>
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
 					<Skeleton className="h-28 rounded-xl" />
@@ -119,7 +208,11 @@ function AdminTeamsPage() {
 			) : teams.length === 0 ? (
 				<EmptyState
 					title="No hay equipos"
-					description="Crea el primer equipo con el formulario de arriba."
+					description={
+						clubFilter
+							? "Este club aún no tiene equipos."
+							: "Crea el primer equipo con el formulario de arriba."
+					}
 				/>
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">

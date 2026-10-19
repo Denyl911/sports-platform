@@ -11,15 +11,20 @@ import {
 	CardHeader,
 	CardTitle,
 	EmptyState,
+	Field,
 	Input,
-	Label,
 	Select,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/users/")({
@@ -27,39 +32,61 @@ export const Route = createFileRoute("/admin/users/")({
 });
 
 function AdminUsersPage() {
-	const { data: usersData, isPending } = useUsers(api);
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/users",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	const { data: usersData, isPending } = useUsers(
+		api,
+		adminListFilters(search),
+	);
 	const create = useCreateUser(api);
 	const del = useDeleteUser(api);
 	const confirm = useConfirm();
-	const users =
-		(
-			usersData as
-				| {
-						items: Array<{
-							id: string;
-							email: string;
-							fullName: string;
-							role: string;
-							isActive: boolean;
-						}>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const envelope = usersData as
+		| {
+				items: Array<{
+					id: string;
+					email: string;
+					fullName: string;
+					role: string;
+					isActive: boolean;
+				}>;
+				total: number;
+		  }
+		| undefined;
+	const users = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const [email, setEmail] = React.useState("");
 	const [password, setPassword] = React.useState("");
 	const [fullName, setFullName] = React.useState("");
 	const [role, setRole] = React.useState("viewer_staff");
+	const [errors, setErrors] = React.useState<Record<string, string | null>>({});
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		const nextErrors: Record<string, string | null> = {
+			email: email.trim() ? null : "El email es obligatorio.",
+			password: password.trim() ? null : "La contraseña es obligatoria.",
+			fullName: fullName.trim() ? null : "El nombre es obligatorio.",
+		};
+		if (nextErrors.email || nextErrors.password || nextErrors.fullName) {
+			setErrors(nextErrors);
+			return;
+		}
 		try {
 			await create.mutateAsync({ email, password, fullName, role } as never);
 			setEmail("");
 			setPassword("");
 			setFullName("");
+			setErrors({});
 			toast.success("Usuario creado");
 		} catch (err) {
+			setErrors({ email: getApiErrorMessage(err) });
 			toast.error("No se pudo crear el usuario", getApiErrorMessage(err));
 		}
 	};
@@ -84,36 +111,54 @@ function AdminUsersPage() {
 			<h1 className="demo-title">Usuarios</h1>
 			<Card className="p-4">
 				<h3 className="font-bold">Crear usuario (admin)</h3>
-				<form onSubmit={onCreate} className="mt-3 grid gap-2 sm:grid-cols-2">
-					<div>
-						<Label>Email</Label>
+				<form
+					onSubmit={onCreate}
+					className="mt-3 grid gap-2 sm:grid-cols-2"
+					noValidate
+				>
+					<Field label="Email" htmlFor="user-email" error={errors.email}>
 						<Input
+							id="user-email"
 							type="email"
 							value={email}
 							onChange={(e) => setEmail(e.target.value)}
-							required
 						/>
-					</div>
-					<div>
-						<Label>Contraseña</Label>
+					</Field>
+					<Field
+						label="Contraseña"
+						htmlFor="user-password"
+						error={errors.password}
+					>
 						<Input
+							id="user-password"
 							type="password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							required
 						/>
-					</div>
-					<div>
-						<Label>Nombre</Label>
+					</Field>
+					<Field
+						label="Nombre"
+						htmlFor="user-full-name"
+						error={errors.fullName}
+					>
 						<Input
+							id="user-full-name"
 							value={fullName}
 							onChange={(e) => setFullName(e.target.value)}
-							required
 						/>
-					</div>
+					</Field>
 					<div>
-						<Label>Rol</Label>
-						<Select value={role} onChange={(e) => setRole(e.target.value)}>
+						<label
+							htmlFor="user-role"
+							className="text-sm font-semibold leading-none text-(--sea-ink)"
+						>
+							Rol
+						</label>
+						<Select
+							id="user-role"
+							value={role}
+							onChange={(e) => setRole(e.target.value)}
+						>
 							<option value="viewer_staff">viewer_staff</option>
 							<option value="organizer">organizer</option>
 							<option value="referee">referee</option>
@@ -129,6 +174,14 @@ function AdminUsersPage() {
 					</div>
 				</form>
 			</Card>
+			<AdminListPager
+				search={search}
+				total={total}
+				onPage={(p) => setAdminSearch({ page: p })}
+				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+				hasOrder={false}
+			/>
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
 					<Skeleton className="h-28 rounded-xl" />

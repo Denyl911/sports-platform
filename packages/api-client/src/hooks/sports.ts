@@ -2,6 +2,7 @@ import type {
 	InsertSport,
 	InsertSportEventType,
 	SportEventTypeFilterQuery,
+	SportFilterQuery,
 	UpdateSport,
 	UpdateSportEventType,
 } from "@sports/schemas";
@@ -21,14 +22,15 @@ import { queryKeys } from "../queryKeys";
 
 export function useSports(
 	client: ApiClient,
+	filters?: SportFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
 	>,
 ) {
 	return useQuery({
-		queryKey: queryKeys.sports.lists(),
-		queryFn: () => unwrap(client.sports.get()),
+		queryKey: queryKeys.sports.list(filters),
+		queryFn: () => unwrap(client.sports.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

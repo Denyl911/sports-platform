@@ -10,13 +10,19 @@ import {
 	CardHeader,
 	CardTitle,
 	EmptyState,
+	Field,
 	Input,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/clubs/")({
@@ -24,25 +30,42 @@ export const Route = createFileRoute("/admin/clubs/")({
 });
 
 function AdminClubsPage() {
-	const { data: clubsData, isPending } = useClubs(api);
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/clubs",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	const { data: clubsData, isPending } = useClubs(
+		api,
+		adminListFilters(search),
+	);
 	const create = useCreateClub(api);
 	const del = useDeleteClub(api);
 	const confirm = useConfirm();
-	const clubs =
-		(
-			clubsData as
-				| { items: Array<{ id: string; name: string }>; total: number }
-				| undefined
-		)?.items ?? [];
+	const envelope = clubsData as
+		| { items: Array<{ id: string; name: string }>; total: number }
+		| undefined;
+	const clubs = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const [name, setName] = React.useState("");
+	const [nameError, setNameError] = React.useState<string | null>(null);
 
 	const onCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!name.trim()) {
+			setNameError("El nombre es obligatorio.");
+			return;
+		}
 		try {
 			await create.mutateAsync({ name } as never);
 			setName("");
+			setNameError(null);
 			toast.success("Club creado", `«${name.trim()}» está listo en la lista.`);
 		} catch (err) {
+			setNameError(getApiErrorMessage(err));
 			toast.error("No se pudo crear el club", getApiErrorMessage(err));
 		}
 	};
@@ -68,18 +91,36 @@ function AdminClubsPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Crear club</h3>
 				<form onSubmit={onCreate} className="mt-2 flex gap-2">
-					<Input
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Club Atlético"
-						required
+					<Field
+						label="Nombre"
+						htmlFor="club-name"
 						className="flex-1"
-					/>
-					<Button type="submit" disabled={create.isPending}>
+						error={nameError}
+					>
+						<Input
+							id="club-name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Club Atlético"
+							className="w-full"
+						/>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={create.isPending}
+					>
 						Crear
 					</Button>
 				</form>
 			</Card>
+			<AdminListPager
+				search={search}
+				total={total}
+				onPage={(p) => setAdminSearch({ page: p })}
+				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+			/>
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
 					<Skeleton className="h-28 rounded-xl" />
@@ -88,10 +129,17 @@ function AdminClubsPage() {
 					<Skeleton className="h-28 rounded-xl" />
 				</div>
 			) : clubs.length === 0 ? (
-				<EmptyState
-					title="No hay clubes"
-					description="Crea el primer club con el formulario de arriba."
-				/>
+				search.q ? (
+					<EmptyState
+						title={`Nada coincide con «${search.q}»`}
+						description="Prueba con otro nombre o borra la búsqueda."
+					/>
+				) : (
+					<EmptyState
+						title="No hay clubes"
+						description="Crea el primer club con el formulario de arriba."
+					/>
+				)
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{clubs.map((c) => (

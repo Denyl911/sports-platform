@@ -1,18 +1,35 @@
 import { db } from "@sports/db";
 import { players } from "@sports/db/tables";
-import type { InsertPlayer, UpdatePlayer } from "@sports/schemas";
-import { and, asc, count, eq, ilike, ne } from "drizzle-orm";
+import type {
+	InsertPlayer,
+	PlayerSearchQuery,
+	UpdatePlayer,
+} from "@sports/schemas";
+import { and, asc, count, eq, ilike, ne, or } from "drizzle-orm";
 import { DomainError } from "./errors";
 
-export async function listPlayers(search?: string) {
-	const where = search ? ilike(players.lastName, `%${search}%`) : undefined;
+export async function listPlayers(filter: PlayerSearchQuery) {
+	// La búsqueda pisa apellido o nombre (antes sólo apellido); el orden
+	// natural es apellido+nombre y el id desempata las páginas.
+	const where = filter.search
+		? or(
+				ilike(players.lastName, `%${filter.search}%`),
+				ilike(players.firstName, `%${filter.search}%`),
+			)
+		: undefined;
+
+	let itemsQuery = db
+		.select()
+		.from(players)
+		.where(where)
+		.$dynamic()
+		.orderBy(asc(players.lastName), asc(players.firstName), asc(players.id));
+	if (filter.limit !== undefined) itemsQuery = itemsQuery.limit(filter.limit);
+	if (filter.offset !== undefined)
+		itemsQuery = itemsQuery.offset(filter.offset);
 
 	const [items, totalRows] = await Promise.all([
-		db
-			.select()
-			.from(players)
-			.where(where)
-			.orderBy(asc(players.lastName), asc(players.firstName)),
+		itemsQuery,
 		db.select({ count: count() }).from(players).where(where),
 	]);
 

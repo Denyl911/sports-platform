@@ -15,16 +15,16 @@ import { queryKeys } from "../queryKeys";
 
 export function usePlayers(
 	client: ApiClient,
-	search?: string,
+	filters?: PlayerSearchQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
 	>,
 ) {
-	const query: PlayerSearchQuery = search ? { search } : {};
 	return useQuery({
-		queryKey: queryKeys.players.list(search),
-		queryFn: () => unwrap(client.players.get({ query })),
+		queryKey: queryKeys.players.list(filters),
+		queryFn: () =>
+			unwrap(client.players.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

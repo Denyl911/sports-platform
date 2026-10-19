@@ -2,6 +2,7 @@ import {
 	insertVenueSchema,
 	selectVenueSchema,
 	updateVenueSchema,
+	venueFilterQuerySchema,
 	venueIdParamsSchema,
 } from "@sports/schemas";
 import { Elysia, t } from "elysia";
@@ -18,7 +19,8 @@ import {
 
 export const venuesRoutes = new Elysia({ prefix: "/venues", tags: ["Venues"] })
 	.use(jwtMiddleware)
-	.get("/", async () => listVenues(), {
+	.get("/", async ({ query }) => listVenues(query), {
+		query: venueFilterQuerySchema,
 		response: {
 			200: t.Object({ items: t.Array(selectVenueSchema), total: t.Integer() }),
 		},

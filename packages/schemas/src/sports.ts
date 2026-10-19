@@ -47,6 +47,22 @@ export const sportEventTypeFilterQuerySchema = t.Object({
 	affectsScore: t.Optional(t.Boolean()),
 });
 
+// Query params para filtros: /sports?search=...&limit=...&offset=...
+export const sportFilterQuerySchema = t.Object({
+	search: t.Optional(t.String({ minLength: 1, maxLength: 60 })),
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
+});
+
+// Query params para filtros: /venues?search=...&limit=...&offset=...
+export const venueFilterQuerySchema = t.Object({
+	search: t.Optional(t.String({ minLength: 1, maxLength: 60 })),
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
+});
+
 // ==========================================
 // 3. TIPOS TYPESCRIPT INFERIDOS
 // ==========================================
@@ -55,6 +71,8 @@ export type Sport = Static<typeof selectSportSchema>;
 export type InsertSport = Static<typeof insertSportSchema>;
 export type UpdateSport = Static<typeof updateSportSchema>;
 export type Venue = Static<typeof selectVenueSchema>;
+export type SportFilterQuery = Static<typeof sportFilterQuerySchema>;
+export type VenueFilterQuery = Static<typeof venueFilterQuerySchema>;
 export type InsertVenue = Static<typeof insertVenueSchema>;
 export type UpdateVenue = Static<typeof updateVenueSchema>;
 export type SportEventType = Static<typeof selectSportEventTypeSchema>;

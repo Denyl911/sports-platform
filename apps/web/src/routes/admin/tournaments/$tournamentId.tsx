@@ -30,6 +30,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/tournaments/$tournamentId")({
@@ -115,9 +116,12 @@ function AdminTournamentDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/tournaments" className="text-sm text-(--sea-ink-soft)">
-				← Volver a torneos
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Torneos", to: "/admin/tournaments" },
+					{ label: t.name },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>{t.name}</CardTitle>

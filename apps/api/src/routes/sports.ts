@@ -7,6 +7,7 @@ import {
 	selectSportSchema,
 	sportEventTypeFilterQuerySchema,
 	sportEventTypeParamsSchema,
+	sportFilterQuerySchema,
 	sportIdParamsSchema,
 	updateSportEventTypeSchema,
 	updateSportSchema,
@@ -29,7 +30,8 @@ import {
 
 export const sportsRoutes = new Elysia({ prefix: "/sports", tags: ["Sports"] })
 	.use(jwtMiddleware)
-	.get("/", async () => listSports(), {
+	.get("/", async ({ query }) => listSports(query), {
+		query: sportFilterQuerySchema,
 		response: {
 			200: t.Object({ items: t.Array(selectSportSchema), total: t.Integer() }),
 		},

@@ -31,6 +31,12 @@ import {
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
+import {
+	AdminBreadcrumbs,
+	useEditionName,
+	useStageName,
+	useTournamentName,
+} from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/stages/$stageId")({
@@ -47,6 +53,9 @@ function AdminStageDetailPage() {
 	};
 	const editionId = search.editionId ?? null;
 	const tournamentId = search.tournamentId ?? null;
+	const tournamentName = useTournamentName(tournamentId);
+	const editionName = useEditionName(tournamentId, editionId ?? "");
+	const stageName = useStageName(editionId, stageId);
 
 	const { data: groupsData, isPending: groupsPending } = useGroupsByStage(
 		api,
@@ -150,14 +159,28 @@ function AdminStageDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/tournaments" className="text-sm text-(--sea-ink-soft)">
-				← Torneos
-			</Link>
-			{tournamentId && (
-				<div className="text-xs text-(--sea-ink-soft)">
-					Torneo: {tournamentId.slice(0, 8)} · Edición: {editionId?.slice(0, 8)}
-				</div>
-			)}
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Torneos", to: "/admin/tournaments" },
+					...(tournamentId
+						? [
+								{
+									label: tournamentName,
+									to: `/admin/tournaments/${tournamentId}`,
+								},
+							]
+						: []),
+					...(editionId
+						? [
+								{
+									label: editionName,
+									to: `/admin/editions/${editionId}?tournamentId=${tournamentId ?? ""}`,
+								},
+							]
+						: []),
+					{ label: stageName },
+				]}
+			/>
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="p-4">
 					<h3 className="font-bold">Grupos</h3>

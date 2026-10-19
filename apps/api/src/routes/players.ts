@@ -24,7 +24,7 @@ export const playersRoutes = new Elysia({
 	tags: ["Players"],
 })
 	.use(jwtMiddleware)
-	.get("/", async ({ query }) => listPlayers(query.search), {
+	.get("/", async ({ query }) => listPlayers(query), {
 		query: playerSearchQuerySchema,
 		response: {
 			200: t.Object({ items: t.Array(selectPlayerSchema), total: t.Integer() }),

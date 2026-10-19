@@ -1,4 +1,8 @@
-import type { InsertVenue, UpdateVenue } from "@sports/schemas";
+import type {
+	InsertVenue,
+	UpdateVenue,
+	VenueFilterQuery,
+} from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -11,14 +15,15 @@ import { queryKeys } from "../queryKeys";
 
 export function useVenues(
 	client: ApiClient,
+	filters?: VenueFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
 	>,
 ) {
 	return useQuery({
-		queryKey: queryKeys.venues.lists(),
-		queryFn: () => unwrap(client.venues.get()),
+		queryKey: queryKeys.venues.list(filters),
+		queryFn: () => unwrap(client.venues.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

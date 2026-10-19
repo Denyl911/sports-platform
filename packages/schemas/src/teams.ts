@@ -63,11 +63,24 @@ export const playerIdParamsSchema = t.Object({
 export const teamFilterQuerySchema = t.Object({
 	clubId: t.Optional(t.String({ format: "uuid" })),
 	category: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
 });
 
 // Query params para búsqueda de jugadores: /players?search=...
 export const playerSearchQuerySchema = t.Object({
 	search: t.Optional(t.String({ minLength: 1, maxLength: 60 })),
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
+});
+
+// Query params para filtros: /clubs?limit=...&offset=...
+export const clubFilterQuerySchema = t.Object({
+	order: t.Optional(t.Union([t.Literal("asc"), t.Literal("desc")])),
+	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100 })),
+	offset: t.Optional(t.Numeric({ minimum: 0 })),
 });
 
 // Parámetro de ruta: /rosters/:entryId
@@ -111,6 +124,7 @@ export const addPlayerToRosterSchema = t.Pick(insertTournamentRosterSchema, [
 export type Club = Static<typeof selectClubSchema>;
 export type InsertClub = Static<typeof insertClubSchema>;
 export type UpdateClub = Static<typeof updateClubSchema>;
+export type ClubFilterQuery = Static<typeof clubFilterQuerySchema>;
 export type Team = Static<typeof selectTeamSchema>;
 export type InsertTeam = Static<typeof insertTeamSchema>;
 export type UpdateTeam = Static<typeof updateTeamSchema>;

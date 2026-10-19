@@ -1,4 +1,4 @@
-import type { InsertClub, UpdateClub } from "@sports/schemas";
+import type { ClubFilterQuery, InsertClub, UpdateClub } from "@sports/schemas";
 import {
 	type UseMutationOptions,
 	type UseQueryOptions,
@@ -11,14 +11,15 @@ import { queryKeys } from "../queryKeys";
 
 export function useClubs(
 	client: ApiClient,
+	filters?: ClubFilterQuery,
 	options?: Omit<
 		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
 		"queryKey" | "queryFn"
 	>,
 ) {
 	return useQuery({
-		queryKey: queryKeys.clubs.lists(),
-		queryFn: () => unwrap(client.clubs.get()),
+		queryKey: queryKeys.clubs.list(filters),
+		queryFn: () => unwrap(client.clubs.get({ query: { ...(filters ?? {}) } })),
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }

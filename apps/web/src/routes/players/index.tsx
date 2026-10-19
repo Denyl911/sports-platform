@@ -34,7 +34,7 @@ function PlayersPage() {
 	}, [input]);
 
 	const { data } = useSuspenseQuery({
-		queryKey: queryKeys.players.list(search),
+		queryKey: queryKeys.players.list(search ? { search } : undefined),
 		queryFn: () =>
 			unwrap(api.players.get({ query: (search ? { search } : {}) as never })),
 	});

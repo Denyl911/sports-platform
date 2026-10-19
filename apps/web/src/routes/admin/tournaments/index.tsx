@@ -1,8 +1,9 @@
-import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
+import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useCreateTournament,
 	useDeleteTournament,
 	useSports,
+	useTournaments,
 } from "@sports/api-client/hooks";
 import {
 	Badge,
@@ -11,16 +12,21 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	EmptyState,
+	Field,
 	Input,
-	Label,
 	Select,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/tournaments/")({
@@ -28,10 +34,18 @@ export const Route = createFileRoute("/admin/tournaments/")({
 });
 
 function AdminTournamentsPage() {
-	const { data: tournamentsData, isPending } = useQuery({
-		queryKey: queryKeys.tournaments.list(),
-		queryFn: () => unwrap(api.tournaments.get({ query: {} as never })),
-	});
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/tournaments",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	const { data: tournamentsData, isPending } = useTournaments(
+		api,
+		adminListFilters(search),
+	);
 	const { data: sportsData } = useSports(api);
 	const create = useCreateTournament(api);
 	const del = useDeleteTournament(api);
@@ -39,16 +53,16 @@ function AdminTournamentsPage() {
 
 	const [name, setName] = React.useState("");
 	const [sportId, setSportId] = React.useState("");
+	const [nameError, setNameError] = React.useState<string | null>(null);
 
-	const tournaments =
-		(
-			tournamentsData as
-				| {
-						items: Array<{ id: string; name: string; sportId: string }>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const envelope = tournamentsData as
+		| {
+				items: Array<{ id: string; name: string; sportId: string }>;
+				total: number;
+		  }
+		| undefined;
+	const tournaments = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const sports =
 		(
 			sportsData as
@@ -62,14 +76,20 @@ function AdminTournamentsPage() {
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		if (!name.trim()) {
+			setNameError("El nombre es obligatorio.");
+			return;
+		}
 		try {
 			await create.mutateAsync({ name, sportId } as never);
 			setName("");
+			setNameError(null);
 			toast.success(
 				"Torneo creado",
 				`«${name.trim()}» está listo en la lista.`,
 			);
 		} catch (err) {
+			setNameError(getApiErrorMessage(err));
 			toast.error("No se pudo crear el torneo", getApiErrorMessage(err));
 		}
 	};
@@ -93,24 +113,32 @@ function AdminTournamentsPage() {
 		<div className="space-y-6">
 			<div className="flex items-center justify-between">
 				<h1 className="demo-title">Torneos</h1>
-				<Badge variant="secondary">{tournaments.length} total</Badge>
+				<Badge variant="secondary">{total} total</Badge>
 			</div>
 
 			<Card className="p-4">
 				<h3 className="mb-3 font-bold">Crear torneo</h3>
 				<form onSubmit={onCreate} className="flex flex-wrap gap-3">
-					<div className="min-w-48 flex-1">
-						<Label htmlFor="t-name">Nombre</Label>
+					<Field
+						label="Nombre"
+						htmlFor="t-name"
+						className="min-w-48 flex-1"
+						error={nameError}
+					>
 						<Input
 							id="t-name"
 							value={name}
 							onChange={(e) => setName(e.target.value)}
-							required
 							placeholder="Copa Apertura"
 						/>
-					</div>
+					</Field>
 					<div className="w-48">
-						<Label htmlFor="t-sport">Deporte</Label>
+						<label
+							htmlFor="t-sport"
+							className="text-sm font-semibold leading-none text-(--sea-ink)"
+						>
+							Deporte
+						</label>
 						<Select
 							id="t-sport"
 							value={sportId}
@@ -124,15 +152,44 @@ function AdminTournamentsPage() {
 						</Select>
 					</div>
 					<div className="flex items-end">
-						<Button
-							type="submit"
-							disabled={create.isPending || !name || !sportId}
-						>
+						<Button type="submit" disabled={create.isPending || !sportId}>
 							{create.isPending ? "Creando…" : "Crear"}
 						</Button>
 					</div>
 				</form>
 			</Card>
+
+			<div className="flex flex-wrap items-end gap-2">
+				<label
+					htmlFor="t-sort"
+					className="text-xs font-bold text-(--sea-ink-soft)"
+				>
+					Ordenar por
+				</label>
+				<Select
+					id="t-sort"
+					value={search.sort ?? ""}
+					onChange={(e) =>
+						setAdminSearch({
+							sort: e.target.value === "name" ? "name" : undefined,
+							order: e.target.value === "name" ? "asc" : undefined,
+							page: undefined,
+						})
+					}
+					className="w-48"
+				>
+					<option value="">Más recientes</option>
+					<option value="name">Nombre A → Z</option>
+				</Select>
+				<AdminListPager
+					search={search}
+					total={total}
+					onPage={(p) => setAdminSearch({ page: p })}
+					onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+					onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+					hasOrder={false}
+				/>
+			</div>
 
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -141,6 +198,11 @@ function AdminTournamentsPage() {
 					<Skeleton className="h-28 rounded-xl" />
 					<Skeleton className="h-28 rounded-xl" />
 				</div>
+			) : tournaments.length === 0 ? (
+				<EmptyState
+					title="No hay torneos"
+					description="Crea el primer torneo con el formulario de arriba."
+				/>
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{tournaments.map((t) => (

@@ -2,22 +2,36 @@ import { db } from "@sports/db";
 import { clubs, teams } from "@sports/db/tables";
 import type {
 	Club,
+	ClubFilterQuery,
 	InsertClub,
 	InsertTeam,
 	TeamFilterQuery,
 	UpdateClub,
 	UpdateTeam,
 } from "@sports/schemas";
-import { and, asc, count, eq, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, ilike } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================
 // Clubes
 // ==========================================
 
-export async function listClubs() {
+export async function listClubs(filter: ClubFilterQuery) {
+	// El orden natural es el nombre; `order` lo invierte y el id desempata.
+	let itemsQuery = db
+		.select()
+		.from(clubs)
+		.$dynamic()
+		.orderBy(
+			filter.order === "desc" ? desc(clubs.name) : asc(clubs.name),
+			asc(clubs.id),
+		);
+	if (filter.limit !== undefined) itemsQuery = itemsQuery.limit(filter.limit);
+	if (filter.offset !== undefined)
+		itemsQuery = itemsQuery.offset(filter.offset);
+
 	const [items, totalRows] = await Promise.all([
-		db.select().from(clubs).orderBy(asc(clubs.name)),
+		itemsQuery,
 		db.select({ count: count() }).from(clubs),
 	]);
 
@@ -72,8 +86,22 @@ export async function listTeams(filter: TeamFilterQuery) {
 	if (filter.category) conditions.push(ilike(teams.category, filter.category));
 	const where = conditions.length ? and(...conditions) : undefined;
 
+	// El orden natural es el nombre; `order` lo invierte y el id desempata.
+	let itemsQuery = db
+		.select()
+		.from(teams)
+		.where(where)
+		.$dynamic()
+		.orderBy(
+			filter.order === "desc" ? desc(teams.name) : asc(teams.name),
+			asc(teams.id),
+		);
+	if (filter.limit !== undefined) itemsQuery = itemsQuery.limit(filter.limit);
+	if (filter.offset !== undefined)
+		itemsQuery = itemsQuery.offset(filter.offset);
+
 	const [items, totalRows] = await Promise.all([
-		db.select().from(teams).where(where).orderBy(asc(teams.name)),
+		itemsQuery,
 		db.select({ count: count() }).from(teams).where(where),
 	]);
 

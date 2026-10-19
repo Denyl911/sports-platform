@@ -70,20 +70,24 @@ export const teamKeys = {
 export const clubKeys = {
 	all: () => ["clubs"] as const,
 	lists: () => [...clubKeys.all(), "list"] as const,
+	list: (filters?: Record<string, unknown>) =>
+		[...clubKeys.lists(), filters ?? {}] as const,
 	detail: (id: string) => [...clubKeys.all(), "detail", id] as const,
 } as const;
 
 export const playerKeys = {
 	all: () => ["players"] as const,
 	lists: () => [...playerKeys.all(), "list"] as const,
-	list: (search?: string) =>
-		[...playerKeys.lists(), search ? { search } : {}] as const,
+	list: (filters?: Record<string, unknown>) =>
+		[...playerKeys.lists(), filters ?? {}] as const,
 	detail: (id: string) => [...playerKeys.all(), "detail", id] as const,
 } as const;
 
 export const sportKeys = {
 	all: () => ["sports"] as const,
 	lists: () => [...sportKeys.all(), "list"] as const,
+	list: (filters?: Record<string, unknown>) =>
+		[...sportKeys.lists(), filters ?? {}] as const,
 	detail: (id: string) => [...sportKeys.all(), "detail", id] as const,
 	eventTypes: (sportId: string) =>
 		[...sportKeys.all(), sportId, "eventTypes"] as const,
@@ -94,6 +98,8 @@ export const sportKeys = {
 export const venueKeys = {
 	all: () => ["venues"] as const,
 	lists: () => [...venueKeys.all(), "list"] as const,
+	list: (filters?: Record<string, unknown>) =>
+		[...venueKeys.lists(), filters ?? {}] as const,
 	detail: (id: string) => [...venueKeys.all(), "detail", id] as const,
 } as const;
 

@@ -10,13 +10,19 @@ import {
 	CardHeader,
 	CardTitle,
 	EmptyState,
+	Field,
 	Input,
 	Skeleton,
 	toast,
 	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminListPager } from "../../../components/AdminListPager";
+import {
+	type AdminListSearch,
+	adminListFilters,
+} from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/players/")({
@@ -24,30 +30,48 @@ export const Route = createFileRoute("/admin/players/")({
 });
 
 function AdminPlayersPage() {
-	const { data: playersData, isPending } = usePlayers(api);
+	const navigate = useNavigate();
+	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
+		navigate({
+			to: "/admin/players",
+			search: { ...search, ...patch },
+		});
+	};
+	const search = Route.useSearch() as AdminListSearch;
+	const { data: playersData, isPending } = usePlayers(
+		api,
+		adminListFilters(search),
+	);
 	const create = useCreatePlayer(api);
 	const del = useDeletePlayer(api);
 	const confirm = useConfirm();
-	const players =
-		(
-			playersData as
-				| {
-						items: Array<{
-							id: string;
-							firstName: string;
-							lastName: string;
-							idCardNumber?: string | null;
-						}>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const envelope = playersData as
+		| {
+				items: Array<{
+					id: string;
+					firstName: string;
+					lastName: string;
+					idCardNumber?: string | null;
+				}>;
+				total: number;
+		  }
+		| undefined;
+	const players = envelope?.items ?? [];
+	const total = envelope?.total ?? 0;
 	const [firstName, setFirstName] = React.useState("");
 	const [lastName, setLastName] = React.useState("");
 	const [idCardNumber, setIdCardNumber] = React.useState("");
+	const [errors, setErrors] = React.useState<Record<string, string | null>>({});
 
-	const onCreate = async (e: React.FormEvent) => {
+	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		const nextErrors: Record<string, string | null> = {};
+		if (!firstName.trim()) nextErrors.firstName = "El nombre es obligatorio.";
+		if (!lastName.trim()) nextErrors.lastName = "El apellido es obligatorio.";
+		if (Object.keys(nextErrors).length) {
+			setErrors(nextErrors);
+			return;
+		}
 		try {
 			await create.mutateAsync({
 				firstName,
@@ -57,8 +81,10 @@ function AdminPlayersPage() {
 			setFirstName("");
 			setLastName("");
 			setIdCardNumber("");
+			setErrors({});
 			toast.success("Jugador creado");
 		} catch (err) {
+			setErrors({ lastName: getApiErrorMessage(err) });
 			toast.error("No se pudo crear el jugador", getApiErrorMessage(err));
 		}
 	};
@@ -84,31 +110,61 @@ function AdminPlayersPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Crear jugador</h3>
 				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
-					<Input
-						value={firstName}
-						onChange={(e) => setFirstName(e.target.value)}
-						placeholder="Nombre"
-						required
+					<Field
+						label="Nombre"
+						htmlFor="player-first-name"
 						className="flex-1 min-w-32"
-					/>
-					<Input
-						value={lastName}
-						onChange={(e) => setLastName(e.target.value)}
-						placeholder="Apellido"
-						required
+						error={errors.firstName}
+					>
+						<Input
+							id="player-first-name"
+							value={firstName}
+							onChange={(e) => setFirstName(e.target.value)}
+							placeholder="Lucía"
+						/>
+					</Field>
+					<Field
+						label="Apellido"
+						htmlFor="player-last-name"
 						className="flex-1 min-w-32"
-					/>
-					<Input
-						value={idCardNumber}
-						onChange={(e) => setIdCardNumber(e.target.value)}
-						placeholder="DNI (opcional)"
+						error={errors.lastName}
+					>
+						<Input
+							id="player-last-name"
+							value={lastName}
+							onChange={(e) => setLastName(e.target.value)}
+							placeholder="García"
+						/>
+					</Field>
+					<Field
+						label="DNI (opcional)"
+						htmlFor="player-id-card"
 						className="flex-1 min-w-32"
-					/>
-					<Button type="submit" disabled={create.isPending}>
+					>
+						<Input
+							id="player-id-card"
+							value={idCardNumber}
+							onChange={(e) => setIdCardNumber(e.target.value)}
+							placeholder="71234567"
+						/>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={create.isPending}
+					>
 						Crear
 					</Button>
 				</form>
 			</Card>
+			<AdminListPager
+				search={search}
+				total={total}
+				onPage={(p) => setAdminSearch({ page: p })}
+				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+				hasSearch
+			/>
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
 					<Skeleton className="h-28 rounded-xl" />
@@ -117,10 +173,17 @@ function AdminPlayersPage() {
 					<Skeleton className="h-28 rounded-xl" />
 				</div>
 			) : players.length === 0 ? (
-				<EmptyState
-					title="No hay jugadores"
-					description="Crea el primer jugador con el formulario de arriba."
-				/>
+				search.q ? (
+					<EmptyState
+						title={`Nada coincide con «${search.q}»`}
+						description="Busca por apellido o nombre, o borra la búsqueda."
+					/>
+				) : (
+					<EmptyState
+						title="No hay jugadores"
+						description="Crea el primer jugador con el formulario de arriba."
+					/>
+				)
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{players.map((p) => (
