@@ -1,6 +1,7 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useAddPlayerToRoster,
+	useAdvanceStage,
 	useClubs,
 	useCreateClub,
 	useCreateGroup,
@@ -8,17 +9,21 @@ import {
 	useCreateMatch,
 	useCreateTeam,
 	useDeleteGroup,
+	useGenerateBracket,
 	useGroupsByStage,
 	usePlayers,
 	useRegisterTeam,
 	useRegistrationsByStage,
 	useRemovePlayerFromRoster,
 	useRoster,
+	useStageQualifiers,
+	useStagesByEdition,
 	useTeams,
 	useUnregisterTeam,
 	useUpdateGroup,
 	useUpdateRegistrationGroup,
 	useUpdateRosterEntry,
+	useUpdateStage,
 } from "@sports/api-client/hooks";
 import {
 	Badge,
@@ -122,6 +127,115 @@ function AdminStageDetailPage() {
 				  }
 				| undefined
 		)?.items ?? [];
+
+	// Avance entre etapas: la regla vive en la etapa (advancementRules) y el
+	// destino es la etapa con el menor sequenceOrder mayor dentro de la edición.
+	const { data: editionStagesData } = useStagesByEdition(api, editionId ?? "");
+	const editionStages =
+		(
+			editionStagesData as
+				| {
+						items: Array<{
+							id: string;
+							name: string;
+							stageType: string;
+							sequenceOrder: number;
+							advancementRules?: {
+								qualifyPerGroup?: number;
+								seeding?: string;
+							} | null;
+						}>;
+						total: number;
+				  }
+				| undefined
+		)?.items ?? [];
+	const currentStage = editionStages.find((s) => s.id === stageId);
+	const nextStage = editionStages
+		.filter((s) => s.sequenceOrder > (currentStage?.sequenceOrder ?? 0))
+		.sort((a, b) => a.sequenceOrder - b.sequenceOrder)[0];
+	const isSource = currentStage?.stageType === "round_robin";
+	const isTarget = currentStage?.stageType === "single_elimination";
+
+	const { data: qualifiersData } = useStageQualifiers(api, stageId);
+	const qualifiers =
+		(
+			qualifiersData as
+				| {
+						rule: { qualifyPerGroup?: number; seeding?: string } | null;
+						items: Array<{
+							groupId: string;
+							groupName: string;
+							position: number;
+							qualified: boolean;
+							team: { id: string; name: string };
+						}>;
+				  }
+				| undefined
+		)?.items ?? [];
+	const qualifiersRule =
+		(
+			qualifiersData as
+				| { rule: { qualifyPerGroup?: number; seeding?: string } | null }
+				| undefined
+		)?.rule ?? null;
+
+	const advanceStage = useAdvanceStage(api);
+	const generateBracket = useGenerateBracket(api);
+	const updateStage = useUpdateStage(api);
+
+	const [qualifyPerGroup, setQualifyPerGroup] = React.useState("");
+	const [seeding, setSeeding] = React.useState("linear");
+
+	React.useEffect(() => {
+		if (currentStage?.advancementRules?.qualifyPerGroup) {
+			setQualifyPerGroup(String(currentStage.advancementRules.qualifyPerGroup));
+		}
+		if (currentStage?.advancementRules?.seeding) {
+			setSeeding(currentStage.advancementRules.seeding);
+		}
+	}, [currentStage]);
+
+	const onSaveAdvancement = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		try {
+			await updateStage.mutateAsync({
+				stageId,
+				body: {
+					advancementRules: {
+						qualifyPerGroup: qualifyPerGroup
+							? Number(qualifyPerGroup)
+							: undefined,
+						seeding: seeding as "cross" | "linear",
+					},
+				} as never,
+			});
+			toast.success("Regla de avance guardada");
+		} catch (err) {
+			toast.error("No se pudo guardar la regla", getApiErrorMessage(err));
+		}
+	};
+
+	const onAdvance = async () => {
+		try {
+			const r = await advanceStage.mutateAsync(stageId);
+			if (r.synced) {
+				toast.success(`Avance aplicado: ${r.registered} clasificados`);
+			} else {
+				toast.info(`Sin cambios: ${r.reason}`);
+			}
+		} catch (err) {
+			toast.error("No se pudo aplicar el avance", getApiErrorMessage(err));
+		}
+	};
+
+	const onGenerateBracket = async (force = false) => {
+		try {
+			const r = await generateBracket.mutateAsync({ stageId, force });
+			toast.success(`Llave generada: ${r.created} partidos`);
+		} catch (err) {
+			toast.error("No se pudo generar la llave", getApiErrorMessage(err));
+		}
+	};
 
 	const [groupName, setGroupName] = React.useState("");
 	const [teamId, setTeamId] = React.useState("");
@@ -255,6 +369,108 @@ function AdminStageDetailPage() {
 					</Button>
 				</div>
 			</Card>
+
+			{editionId && currentStage && (
+				<Card className="p-4">
+					<h3 className="font-bold">Avance a la etapa siguiente</h3>
+					{isSource && (
+						<>
+							<p className="mt-1 text-sm text-(--sea-ink-soft)">
+								Cuántos equipos por grupo pasan a la etapa siguiente
+								{nextStage
+									? ` («${nextStage.name}»)`
+									: " (sin etapa siguiente)"}
+								.
+							</p>
+							<form
+								onSubmit={onSaveAdvancement}
+								className="mt-3 flex flex-wrap items-end gap-3"
+							>
+								<Field
+									label="Clasifican por grupo"
+									htmlFor="adv-qualify"
+									className="w-32"
+								>
+									<Input
+										id="adv-qualify"
+										type="number"
+										min={1}
+										value={qualifyPerGroup}
+										onChange={(e) => setQualifyPerGroup(e.target.value)}
+										placeholder="2"
+									/>
+								</Field>
+								<Field label="Cruce" htmlFor="adv-seeding" className="w-40">
+									<Select
+										id="adv-seeding"
+										value={seeding}
+										onChange={(e) => setSeeding(e.target.value)}
+									>
+										<option value="cross">Cruzado (A1 vs B2)</option>
+										<option value="linear">Lineal (A1 vs B1)</option>
+									</Select>
+								</Field>
+								<Button
+									type="submit"
+									icon={Save}
+									disabled={updateStage.isPending}
+								>
+									{updateStage.isPending ? "Guardando…" : "Guardar regla"}
+								</Button>
+								{qualifiersRule?.qualifyPerGroup && (
+									<Button
+										type="button"
+										variant="outline"
+										icon={Plus}
+										disabled={advanceStage.isPending}
+										onClick={onAdvance}
+									>
+										{advanceStage.isPending ? "Aplicando…" : "Aplicar avance"}
+									</Button>
+								)}
+							</form>
+							{qualifiers.length > 0 && (
+								<div className="mt-3 flex flex-col gap-1">
+									{qualifiers.map((q) => (
+										<div
+											key={`${q.groupId}-${q.team.id}`}
+											className="flex items-center justify-between text-sm"
+										>
+											<span>
+												{q.team.name}{" "}
+												<span className="text-(--sea-ink-soft)">
+													({q.groupName} · pos. {q.position})
+												</span>
+											</span>
+											{q.qualified ? (
+												<Badge variant="success">clasifica</Badge>
+											) : (
+												<Badge variant="outline">no</Badge>
+											)}
+										</div>
+									))}
+								</div>
+							)}
+						</>
+					)}
+					{isTarget && (
+						<div className="mt-3">
+							<p className="mb-2 text-sm text-(--sea-ink-soft)">
+								Genera la llave a partir de los clasificados de la etapa
+								anterior (o de los inscritos de esta etapa).
+							</p>
+							<Button
+								variant="outline"
+								icon={Plus}
+								disabled={generateBracket.isPending}
+								onClick={() => onGenerateBracket(false)}
+							>
+								{generateBracket.isPending ? "Generando…" : "Generar llaves"}
+							</Button>
+						</div>
+					)}
+				</Card>
+			)}
 
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="p-4">
