@@ -33,6 +33,7 @@
 		"docs-check": "bun scripts/checks.ts docs",
 		"glyphs-check": "bun scripts/checks.ts glyphs",
 		"checks": "bun scripts/checks.ts gate",
+		"db:seed:admin": "bun apps/api/scripts/seed-admin.ts",
 		"gate": "bun scripts/checks.ts gate && turbo run check typecheck test"
 	},
 	"workspaces": [
