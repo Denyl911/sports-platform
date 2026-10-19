@@ -11,11 +11,16 @@ import { type Static, t } from "elysia";
 // ==========================================
 
 export const selectSportSchema = createSelectSchema(sports);
+
+// Extend Sport type with icon field
+export type SportWithIcon = Static<typeof selectSportSchema> & { icon?: string | null };
 export const insertSportSchema = createInsertSchema(sports, {
 	scoringRules: t.Optional(t.Record(t.String(), t.Number())),
+	icon: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
 });
 export const updateSportSchema = createUpdateSchema(sports, {
 	scoringRules: t.Optional(t.Record(t.String(), t.Number())),
+	icon: t.Optional(t.String({ minLength: 1, maxLength: 50 })),
 });
 
 export const selectVenueSchema = createSelectSchema(venues);
@@ -68,7 +73,7 @@ export const venueFilterQuerySchema = t.Object({
 // 3. TIPOS TYPESCRIPT INFERIDOS
 // ==========================================
 
-export type Sport = Static<typeof selectSportSchema>;
+export type Sport = Static<typeof selectSportSchema> & { icon?: string | null };
 export type InsertSport = Static<typeof insertSportSchema>;
 export type UpdateSport = Static<typeof updateSportSchema>;
 export type Venue = Static<typeof selectVenueSchema>;

@@ -13,6 +13,7 @@ export const sports = pgTable(
 			.default("half")
 			.notNull(),
 		regularPeriods: integer("regular_periods").default(2).notNull(),
+		icon: varchar("icon", { length: 50 }),
 		scoringRules: jsonb("scoring_rules")
 			.$type<Record<string, number>>()
 			.default({})

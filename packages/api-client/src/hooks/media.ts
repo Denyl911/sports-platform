@@ -10,7 +10,11 @@ import {
 	useMutation,
 	useQuery,
 } from "@tanstack/react-query";
-import { type ApiClient, unwrap } from "../client";
+import { type ApiClient } from "../client";
+
+function toTreatyResponse<T>(fn: () => Promise<unknown>): Promise<T> {
+	return fn() as Promise<T>;
+}
 
 export function usePresignedUpload(
 	client: ApiClient,
@@ -21,9 +25,9 @@ export function usePresignedUpload(
 ) {
 	return useMutation({
 		mutationFn: (body: PresignedUrlRequest) =>
-			unwrap(
+			toTreatyResponse<PresignedUrlResponse>(() =>
 				(client.media as unknown as { presignedUrl: { post: (b: PresignedUrlRequest) => Promise<unknown> } }).presignedUrl.post(body),
-			) as Promise<PresignedUrlResponse>,
+			),
 		...(options as unknown as object),
 	});
 }
@@ -37,9 +41,9 @@ export function useAttachMedia(
 ) {
 	return useMutation({
 		mutationFn: (body: AttachMediaToEntity) =>
-			unwrap(
+			toTreatyResponse<{ success: true }>(() =>
 				(client.media as unknown as { attach: { post: (b: AttachMediaToEntity) => Promise<unknown> } }).attach.post(body),
-			) as Promise<{ success: true }>,
+			),
 		...(options as unknown as object),
 	});
 }
@@ -56,9 +60,9 @@ export function useEntityMedia(
 	return useQuery({
 		queryKey: ["entity-media", entityType, entityId],
 		queryFn: () =>
-			unwrap(
+			toTreatyResponse<{ items: Array<{ id: string; media: MediaAssetResponse; isFeatured: boolean; displayOrder: number }> }>(() =>
 				(client.media as unknown as { entity: (params: { entityType: string; entityId: string }) => { get: () => Promise<unknown> } }).entity({ entityType, entityId }).get(),
-			) as Promise<{ items: Array<{ id: string; media: MediaAssetResponse; isFeatured: boolean; displayOrder: number }> }>,
+			),
 		...(options as unknown as object),
 	});
 }

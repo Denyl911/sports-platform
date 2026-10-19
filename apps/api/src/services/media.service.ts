@@ -71,7 +71,7 @@ export async function createPresignedUploadUrl(
 
 	// Registrar el asset en la DB
 	const mediaTypeValue = data.mediaType;
-	const [asset] = await db
+	await db
 		.insert(mediaAssets)
 		.values({
 			key,
@@ -80,8 +80,7 @@ export async function createPresignedUploadUrl(
 			sizeBytes: data.fileSize,
 			mediaType: sql`${mediaTypeValue}`,
 			uploadedBy: userId,
-		})
-		.returning();
+		});
 
 	return {
 		uploadUrl,
