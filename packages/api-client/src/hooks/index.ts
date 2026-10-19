@@ -22,6 +22,7 @@ export * from "../live/useGroupLive";
 export * from "../live/useMatchLive";
 export * from "./auth";
 export * from "./clubs";
+export * from "./invitations";
 export * from "./matches";
 export * from "./players";
 export * from "./registrations";
