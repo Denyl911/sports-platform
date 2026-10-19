@@ -24,6 +24,10 @@ _Avoid_: fase, ronda (la ronda es `roundNumber`: la fila de partidos dentro de u
 Una agrupación de equipos dentro de una etapa de formato de grupos.
 _Avoid_: zona, sector, serie, categoría
 
+**Deporte** (sport):
+El catálogo de reglas con el que se juega un torneo: cuántos periodos tiene, si admite empates y cuántos puntos da la tabla (`win`/`draw`/`loss`). Una variante con reglamento propio —fútbol sala, básquetbol 3×3, voleibol playa— es otro deporte, no una jerarquía: el nombre carga la familia ("Fútbol sala") y la fila carga el reglamento. Los eventos puntuables del deporte (`sportEventTypes`) son los que el marcador en vivo sabe sumar.
+_Avoid_: disciplina, modalidad, especialidad, "variante" como entidad
+
 **Club**:
 La entidad social que presenta equipos. Un club puede tener varios equipos.
 _Avoid_: institución, asociación, franquicia

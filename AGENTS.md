@@ -78,7 +78,12 @@ bun run dev --filter=api               # one app (the web dev server re-checks t
 cd packages/db && bun run db:generate  # drizzle-kit generate (the ledger is empty — docs/todo.md P2)
 cd packages/db && bun run db:push      # push schema straight (that is how tests build it today)
 cd packages/db && bun run db:studio    # drizzle studio
+
+bun run db:seed                        # sports catalog + dev admin (idempotent, additive)
+bun run db:seed:sports                 # sports catalog only; --force refreshes its config
 ```
+
+`bun run db:seed:sports` reads `packages/db/src/seed/sports.ts`: eleven sports (football 11/futsal/7, basketball 5×5/3×3, volleyball/beach, baseball, softball, tennis 3/5 sets) with their periods, table points and event types. It inserts what is missing, never deletes, and leaves an edited row alone; `--force` rewrites the catalog's configuration without touching a sport outside it.
 
 **The tests run against a real Postgres.** `apps/api/test/setup.ts` pins `DATABASE_URL` to `sports_platform_test` on the local instance (`postgresql://sports_user:sports_user_password@localhost:5432`) unless the variable already targets that database, and `packages/api-client`'s E2E suite preloads the same setup via its own `bunfig.toml` — one test world, one database, which is why Turbo's `^test` ordering runs the suites in sequence. A Postgres reachable at `localhost:5432` (Docker/Podman) is the only external dependency; nothing is mocked (see [`docs/decided.md`](./docs/decided.md)). Read the exit code, not the word "failed": one green run needs `bun run gate` passing.
 
