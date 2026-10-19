@@ -22,6 +22,7 @@ import {
 	Card,
 	EditDialog,
 	EmptyState,
+	Field,
 	Input,
 	Label,
 	Select,
@@ -37,6 +38,7 @@ import {
 	useStageName,
 	useTournamentName,
 } from "../../../components/AdminBreadcrumbs";
+import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/stages/$stageId")({
@@ -181,18 +183,32 @@ function AdminStageDetailPage() {
 					{ label: stageName },
 				]}
 			/>
+			<AdminFlowSteps current="group" />
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="p-4">
 					<h3 className="font-bold">Grupos</h3>
-					<form onSubmit={onCreateGroup} className="mt-2 flex gap-2">
-						<Input
-							value={groupName}
-							onChange={(e) => setGroupName(e.target.value)}
-							placeholder="Grupo A"
-							required
-							className="flex-1"
-						/>
-						<Button type="submit" disabled={createGroup.isPending}>
+					<p className="mt-1 text-sm text-(--sea-ink-soft)">
+						El grupo es la unidad de la tabla y los cruces (Grupo A, Grupo B…).
+					</p>
+					<form onSubmit={onCreateGroup} className="mt-2 flex flex-wrap gap-3">
+						<Field
+							label="Nombre del grupo"
+							htmlFor="group-name"
+							className="min-w-40 flex-1"
+						>
+							<Input
+								id="group-name"
+								value={groupName}
+								onChange={(e) => setGroupName(e.target.value)}
+								placeholder="Grupo A"
+								required
+							/>
+						</Field>
+						<Button
+							type="submit"
+							className="self-end"
+							disabled={createGroup.isPending}
+						>
 							Crear
 						</Button>
 					</form>
@@ -201,6 +217,12 @@ function AdminStageDetailPage() {
 							<Skeleton className="h-10 rounded-xl" />
 							<Skeleton className="h-10 rounded-xl" />
 						</div>
+					) : groups.length === 0 ? (
+						<EmptyState
+							title="Sin grupos todavía"
+							description="Crea el primer grupo con el formulario de arriba: es el paso 4 y es donde inscribes los equipos."
+							className="mt-3"
+						/>
 					) : (
 						<div className="mt-3 flex flex-col gap-2">
 							{groups.map((g) => (
@@ -235,21 +257,19 @@ function AdminStageDetailPage() {
 							))}
 						</div>
 					)}
-					{groups.length === 0 && (
-						<EmptyState
-							title="Sin grupos"
-							description="Crea el primer grupo de la etapa con el formulario de arriba."
-							className="mt-3"
-						/>
-					)}
 				</Card>
 
 				<Card className="p-4">
 					<h3 className="font-bold">Inscripciones</h3>
+					<p className="mt-1 text-sm text-(--sea-ink-soft)">
+						Inscribe los equipos de la etapa y asígnalos a un grupo para que
+						entren en la tabla.
+					</p>
 					<form onSubmit={onRegister} className="mt-2 flex gap-2">
 						<Select
 							value={teamId}
 							onChange={(e) => setTeamId(e.target.value)}
+							aria-label="Equipo"
 							className="flex-1"
 						>
 							{teams.map((t) => (
@@ -274,7 +294,7 @@ function AdminStageDetailPage() {
 						{registrations.length === 0 && (
 							<EmptyState
 								title="Sin inscripciones"
-								description="Inscribe el primer equipo de la etapa con el formulario de arriba."
+								description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos."
 							/>
 						)}
 					</div>
@@ -283,6 +303,10 @@ function AdminStageDetailPage() {
 
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
+				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
+					Elige dos equipos inscritos y crea el partido; el grupo es opcional.
+					El fixture completo y las jornadas se arman después desde cada grupo.
+				</p>
 				{tournamentId ? (
 					<CreateMatchInline
 						stageId={stageId}
@@ -473,44 +497,55 @@ function CreateMatchInline({
 		}
 	};
 	return (
-		<form onSubmit={onCreate} className="mt-2 flex flex-wrap gap-2">
-			<Badge variant="outline">Torneo {tournamentId.slice(0, 8)}</Badge>
-			<Select
-				value={homeTeamId}
-				onChange={(e) => setHomeTeamId(e.target.value)}
-				className="w-40"
+		<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-3">
+			<Field label="Local" htmlFor="match-home" className="min-w-40 flex-1">
+				<Select
+					id="match-home"
+					value={homeTeamId}
+					onChange={(e) => setHomeTeamId(e.target.value)}
+				>
+					{teams.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
+						</option>
+					))}
+				</Select>
+			</Field>
+			<span className="self-end pb-3 text-center text-xs font-bold text-(--sea-ink-soft)">
+				vs
+			</span>
+			<Field label="Visitante" htmlFor="match-away" className="min-w-40 flex-1">
+				<Select
+					id="match-away"
+					value={awayTeamId}
+					onChange={(e) => setAwayTeamId(e.target.value)}
+				>
+					{teams.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
+						</option>
+					))}
+				</Select>
+			</Field>
+			<Field label="Grupo" htmlFor="match-group" className="w-40">
+				<Select
+					id="match-group"
+					value={groupId}
+					onChange={(e) => setGroupId(e.target.value)}
+				>
+					<option value="">Sin grupo</option>
+					{groups.map((g) => (
+						<option key={g.id} value={g.id}>
+							{g.name}
+						</option>
+					))}
+				</Select>
+			</Field>
+			<Button
+				type="submit"
+				className="self-end"
+				disabled={createMatch.isPending}
 			>
-				{teams.map((t) => (
-					<option key={t.id} value={t.id}>
-						{t.name}
-					</option>
-				))}
-			</Select>
-			<span className="self-center">vs</span>
-			<Select
-				value={awayTeamId}
-				onChange={(e) => setAwayTeamId(e.target.value)}
-				className="w-40"
-			>
-				{teams.map((t) => (
-					<option key={t.id} value={t.id}>
-						{t.name}
-					</option>
-				))}
-			</Select>
-			<Select
-				value={groupId}
-				onChange={(e) => setGroupId(e.target.value)}
-				className="w-32"
-			>
-				<option value="">Sin grupo</option>
-				{groups.map((g) => (
-					<option key={g.id} value={g.id}>
-						{g.name}
-					</option>
-				))}
-			</Select>
-			<Button type="submit" disabled={createMatch.isPending}>
 				Crear partido
 			</Button>
 		</form>
@@ -587,38 +622,64 @@ function RosterSection({
 	>(null);
 	return (
 		<div className="mt-2 space-y-3">
-			<Select
-				value={selectedTeamId}
-				onChange={(e) => setSelectedTeamId(e.target.value)}
-				className="w-full"
-			>
-				{teams.map((t) => (
-					<option key={t.id} value={t.id}>
-						{t.name}
-					</option>
-				))}
-			</Select>
-			<form onSubmit={onAdd} className="flex gap-2">
+			<Field label="Equipo" htmlFor="roster-team">
 				<Select
-					value={playerId}
-					onChange={(e) => setPlayerId(e.target.value)}
-					className="flex-1"
+					id="roster-team"
+					value={selectedTeamId}
+					onChange={(e) => setSelectedTeamId(e.target.value)}
 				>
-					{players.map((p) => (
-						<option key={p.id} value={p.id}>
-							{p.firstName} {p.lastName}
+					{teams.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
 						</option>
 					))}
 				</Select>
-				<Button type="submit" disabled={addPlayer.isPending}>
-					Añadir
-				</Button>
-			</form>
+			</Field>
+			{players.length === 0 ? (
+				<p className="text-sm text-(--sea-ink-soft)">
+					No hay jugadores en el catálogo todavía. Créalos en{" "}
+					<Link to="/admin/players" className="font-semibold">
+						Jugadores
+					</Link>{" "}
+					para armar el plantel.
+				</p>
+			) : (
+				<form onSubmit={onAdd} className="flex flex-wrap gap-3">
+					<Field
+						label="Jugador"
+						htmlFor="roster-player"
+						className="min-w-40 flex-1"
+					>
+						<Select
+							id="roster-player"
+							value={playerId}
+							onChange={(e) => setPlayerId(e.target.value)}
+						>
+							{players.map((p) => (
+								<option key={p.id} value={p.id}>
+									{p.firstName} {p.lastName}
+								</option>
+							))}
+						</Select>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={addPlayer.isPending || !playerId}
+					>
+						Añadir
+					</Button>
+				</form>
+			)}
 			<div className="space-y-1">
 				{roster.length === 0 ? (
 					<EmptyState
 						title="Plantel vacío"
-						description="Añade jugadores al plantel con el formulario de arriba."
+						description={
+							players.length === 0
+								? "Cuando haya jugadores en el catálogo podrás añadirlos a este equipo."
+								: "Añade jugadores al plantel con el formulario de arriba."
+						}
 						className="mt-2"
 					/>
 				) : (

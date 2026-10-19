@@ -64,7 +64,14 @@ function readCollapsed(): string[] {
 export function AdminSidebar() {
 	const [collapsed, setCollapsed] = React.useState<string[]>([]);
 	const matches = useMatches();
-	const pathname = matches.at(-1)?.pathname ?? "";
+	// El pathname del match llega con barra final ("/admin/venues/"): sin
+	// normalizar, el `to` del nav nunca coincide y el grupo de la sección
+	// activa no se reabre.
+	const pathname = (matches.at(-1)?.pathname ?? "").replace(/\/+$/, "");
+	const isActiveItem = (item: AdminNavItem) =>
+		item.exact
+			? pathname === item.to
+			: pathname === item.to || pathname.startsWith(`${item.to}/`);
 	React.useEffect(() => {
 		setCollapsed(readCollapsed());
 	}, []);
@@ -90,7 +97,7 @@ export function AdminSidebar() {
 				const userCollapsed = collapsed.includes(group.title);
 				// Un grupo con la sección activa reabre: el usuario no debe
 				// buscar dónde está parado.
-				const hasActive = group.items.some((item) => item.to === pathname);
+				const hasActive = group.items.some(isActiveItem);
 				const isOpen = !userCollapsed || hasActive;
 				return (
 					<div key={group.title}>
@@ -98,29 +105,30 @@ export function AdminSidebar() {
 							type="button"
 							onClick={() => toggle(group.title)}
 							aria-expanded={!userCollapsed}
-							className="flex w-full items-center justify-between px-3 pt-3 pb-1 text-[10px] font-bold tracking-widest text-(--sea-ink-soft) uppercase hover:text-(--sea-ink)"
+							className="flex w-full items-center justify-between gap-2 rounded-lg px-3 pt-3 pb-1 text-[10px] font-bold tracking-widest text-(--sea-ink-soft) uppercase hover:text-(--sea-ink)"
 						>
 							{group.title}
-							<span aria-hidden="true" className="text-sm leading-none">
-								{userCollapsed ? "+" : "–"}
+							<span aria-hidden="true" className="text-xs leading-none">
+								{userCollapsed ? "▸" : "▾"}
 							</span>
 						</button>
-						{isOpen &&
-							group.items.map((item) => (
-								<Link
-									key={item.to}
-									to={item.to}
-									{...(item.exact ? { activeOptions: { exact: true } } : {})}
-									className={
-										hasActive ? `${sidebarIdle} ${sidebarActive}` : sidebarIdle
-									}
-									activeProps={{
-										className: `${sidebarIdle} ${sidebarActive}`,
-									}}
-								>
-									{item.label}
-								</Link>
-							))}
+						{isOpen && (
+							<div className="flex flex-col gap-0.5">
+								{group.items.map((item) => (
+									<Link
+										key={item.to}
+										to={item.to}
+										{...(item.exact ? { activeOptions: { exact: true } } : {})}
+										className={`${sidebarIdle} block whitespace-nowrap`}
+										activeProps={{
+											className: `${sidebarIdle} ${sidebarActive}`,
+										}}
+									>
+										{item.label}
+									</Link>
+								))}
+							</div>
+						)}
 					</div>
 				);
 			})}

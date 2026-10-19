@@ -177,6 +177,8 @@ function AdminUsersPage() {
 			<AdminListPager
 				search={search}
 				total={total}
+				itemOne="usuario"
+				itemMany="usuarios"
 				onPage={(p) => setAdminSearch({ page: p })}
 				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
 				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}

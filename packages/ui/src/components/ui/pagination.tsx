@@ -9,7 +9,9 @@ export interface PaginationProps {
 	page: number;
 	pageCount: number;
 	total: number;
-	itemWord?: string;
+	/** Sustantivo contado, en singular y plural ("torneo"/"torneos"). */
+	itemOne?: string;
+	itemMany?: string;
 	onChange: (page: number) => void;
 	className?: string;
 }
@@ -18,7 +20,8 @@ export function Pagination({
 	page,
 	pageCount,
 	total,
-	itemWord = "elementos",
+	itemOne = "elemento",
+	itemMany = "elementos",
 	onChange,
 	className,
 }: PaginationProps) {
@@ -28,12 +31,12 @@ export function Pagination({
 		<nav
 			aria-label="Paginación"
 			className={cn(
-				"flex items-center justify-between gap-3 text-sm text-(--sea-ink-soft)",
+				"flex items-center gap-3 text-sm text-(--sea-ink-soft)",
 				className,
 			)}
 		>
 			<span aria-live="polite">
-				{total} {itemWord}
+				{total} {total === 1 ? itemOne : itemMany}
 			</span>
 			<div className="flex items-center gap-2">
 				<button

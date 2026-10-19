@@ -5,6 +5,7 @@ import {
 	useUsers,
 } from "@sports/api-client/hooks";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FirstTournamentGuide } from "../../components/FirstTournamentGuide";
 import { api } from "../../lib/api";
 
 export const Route = createFileRoute("/admin/")({
@@ -30,49 +31,56 @@ function AdminDashboard() {
 			title: "Torneos",
 			desc: "Crear y editar torneos, ediciones, etapas, grupos y miembros.",
 			stat: totals.torneos,
-			statLabel: "torneos",
+			statOne: "torneo",
+			statMany: "torneos",
 		},
 		{
 			to: "/admin/clubs",
 			title: "Clubes",
 			desc: "Catálogo de clubes.",
 			stat: undefined,
-			statLabel: "",
+			statOne: "club",
+			statMany: "clubes",
 		},
 		{
 			to: "/admin/teams",
 			title: "Equipos",
 			desc: "Equipos por club y categoría.",
 			stat: totals.equipos,
-			statLabel: "equipos",
+			statOne: "equipo",
+			statMany: "equipos",
 		},
 		{
 			to: "/admin/players",
 			title: "Jugadores",
 			desc: "Registro de jugadores.",
 			stat: undefined,
-			statLabel: "",
+			statOne: "jugador",
+			statMany: "jugadores",
 		},
 		{
 			to: "/admin/venues",
 			title: "Sedes",
 			desc: "Canchas y sedes de partidos.",
 			stat: undefined,
-			statLabel: "",
+			statOne: "sede",
+			statMany: "sedes",
 		},
 		{
 			to: "/admin/sports",
 			title: "Deportes",
 			desc: "Deportes y tipos de evento.",
 			stat: undefined,
-			statLabel: "",
+			statOne: "deporte",
+			statMany: "deportes",
 		},
 		{
 			to: "/admin/users",
 			title: "Usuarios",
 			desc: "Usuarios y membresías por torneo.",
 			stat: totals.usuarios,
-			statLabel: "usuarios",
+			statOne: "usuario",
+			statMany: "usuarios",
 		},
 	];
 
@@ -100,6 +108,8 @@ function AdminDashboard() {
 				</div>
 			</div>
 
+			{totals.torneos === 0 && <FirstTournamentGuide />}
+
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{cards.map((c) => (
 					<Link key={c.to} to={c.to} className="demo-card no-underline">
@@ -109,7 +119,7 @@ function AdminDashboard() {
 							<p className="mt-2 text-2xl font-black text-(--sea-ink)">
 								{c.stat}{" "}
 								<span className="text-sm font-normal text-(--sea-ink-soft)">
-									{c.statLabel}
+									{c.stat === 1 ? c.statOne : c.statMany}
 								</span>
 							</p>
 						)}

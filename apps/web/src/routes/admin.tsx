@@ -16,7 +16,7 @@ function AdminLayout() {
 		>
 			<div className="page-wrap py-6">
 				<div className="flex gap-6">
-					<aside className="hidden w-48 shrink-0 sm:block">
+					<aside className="hidden w-56 shrink-0 sm:block">
 						<AdminSidebar />
 					</aside>
 					<div className="min-w-0 flex-1">

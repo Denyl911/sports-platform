@@ -13,6 +13,7 @@ import {
 	CardTitle,
 	EditDialog,
 	EmptyState,
+	Field,
 	Input,
 	Label,
 	Select,
@@ -27,6 +28,7 @@ import {
 	useEditionName,
 	useTournamentName,
 } from "../../../components/AdminBreadcrumbs";
+import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/editions/$editionId")({
@@ -39,6 +41,15 @@ type StageType =
 	| "double_elimination"
 	| "swiss"
 	| "manual";
+
+/** El enum de la API, con la palabra del dominio para elegirlo. */
+const STAGE_TYPES: Array<[StageType, string]> = [
+	["round_robin", "Liguilla (todos contra todos)"],
+	["single_elimination", "Eliminación directa"],
+	["double_elimination", "Doble eliminación"],
+	["swiss", "Suizo"],
+	["manual", "Manual"],
+];
 
 function AdminEditionDetailPage() {
 	const { editionId } = Route.useParams();
@@ -105,43 +116,122 @@ function AdminEditionDetailPage() {
 					{ label: editionName },
 				]}
 			/>
+			<AdminFlowSteps current="stage" />
 			<Card className="p-4">
 				<h3 className="font-bold">Etapas de la edición {editionName}</h3>
-				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-2">
-					<Input
-						value={name}
-						onChange={(e) => setName(e.target.value)}
-						placeholder="Fase 1"
-						required
-						className="flex-1 min-w-32"
-					/>
-					<Select
-						value={stageType}
-						onChange={(e) => setStageType(e.target.value as StageType)}
+				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
+					Una <strong>etapa</strong> agrupa los partidos de una forma de juego:
+					liga, cuadro o fase de grupos. Crea la primera aquí y, dentro, sus
+					grupos y equipos.
+				</p>
+				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-3">
+					<Field
+						label="Nombre"
+						htmlFor="stage-name"
+						className="min-w-48 flex-1"
 					>
-						<option value="round_robin">round_robin</option>
-						<option value="single_elimination">single_elimination</option>
-						<option value="swiss">swiss</option>
-					</Select>
-					<Input
-						type="number"
-						value={seq}
-						onChange={(e) => setSeq(Number(e.target.value))}
-						className="w-20"
-					/>
-					<Button type="submit" disabled={createStage.isPending}>
-						Crear etapa
+						<Input
+							id="stage-name"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Fase 1"
+							required
+						/>
+					</Field>
+					<Field label="Tipo" htmlFor="stage-type" className="w-64">
+						<Select
+							id="stage-type"
+							value={stageType}
+							onChange={(e) => setStageType(e.target.value as StageType)}
+						>
+							{STAGE_TYPES.map(([value, label]) => (
+								<option key={value} value={value}>
+									{label}
+								</option>
+							))}
+						</Select>
+					</Field>
+					<Field label="Orden" htmlFor="stage-order" className="w-24">
+						<Input
+							id="stage-order"
+							type="number"
+							min={1}
+							value={seq}
+							onChange={(e) => setSeq(Number(e.target.value))}
+							required
+						/>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={createStage.isPending}
+					>
+						{createStage.isPending ? "Creando…" : "Crear etapa"}
 					</Button>
 				</form>
-				<div className="mt-4 grid gap-2 sm:grid-cols-2">
-					{stagesPending ? (
-						<>
-							<Skeleton className="h-24 rounded-xl" />
-							<Skeleton className="h-24 rounded-xl" />
-						</>
-					) : (
-						stages.map((s) => (
-							<Card key={s.id} className="p-3 flex flex-col">
+				{stagesPending ? (
+					<div className="mt-4 grid gap-2 sm:grid-cols-2">
+						<Skeleton className="h-24 rounded-xl" />
+						<Skeleton className="h-24 rounded-xl" />
+					</div>
+				) : stages.length === 0 ? (
+					<EmptyState
+						className="mt-4"
+						title="Sin etapas todavía"
+						description="Crea la primera con el formulario de arriba: es el paso 3, y habilita los grupos y los partidos."
+					/>
+				) : (
+					<div className="mt-4 grid gap-2 sm:grid-cols-2">
+						{stages.map((s) => (
+							<Card
+								key={s.id}
+								className="group flex flex-col justify-between p-3"
+							>
+								<div className="flex items-start justify-between gap-2">
+									<div className="min-w-0">
+										<CardHeader className="p-0">
+											<CardTitle className="truncate text-sm">
+												{s.name}
+											</CardTitle>
+										</CardHeader>
+										<div className="mt-2 flex flex-wrap gap-1.5">
+											<Badge>{s.stageType}</Badge>
+											<Badge variant="secondary">#{s.sequenceOrder}</Badge>
+										</div>
+									</div>
+									<div className="flex shrink-0 gap-1">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setEditingStage(s)}
+										>
+											Editar
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={async () => {
+												const ok = await confirm({
+													title: "Eliminar etapa",
+													description: `Se elimina «${s.name}» y sus grupos. No se puede deshacer.`,
+													confirmLabel: "Eliminar",
+												});
+												if (!ok) return;
+												try {
+													await deleteStage.mutateAsync(s.id);
+													toast.success("Etapa eliminada");
+												} catch (err) {
+													toast.error(
+														"No se pudo eliminar la etapa",
+														getApiErrorMessage(err),
+													);
+												}
+											}}
+										>
+											Eliminar
+										</Button>
+									</div>
+								</div>
 								<Link
 									to="/admin/stages/$stageId"
 									params={{ stageId: s.id }}
@@ -149,58 +239,19 @@ function AdminEditionDetailPage() {
 										editionId,
 										tournamentId: tournamentId ?? undefined,
 									}}
-									className="no-underline"
+									className="mt-3 inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
 								>
-									<CardHeader className="p-0">
-										<CardTitle className="text-sm">{s.name}</CardTitle>
-									</CardHeader>
-									<div className="flex gap-2 mt-1">
-										<Badge>{s.stageType}</Badge>
-										<Badge variant="secondary">#{s.sequenceOrder}</Badge>
-									</div>
+									Grupos y equipos
+									<span
+										aria-hidden="true"
+										className="transition-transform group-hover:translate-x-0.5"
+									>
+										→
+									</span>
 								</Link>
-								<div className="mt-2 flex gap-2 self-start">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setEditingStage(s)}
-									>
-										Editar
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={async () => {
-											const ok = await confirm({
-												title: "Eliminar etapa",
-												description: `Se elimina «${s.name}» y sus grupos. No se puede deshacer.`,
-												confirmLabel: "Eliminar",
-											});
-											if (!ok) return;
-											try {
-												await deleteStage.mutateAsync(s.id);
-												toast.success("Etapa eliminada");
-											} catch (err) {
-												toast.error(
-													"No se pudo eliminar la etapa",
-													getApiErrorMessage(err),
-												);
-											}
-										}}
-									>
-										Eliminar
-									</Button>
-								</div>
 							</Card>
-						))
-					)}
-				</div>
-				{stages.length === 0 && (
-					<EmptyState
-						title="Sin etapas"
-						description="Crea la primera etapa de la edición con el formulario de arriba."
-						className="mt-4"
-					/>
+						))}
+					</div>
 				)}
 			</Card>
 			{editingStage && (
@@ -279,11 +330,11 @@ function StageEditDialog({
 							value={stageType}
 							onChange={(e) => setStageType(e.target.value as StageType)}
 						>
-							<option value="round_robin">round_robin</option>
-							<option value="single_elimination">single_elimination</option>
-							<option value="double_elimination">double_elimination</option>
-							<option value="swiss">swiss</option>
-							<option value="manual">manual</option>
+							{STAGE_TYPES.map(([value, label]) => (
+								<option key={value} value={value}>
+									{label}
+								</option>
+							))}
 						</Select>
 					</div>
 					<div>

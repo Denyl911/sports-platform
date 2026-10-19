@@ -20,6 +20,7 @@ import {
 	CardTitle,
 	EditDialog,
 	EmptyState,
+	Field,
 	Input,
 	Label,
 	Select,
@@ -31,6 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
+import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/tournaments/$tournamentId")({
@@ -122,18 +124,29 @@ function AdminTournamentDetailPage() {
 					{ label: t.name },
 				]}
 			/>
+			<AdminFlowSteps current="edition" />
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>{t.name}</CardTitle>
 				</CardHeader>
 				<CardContent className="p-0">
-					<form onSubmit={onUpdate} className="flex gap-2">
-						<Input
-							value={name}
-							onChange={(e) => setName(e.target.value)}
-							className="flex-1"
-						/>
-						<Button type="submit" disabled={update.isPending}>
+					<form onSubmit={onUpdate} className="flex flex-wrap gap-3">
+						<Field
+							label="Nombre del torneo"
+							htmlFor="tournament-name"
+							className="min-w-56 flex-1"
+						>
+							<Input
+								id="tournament-name"
+								value={name}
+								onChange={(e) => setName(e.target.value)}
+							/>
+						</Field>
+						<Button
+							type="submit"
+							className="self-end"
+							disabled={update.isPending}
+						>
 							Guardar
 						</Button>
 					</form>
@@ -142,88 +155,123 @@ function AdminTournamentDetailPage() {
 
 			<Card className="p-4">
 				<h3 className="font-bold">Ediciones</h3>
-				<form onSubmit={onCreateEdition} className="mt-3 flex flex-wrap gap-2">
-					<Input
-						value={eName}
-						onChange={(e) => setEName(e.target.value)}
-						placeholder="2025"
-						required
-						className="min-w-32 flex-1"
-					/>
-					<Select
-						value={eCategory}
-						onChange={(e) => setECategory(e.target.value)}
+				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
+					La <strong>edición</strong> es la temporada concreta del torneo (2026,
+					u18…). Sin edición no hay etapas ni partidos, así que este es el paso
+					2: créala aquí y sigue con sus etapas.
+				</p>
+				<form onSubmit={onCreateEdition} className="mt-3 flex flex-wrap gap-3">
+					<Field
+						label="Nombre"
+						htmlFor="edition-name"
+						className="min-w-56 flex-1"
 					>
-						<option value="open">open</option>
-						<option value="u18">u18</option>
-						<option value="senior">senior</option>
-					</Select>
-					<Button type="submit" disabled={createEdition.isPending}>
-						Crear edición
+						<Input
+							id="edition-name"
+							value={eName}
+							onChange={(e) => setEName(e.target.value)}
+							placeholder="2026"
+							required
+						/>
+					</Field>
+					<Field label="Categoría" htmlFor="edition-category" className="w-48">
+						<Select
+							id="edition-category"
+							value={eCategory}
+							onChange={(e) => setECategory(e.target.value)}
+						>
+							<option value="open">open</option>
+							<option value="u18">u18</option>
+							<option value="senior">senior</option>
+						</Select>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={createEdition.isPending}
+					>
+						{createEdition.isPending ? "Creando…" : "Crear edición"}
 					</Button>
 				</form>
-				<div className="mt-4 grid gap-2 sm:grid-cols-2">
-					{editionsPending ? (
-						<>
-							<Skeleton className="h-28 rounded-xl" />
-							<Skeleton className="h-28 rounded-xl" />
-							<Skeleton className="h-28 rounded-xl" />
-							<Skeleton className="h-28 rounded-xl" />
-						</>
-					) : editions.length === 0 ? (
-						<EmptyState
-							title="Sin ediciones"
-							description="Crea la primera edición del torneo con el formulario de arriba."
-						/>
-					) : (
-						editions.map((ed) => (
-							<Card key={ed.id} className="p-3 flex flex-col">
+				{editionsPending ? (
+					<div className="mt-4 grid gap-2 sm:grid-cols-2">
+						<Skeleton className="h-28 rounded-xl" />
+						<Skeleton className="h-28 rounded-xl" />
+						<Skeleton className="h-28 rounded-xl" />
+						<Skeleton className="h-28 rounded-xl" />
+					</div>
+				) : editions.length === 0 ? (
+					<EmptyState
+						className="mt-4"
+						title="Sin ediciones todavía"
+						description="Crea la primera con el formulario de arriba: es el paso 2 de la cadena y habilita las etapas, los grupos y los partidos."
+					/>
+				) : (
+					<div className="mt-4 grid gap-2 sm:grid-cols-2">
+						{editions.map((ed) => (
+							<Card
+								key={ed.id}
+								className="group flex flex-col justify-between p-3"
+							>
+								<div className="flex items-start justify-between gap-2">
+									<div className="min-w-0">
+										<div className="truncate text-sm font-bold">{ed.name}</div>
+										<div className="mt-2 flex flex-wrap gap-1.5">
+											<Badge variant="secondary">{ed.status}</Badge>
+											<Badge variant="outline">{ed.category}</Badge>
+										</div>
+									</div>
+									<div className="flex shrink-0 gap-1">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setEditingEdition(ed)}
+										>
+											Editar
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={async () => {
+												const ok = await confirm({
+													title: "Eliminar edición",
+													description: `Se elimina «${ed.name}» y sus etapas. No se puede deshacer.`,
+													confirmLabel: "Eliminar",
+												});
+												if (!ok) return;
+												try {
+													await deleteEdition.mutateAsync(ed.id);
+													toast.success("Edición eliminada");
+												} catch (err) {
+													toast.error(
+														"No se pudo eliminar la edición",
+														getApiErrorMessage(err),
+													);
+												}
+											}}
+										>
+											Eliminar
+										</Button>
+									</div>
+								</div>
 								<Link
 									to="/admin/editions/$editionId"
 									params={{ editionId: ed.id }}
 									search={{ tournamentId }}
-									className="no-underline"
+									className="mt-3 inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
 								>
-									<div className="font-bold text-sm">{ed.name}</div>
-									<Badge variant="secondary">{ed.status}</Badge>{" "}
-									<Badge variant="outline">{ed.category}</Badge>
+									Etapas
+									<span
+										aria-hidden="true"
+										className="transition-transform group-hover:translate-x-0.5"
+									>
+										→
+									</span>
 								</Link>
-								<div className="mt-2 flex gap-2 self-start">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setEditingEdition(ed)}
-									>
-										Editar
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={async () => {
-											const ok = await confirm({
-												title: "Eliminar edición",
-												description: `Se elimina «${ed.name}» y sus etapas. No se puede deshacer.`,
-												confirmLabel: "Eliminar",
-											});
-											if (!ok) return;
-											try {
-												await deleteEdition.mutateAsync(ed.id);
-												toast.success("Edición eliminada");
-											} catch (err) {
-												toast.error(
-													"No se pudo eliminar la edición",
-													getApiErrorMessage(err),
-												);
-											}
-										}}
-									>
-										Eliminar
-									</Button>
-								</div>
 							</Card>
-						))
-					)}
-				</div>
+						))}
+					</div>
+				)}
 			</Card>
 			{editingEdition && (
 				<EditionEditDialog

@@ -117,6 +117,8 @@ function AdminClubsPage() {
 			<AdminListPager
 				search={search}
 				total={total}
+				itemOne="club"
+				itemMany="clubes"
 				onPage={(p) => setAdminSearch({ page: p })}
 				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
 				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}

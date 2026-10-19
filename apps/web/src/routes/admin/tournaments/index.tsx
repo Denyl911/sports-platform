@@ -9,10 +9,7 @@ import {
 	Badge,
 	Button,
 	Card,
-	CardContent,
-	CardHeader,
 	CardTitle,
-	EmptyState,
 	Field,
 	Input,
 	Select,
@@ -23,6 +20,7 @@ import {
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { AdminListPager } from "../../../components/AdminListPager";
+import { FirstTournamentGuide } from "../../../components/FirstTournamentGuide";
 import {
 	type AdminListSearch,
 	adminListFilters,
@@ -35,13 +33,13 @@ export const Route = createFileRoute("/admin/tournaments/")({
 
 function AdminTournamentsPage() {
 	const navigate = useNavigate();
+	const search = Route.useSearch() as AdminListSearch;
 	const setAdminSearch = (patch: Partial<AdminListSearch>) => {
 		navigate({
 			to: "/admin/tournaments",
 			search: { ...search, ...patch },
 		});
 	};
-	const search = Route.useSearch() as AdminListSearch;
 	const { data: tournamentsData, isPending } = useTournaments(
 		api,
 		adminListFilters(search),
@@ -81,13 +79,23 @@ function AdminTournamentsPage() {
 			return;
 		}
 		try {
-			await create.mutateAsync({ name, sportId } as never);
+			const created = (await create.mutateAsync({ name, sportId } as never)) as
+				| { id?: string }
+				| undefined;
 			setName("");
 			setNameError(null);
 			toast.success(
 				"Torneo creado",
 				`«${name.trim()}» está listo en la lista.`,
 			);
+			// El primer torneo lleva directo a su ficha: ahí está el paso
+			// siguiente (la edición). Con la lista en marcha, no se interrumpe.
+			if (total === 0 && created?.id) {
+				navigate({
+					to: "/admin/tournaments/$tournamentId",
+					params: { tournamentId: created.id },
+				});
+			}
 		} catch (err) {
 			setNameError(getApiErrorMessage(err));
 			toast.error("No se pudo crear el torneo", getApiErrorMessage(err));
@@ -111,19 +119,21 @@ function AdminTournamentsPage() {
 
 	return (
 		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<h1 className="demo-title">Torneos</h1>
-				<Badge variant="secondary">{total} total</Badge>
-			</div>
+			<h1 className="demo-title">Torneos</h1>
 
 			<Card className="p-4">
-				<h3 className="mb-3 font-bold">Crear torneo</h3>
-				<form onSubmit={onCreate} className="flex flex-wrap gap-3">
+				<h3 className="font-bold">Crear torneo</h3>
+				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
+					Un torneo es la competición. Al crearlo llegarás a su ficha para
+					crearle la <strong>edición</strong> (la temporada) y, dentro, las
+					etapas y los partidos.
+				</p>
+				<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-3">
 					<Field
 						label="Nombre"
 						htmlFor="t-name"
-						className="min-w-48 flex-1"
 						error={nameError}
+						className="min-w-56 flex-1"
 					>
 						<Input
 							id="t-name"
@@ -132,13 +142,7 @@ function AdminTournamentsPage() {
 							placeholder="Copa Apertura"
 						/>
 					</Field>
-					<div className="w-48">
-						<label
-							htmlFor="t-sport"
-							className="text-sm font-semibold leading-none text-(--sea-ink)"
-						>
-							Deporte
-						</label>
+					<Field label="Deporte" htmlFor="t-sport" className="w-56">
 						<Select
 							id="t-sport"
 							value={sportId}
@@ -146,50 +150,51 @@ function AdminTournamentsPage() {
 						>
 							{sports.map((s) => (
 								<option key={s.id} value={s.id}>
-									{s.name} ({s.id})
+									{s.name}
 								</option>
 							))}
 						</Select>
-					</div>
-					<div className="flex items-end">
-						<Button type="submit" disabled={create.isPending || !sportId}>
-							{create.isPending ? "Creando…" : "Crear"}
-						</Button>
-					</div>
+					</Field>
+					<Button
+						type="submit"
+						className="self-end"
+						disabled={create.isPending || !sportId}
+					>
+						{create.isPending ? "Creando…" : "Crear"}
+					</Button>
 				</form>
 			</Card>
 
-			<div className="flex flex-wrap items-end gap-2">
-				<label
-					htmlFor="t-sort"
-					className="text-xs font-bold text-(--sea-ink-soft)"
-				>
-					Ordenar por
-				</label>
-				<Select
-					id="t-sort"
-					value={search.sort ?? ""}
-					onChange={(e) =>
-						setAdminSearch({
-							sort: e.target.value === "name" ? "name" : undefined,
-							order: e.target.value === "name" ? "asc" : undefined,
-							page: undefined,
-						})
-					}
-					className="w-48"
-				>
-					<option value="">Más recientes</option>
-					<option value="name">Nombre A → Z</option>
-				</Select>
-				<AdminListPager
-					search={search}
-					total={total}
-					onPage={(p) => setAdminSearch({ page: p })}
-					onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
-					onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
-					hasOrder={false}
-				/>
-			</div>
+			<AdminListPager
+				search={search}
+				total={total}
+				itemOne="torneo"
+				itemMany="torneos"
+				hasOrder={false}
+				extra={
+					<span className="flex items-center gap-2 text-xs font-bold text-(--sea-ink-soft)">
+						Ordenar
+						<Select
+							aria-label="Ordenar los torneos"
+							value={search.sort ?? ""}
+							onChange={(e) =>
+								setAdminSearch({
+									sort: e.target.value === "name" ? "name" : undefined,
+									order: e.target.value === "name" ? "asc" : undefined,
+									page: undefined,
+								})
+							}
+							className="w-40"
+						>
+							<option value="">Más recientes</option>
+							<option value="name">Nombre A → Z</option>
+						</Select>
+					</span>
+				}
+				onPage={(p) => setAdminSearch({ page: p })}
+				onOrder={(o) => setAdminSearch({ order: o, page: undefined })}
+				onQuery={(qq) => setAdminSearch({ q: qq, page: undefined })}
+			/>
 
 			{isPending ? (
 				<div className="grid gap-3 sm:grid-cols-2">
@@ -199,35 +204,43 @@ function AdminTournamentsPage() {
 					<Skeleton className="h-28 rounded-xl" />
 				</div>
 			) : tournaments.length === 0 ? (
-				<EmptyState
-					title="No hay torneos"
-					description="Crea el primer torneo con el formulario de arriba."
-				/>
+				<FirstTournamentGuide cta={false} />
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{tournaments.map((t) => (
-						<Card key={t.id} className="p-4 flex flex-col justify-between">
-							<Link
-								to="/admin/tournaments/$tournamentId"
-								params={{ tournamentId: t.id }}
-								className="no-underline"
-							>
-								<CardHeader className="p-0">
-									<CardTitle className="text-base">{t.name}</CardTitle>
-								</CardHeader>
-								<CardContent className="p-0">
-									<Badge variant="outline">{t.sportId}</Badge>
-								</CardContent>
-							</Link>
-							<div className="mt-3 flex gap-2">
+						<Card
+							key={t.id}
+							className="group flex flex-col justify-between gap-3 p-4"
+						>
+							<div className="flex items-start justify-between gap-3">
+								<div className="min-w-0">
+									<CardTitle className="truncate text-base">{t.name}</CardTitle>
+									<Badge variant="outline" className="mt-2">
+										{t.sportId}
+									</Badge>
+								</div>
 								<Button
 									variant="ghost"
 									size="sm"
+									className="shrink-0"
 									onClick={() => onDelete(t.id, t.name)}
 								>
 									Eliminar
 								</Button>
 							</div>
+							<Link
+								to="/admin/tournaments/$tournamentId"
+								params={{ tournamentId: t.id }}
+								className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
+							>
+								Ediciones y etapas
+								<span
+									aria-hidden="true"
+									className="transition-transform group-hover:translate-x-0.5"
+								>
+									→
+								</span>
+							</Link>
 						</Card>
 					))}
 				</div>
