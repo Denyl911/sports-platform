@@ -10,7 +10,7 @@ import type {
 	UpdateStageGroup,
 	UpdateTournamentStage,
 } from "@sports/schemas";
-import { and, asc, count, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================
@@ -99,6 +99,39 @@ export async function listGroupsByStage(stageId: string) {
 	]);
 
 	return { items, total: totalRows[0]?.count ?? 0 };
+}
+
+export async function findNextStage(editionId: string, sequenceOrder: number) {
+	const [stage] = await db
+		.select()
+		.from(tournamentStages)
+		.where(
+			and(
+				eq(tournamentStages.editionId, editionId),
+				gt(tournamentStages.sequenceOrder, sequenceOrder),
+			),
+		)
+		.orderBy(asc(tournamentStages.sequenceOrder))
+		.limit(1);
+	return stage ?? null;
+}
+
+export async function findPreviousStage(
+	editionId: string,
+	sequenceOrder: number,
+) {
+	const [stage] = await db
+		.select()
+		.from(tournamentStages)
+		.where(
+			and(
+				eq(tournamentStages.editionId, editionId),
+				lt(tournamentStages.sequenceOrder, sequenceOrder),
+			),
+		)
+		.orderBy(desc(tournamentStages.sequenceOrder))
+		.limit(1);
+	return stage ?? null;
 }
 
 export async function findGroupById(id: string) {

@@ -22,7 +22,6 @@ import {
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { resolveSportIcon } from "../../../lib/sport-icon";
 import * as React from "react";
 import { AdminListPager } from "../../../components/AdminListPager";
 import {
@@ -30,6 +29,7 @@ import {
 	adminListFilters,
 } from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
+import { resolveSportIcon } from "../../../lib/sport-icon";
 
 export const Route = createFileRoute("/admin/sports/")({
 	component: AdminSportsPage,
@@ -186,7 +186,7 @@ function AdminSportsPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-										<CardTitle className="flex items-center gap-2 text-base">
+									<CardTitle className="flex items-center gap-2 text-base">
 										{(() => {
 											const Icon = resolveSportIcon(s.name, s.icon);
 											return <Icon className="h-5 w-5 text-(--sea-ink-soft)" />;

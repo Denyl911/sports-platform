@@ -126,7 +126,11 @@ export async function seedEdition(
 	return edition;
 }
 
-export async function seedStage(editionId: string, sequenceOrder?: number) {
+export async function seedStage(
+	editionId: string,
+	sequenceOrder?: number,
+	stageType: (typeof tournamentStages.$inferSelect)["stageType"] = "round_robin",
+) {
 	// Secuencia automática si no se indica (evita chocar con stage_sequence_unique)
 	const order =
 		sequenceOrder ??
@@ -144,7 +148,7 @@ export async function seedStage(editionId: string, sequenceOrder?: number) {
 		.values({
 			editionId,
 			name: `Stage ${unique()}`,
-			stageType: "round_robin",
+			stageType,
 			sequenceOrder: order,
 		})
 		.returning();
@@ -176,10 +180,14 @@ export async function seedTeam(name?: string): Promise<TeamRow> {
 }
 
 // Inscripción de un equipo en la etapa (idempotente)
-export async function seedRegistration(stageId: string, teamId: string) {
+export async function seedRegistration(
+	stageId: string,
+	teamId: string,
+	groupId?: string,
+) {
 	await db
 		.insert(stageTeamRegistrations)
-		.values({ stageId, teamId })
+		.values({ stageId, teamId, groupId: groupId ?? null })
 		.onConflictDoNothing();
 	const [registration] = await db
 		.select()
@@ -192,6 +200,13 @@ export async function seedRegistration(stageId: string, teamId: string) {
 		)
 		.limit(1);
 	if (!registration) throw new Error("registration not found");
+	// Si se pide grupo y la inscripción ya existía sin él, se asigna.
+	if (groupId && registration.groupId !== groupId) {
+		await db
+			.update(stageTeamRegistrations)
+			.set({ groupId })
+			.where(eq(stageTeamRegistrations.id, registration.id));
+	}
 	return registration;
 }
 

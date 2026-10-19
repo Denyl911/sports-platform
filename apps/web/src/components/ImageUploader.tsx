@@ -1,11 +1,16 @@
 import { getApiErrorMessage } from "@sports/api-client";
-import { usePresignedUpload, useAttachMedia } from "@sports/api-client/hooks";
+import { useAttachMedia, usePresignedUpload } from "@sports/api-client/hooks";
 import { toast } from "@sports/ui";
 import * as React from "react";
 import { api } from "../lib/api";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+const ALLOWED_IMAGE_TYPES = [
+	"image/jpeg",
+	"image/png",
+	"image/gif",
+	"image/webp",
+];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm"];
 
 type MediaType = "image" | "video";
@@ -40,17 +45,18 @@ export function ImageUploader({
 		const type = mediaType ?? detectMediaType(file.type);
 
 		// Validar tipo
-		const allowed = type === "video" ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
+		const allowed =
+			type === "video" ? ALLOWED_VIDEO_TYPES : ALLOWED_IMAGE_TYPES;
 		if (!allowed.includes(file.type)) {
-			toast.error(
-				`Tipo no permitido: ${file.type}. Usa ${allowed.join(", ")}`,
-			);
+			toast.error(`Tipo no permitido: ${file.type}. Usa ${allowed.join(", ")}`);
 			return;
 		}
 
 		// Validar tamaño
 		if (file.size > MAX_FILE_SIZE) {
-			toast.error(`Archivo muy grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 5MB.`);
+			toast.error(
+				`Archivo muy grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo 5MB.`,
+			);
 			return;
 		}
 
@@ -118,48 +124,51 @@ export function ImageUploader({
 	};
 
 	return (
-			<div
-				onDragOver={(e) => {
+		<button
+			type="button"
+			onDragOver={(e) => {
 				e.preventDefault();
 				setIsDragging(true);
 			}}
-				onDragLeave={() => setIsDragging(false)}
-				onDrop={handleDrop}
-				className={`relative flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
-					isDragging
-						? "border-(--sea-ink) bg-(--chip-bg)"
-						: "border-(--line) hover:border-(--sea-ink-soft)"
-				}`}
-				onClick={() => fileInputRef.current?.click()}
-			>
-				<input
-					type="file"
-					ref={fileInputRef}
-					onChange={handleFileSelect}
-					accept={mediaType === "video" ? "video/*" : "image/*"}
-					className="hidden"
-				/>
-				{isUploading ? (
-					<div className="space-y-2 text-center">
-						<p className="text-sm font-semibold">Subiendo... {progress}%</p>
-						<div className="h-2 overflow-hidden rounded-full bg-(--line)">
-							<div
-								className="h-full bg-(--sea-ink) transition-all"
-								style={{ width: `${progress}%` }}
-							/>
-						</div>
+			onDragLeave={() => setIsDragging(false)}
+			onDrop={handleDrop}
+			className={`relative flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 transition-colors ${
+				isDragging
+					? "border-(--sea-ink) bg-(--chip-bg)"
+					: "border-(--line) hover:border-(--sea-ink-soft)"
+			}`}
+			onClick={() => fileInputRef.current?.click()}
+		>
+			<input
+				type="file"
+				ref={fileInputRef}
+				onChange={handleFileSelect}
+				accept={mediaType === "video" ? "video/*" : "image/*"}
+				className="hidden"
+			/>
+			{isUploading ? (
+				<div className="space-y-2 text-center">
+					<p className="text-sm font-semibold">Subiendo... {progress}%</p>
+					<div className="h-2 overflow-hidden rounded-full bg-(--line)">
+						<div
+							className="h-full bg-(--sea-ink) transition-all"
+							style={{ width: `${progress}%` }}
+						/>
 					</div>
-				) : (
-					<div className="space-y-1 text-center">
-						{children}
-						<p className="text-sm font-semibold">
-							{isDragging ? "Suelta el archivo aquí" : "Arrastra y suelta un archivo"}
-						</p>
-						<p className="text-xs text-(--sea-ink-soft)">
-							{"o haz clic para seleccionar. Máximo 5MB."}
-						</p>
-					</div>
-				)}
-			</div>
-		);
-	}
+				</div>
+			) : (
+				<div className="space-y-1 text-center">
+					{children}
+					<p className="text-sm font-semibold">
+						{isDragging
+							? "Suelta el archivo aquí"
+							: "Arrastra y suelta un archivo"}
+					</p>
+					<p className="text-xs text-(--sea-ink-soft)">
+						{"o haz clic para seleccionar. Máximo 5MB."}
+					</p>
+				</div>
+			)}
+		</button>
+	);
+}

@@ -34,6 +34,8 @@ export const stageKeys = {
 		[...stageKeys.all(), "byEdition", editionId] as const,
 	detail: (id: string) => [...stageKeys.all(), "detail", id] as const,
 	groups: (stageId: string) => [...stageKeys.all(), stageId, "groups"] as const,
+	qualifiers: (stageId: string) =>
+		[...stageKeys.all(), stageId, "qualifiers"] as const,
 } as const;
 
 export const groupKeys = {

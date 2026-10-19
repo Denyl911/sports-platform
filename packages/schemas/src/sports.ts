@@ -13,7 +13,9 @@ import { type Static, t } from "elysia";
 export const selectSportSchema = createSelectSchema(sports);
 
 // Extend Sport type with icon field
-export type SportWithIcon = Static<typeof selectSportSchema> & { icon?: string | null };
+export type SportWithIcon = Static<typeof selectSportSchema> & {
+	icon?: string | null;
+};
 export const insertSportSchema = createInsertSchema(sports, {
 	scoringRules: t.Optional(t.Record(t.String(), t.Number())),
 	icon: t.Optional(t.String({ minLength: 1, maxLength: 50 })),

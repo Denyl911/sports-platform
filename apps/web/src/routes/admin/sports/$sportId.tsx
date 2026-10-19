@@ -29,10 +29,10 @@ import {
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { resolveSportIcon } from "../../../lib/sport-icon";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
+import { resolveSportIcon } from "../../../lib/sport-icon";
 
 export const Route = createFileRoute("/admin/sports/$sportId")({
 	component: AdminSportDetailPage,

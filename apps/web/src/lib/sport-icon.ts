@@ -7,6 +7,7 @@ import {
 	Dumbbell,
 	Flag,
 	Goal,
+	type LucideIcon,
 	Medal,
 	Mountain,
 	Shield,
@@ -17,7 +18,6 @@ import {
 	Users,
 	Waves,
 	Zap,
-	type LucideIcon,
 } from "lucide-react";
 
 const SPORT_ICON_MAP: Record<string, LucideIcon> = {

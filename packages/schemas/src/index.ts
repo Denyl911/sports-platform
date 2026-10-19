@@ -1,8 +1,8 @@
 // Exportación de todos los esquemas y tipos
 export * from "./common";
 export * from "./invitations";
-export * from "./media";
 export * from "./matches";
+export * from "./media";
 export * from "./sports";
 export * from "./standings";
 export * from "./teams";

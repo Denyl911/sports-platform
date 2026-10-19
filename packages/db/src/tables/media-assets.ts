@@ -1,4 +1,10 @@
-import { boolean, integer, timestamp, uuid, varchar } from "drizzle-orm/pg-core/columns";
+import {
+	boolean,
+	integer,
+	timestamp,
+	uuid,
+	varchar,
+} from "drizzle-orm/pg-core/columns";
 import { index } from "drizzle-orm/pg-core/indexes";
 import { pgTable } from "drizzle-orm/pg-core/table";
 import { users } from "./users";
@@ -23,9 +29,7 @@ export const mediaAssets = pgTable(
 			.defaultNow()
 			.notNull(),
 	},
-	(t) => [
-		index("media_assets_uploaded_by_idx").on(t.uploadedBy),
-	],
+	(t) => [index("media_assets_uploaded_by_idx").on(t.uploadedBy)],
 );
 
 /**

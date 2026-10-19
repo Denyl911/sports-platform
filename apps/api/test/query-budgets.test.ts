@@ -20,6 +20,7 @@ import { app } from "../src/app";
 import {
 	resetDb,
 	seedEdition,
+	seedGroup,
 	seedMatch,
 	seedRegistration,
 	seedStage,
@@ -153,5 +154,34 @@ describe("query budgets", () => {
 			const measure = countQueries(row.label, row.budget, row.call);
 			await measure();
 		}
+	});
+
+	it("GET /stages/:stageId/qualifiers stays at its budget", async () => {
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		const group = await seedGroup(stage.id);
+		const home = await seedTeam();
+		const away = await seedTeam();
+		await seedRegistration(stage.id, home.id, group.id);
+		await seedRegistration(stage.id, away.id, group.id);
+		await seedMatch(stage.id, {
+			groupId: group.id,
+			homeTeamId: home.id,
+			awayTeamId: away.id,
+			status: "finished",
+			homeScore: 1,
+			awayScore: 0,
+		});
+
+		const measure = countQueries(
+			"GET /stages/:stageId/qualifiers",
+			2,
+			async () => {
+				queryLedger.length = 0;
+				return api.stages({ stageId: stage.id }).qualifiers.get();
+			},
+		);
+		await measure();
 	});
 });
