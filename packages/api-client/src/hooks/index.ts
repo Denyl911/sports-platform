@@ -20,11 +20,12 @@ export * from "../live/url";
 export * from "../live/useGroupLive";
 // Live — Fase 2 (re-export para `import { useMatchLive } from "@sports/api-client/hooks"`)
 export * from "../live/useMatchLive";
+export * from "./advancement";
 export * from "./auth";
 export * from "./clubs";
 export * from "./invitations";
-export * from "./media";
 export * from "./matches";
+export * from "./media";
 export * from "./players";
 export * from "./registrations";
 export * from "./rosters";
