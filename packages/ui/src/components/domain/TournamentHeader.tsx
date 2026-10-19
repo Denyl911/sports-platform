@@ -135,10 +135,16 @@ export function SportIcon({
 }: { sportId: string } & React.HTMLAttributes<HTMLDivElement>) {
 	const emoji: Record<string, string> = {
 		football: "⚽",
+		futsal: "⚽",
+		"football-7": "⚽",
 		basketball: "🏀",
+		"basketball-3x3": "🏀",
 		volleyball: "🏐",
-		tennis: "🎾",
+		"beach-volleyball": "🏐",
 		baseball: "⚾",
+		softball: "🥎",
+		tennis: "🎾",
+		"tennis-best-of-5": "🎾",
 	};
 	return (
 		<div

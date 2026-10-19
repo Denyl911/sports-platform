@@ -86,6 +86,9 @@ export const matchWithTeamsSchema = t.Object({
 // consultas client-side para venue ni nombres.
 export const matchDetailSchema = t.Object({
 	...selectMatchSchema.properties,
+	// El deporte del torneo, para que el cliente sepa qué tipos de evento
+	// puede registrar (el catálogo lo define el deporte, no el partido).
+	sportId: t.String({ minLength: 1, maxLength: 32 }),
 	homeTeam: t.Union([selectTeamSchema, t.Null()]),
 	awayTeam: t.Union([selectTeamSchema, t.Null()]),
 	winnerTeam: t.Union([selectTeamSchema, t.Null()]),
