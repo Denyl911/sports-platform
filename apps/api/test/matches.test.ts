@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "bun:test";
 import { treaty } from "@elysia/eden";
 import { db } from "@sports/db";
-import { matches, matchPeriods } from "@sports/db/tables";
+import { matches, matchPeriods, sportEventTypes } from "@sports/db/tables";
 import { eq } from "drizzle-orm";
 import { app } from "../src/app";
 import { authHeaders } from "./helpers/auth";
@@ -25,6 +25,7 @@ const api = treaty(app);
 interface Ctx {
 	referee: UserRow;
 	organizer: UserRow;
+	sportId: string;
 	tournamentId: string;
 	editionId: string;
 	stageId: string;
@@ -72,6 +73,7 @@ beforeEach(async () => {
 	ctx = {
 		referee: refereeUser,
 		organizer: organizerUser,
+		sportId: tournament.sportId,
 		tournamentId: tournament.id,
 		editionId: edition.id,
 		stageId: stage.id,
@@ -258,6 +260,32 @@ describe("matches - eventos y PATCH info", () => {
 			.limit(1);
 		expect(match?.homeScore).toBe(2);
 		expect(match?.awayScore).toBe(0);
+	});
+
+	it("sin eventValue, el evento suma el defaultValue del catálogo", async () => {
+		await startMatch();
+		await db
+			.update(sportEventTypes)
+			.set({ defaultValue: 3 })
+			.where(eq(sportEventTypes.sportId, ctx.sportId));
+
+		const event = await api.matches({ id: ctx.matchId }).events.post(
+			{
+				teamId: ctx.homeTeamId,
+				periodNumber: 1,
+				minuteOrSecond: 10,
+				eventType: "goal",
+			},
+			{ headers: await h(ctx.referee) },
+		);
+		expect(event.status).toBe(200);
+
+		const [match] = await db
+			.select()
+			.from(matches)
+			.where(eq(matches.id, ctx.matchId))
+			.limit(1);
+		expect(match?.homeScore).toBe(3);
 	});
 
 	it("evento de equipo no participante → 400", async () => {

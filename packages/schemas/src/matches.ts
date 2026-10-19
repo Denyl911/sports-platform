@@ -158,7 +158,10 @@ export const recordLiveEventSchema = t.Object({
 	periodNumber: t.Integer({ minimum: 1 }),
 	minuteOrSecond: t.Integer({ minimum: 0 }),
 	eventType: t.String({ minLength: 2, maxLength: 40 }),
-	eventValue: t.Optional(t.Integer({ default: 1 })),
+	// Sin default en el contrato: cuando el cliente no manda un valor, manda el
+	// `defaultValue` del tipo de evento del deporte (un triple suma 3). Un
+	// default fijo acá lo pisaba y todo evento puntuable valía 1.
+	eventValue: t.Optional(t.Integer({ minimum: 0 })),
 	metadata: t.Optional(t.Record(t.String(), t.Unknown())),
 });
 
