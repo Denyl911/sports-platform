@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card } from "@sports/ui";
+import { Badge, Building2, Card, DECORATIVE } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -49,7 +49,10 @@ function TeamDetailPage() {
 			<h1 className="demo-title">{team.name}</h1>
 			<Card className="p-4">
 				<div className="flex gap-2">
-					<Badge variant="outline">Club {team.clubId.slice(0, 8)}</Badge>
+					<Badge variant="outline" className="gap-1.5">
+						<Building2 {...DECORATIVE} className="size-3.5" />
+						Club {team.clubId.slice(0, 8)}
+					</Badge>
 					{team.category && <Badge>{team.category}</Badge>}
 				</div>
 				<p className="mt-2 text-sm text-(--sea-ink-soft)">ID: {team.id}</p>

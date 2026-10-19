@@ -1,15 +1,21 @@
 import { queryKeys, unwrap } from "@sports/api-client";
 import {
+	ArrowLeft,
+	ArrowRight,
 	Badge,
 	Button,
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
+	Dumbbell,
 	EmptyState,
 	Input,
+	Search,
 	Select,
 	Skeleton,
+	Trophy,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -87,15 +93,21 @@ function TournamentsPage() {
 			</div>
 
 			<div className="flex flex-wrap gap-2">
-				<Input
-					placeholder="Filtrar por sportId"
-					value={sportId ?? ""}
-					onChange={(e) => {
-						setSportId(e.target.value || undefined);
-						setOffset(0);
-					}}
-					className="max-w-xs"
-				/>
+				<div className="relative">
+					<Search
+						{...DECORATIVE}
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--sea-ink-soft)"
+					/>
+					<Input
+						placeholder="Filtrar por sportId"
+						value={sportId ?? ""}
+						onChange={(e) => {
+							setSportId(e.target.value || undefined);
+							setOffset(0);
+						}}
+						className="max-w-xs pl-9"
+					/>
+				</div>
 				<Select
 					value={String(limit)}
 					onChange={(e) => {
@@ -129,15 +141,22 @@ function TournamentsPage() {
 						className="no-underline"
 					>
 						<Card className="h-full p-4 hover:border-(--lagoon-deep)">
-							<CardHeader className="p-0 pb-2">
+							<CardHeader className="flex flex-row items-center justify-between gap-2 p-0 pb-2">
 								<CardTitle className="text-base">{t.name}</CardTitle>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 							</CardHeader>
 							<CardContent className="p-0">
 								<p className="text-sm text-(--sea-ink-soft) line-clamp-2">
 									{t.description ?? "Sin descripción"}
 								</p>
 								<div className="mt-3 flex gap-2">
-									<Badge variant="outline">{t.sportId}</Badge>
+									<Badge variant="outline" className="gap-1.5">
+										<Dumbbell {...DECORATIVE} className="size-3.5" />
+										{t.sportId}
+									</Badge>
 								</div>
 							</CardContent>
 						</Card>
@@ -146,6 +165,7 @@ function TournamentsPage() {
 			</div>
 			{tournaments.length === 0 && (
 				<EmptyState
+					icon={Trophy}
 					title="No hay torneos aún"
 					description="Cuando se publique el primer torneo, aparece en esta lista."
 				/>
@@ -154,6 +174,7 @@ function TournamentsPage() {
 			<div className="flex items-center justify-between pt-2">
 				<Button
 					variant="secondary"
+					icon={ArrowLeft}
 					disabled={offset === 0}
 					onClick={() => setOffset(Math.max(0, offset - limit))}
 				>
@@ -164,6 +185,7 @@ function TournamentsPage() {
 				</span>
 				<Button
 					variant="secondary"
+					icon={ArrowRight}
 					disabled={offset + limit >= total}
 					onClick={() => setOffset(offset + limit)}
 				>

@@ -1,4 +1,12 @@
-import { Button, Input, Label, toast } from "@sports/ui";
+import {
+	Button,
+	DECORATIVE,
+	Info,
+	Input,
+	Label,
+	LogIn,
+	toast,
+} from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../../lib/auth";
@@ -45,9 +53,12 @@ function LoginPage() {
 				className="demo-panel w-full max-w-md space-y-4"
 			>
 				<h1 className="demo-title text-2xl">Iniciar sesión</h1>
-				<p className="demo-muted text-sm">
-					Usa tu email y contraseña. Los tokens se guardan en{" "}
-					<code>localStorage</code> vía <code>src/lib/api.ts</code>.
+				<p className="demo-muted flex items-start gap-1.5 text-sm">
+					<Info {...DECORATIVE} className="mt-0.5 size-4 shrink-0" />
+					<span>
+						Usa tu email y contraseña. Los tokens se guardan en{" "}
+						<code>localStorage</code> vía <code>src/lib/api.ts</code>.
+					</span>
 				</p>
 				<div className="space-y-2">
 					<Label htmlFor="email">Email</Label>
@@ -68,10 +79,15 @@ function LoginPage() {
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
 						required
-						placeholder="••••••••"
+						placeholder="Tu contraseña"
 					/>
 				</div>
-				<Button type="submit" disabled={pending} className="w-full">
+				<Button
+					type="submit"
+					icon={LogIn}
+					disabled={pending}
+					className="w-full"
+				>
 					{pending ? "Entrando…" : "Entrar"}
 				</Button>
 				<p className="text-center text-sm text-(--sea-ink-soft)">

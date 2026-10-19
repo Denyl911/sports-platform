@@ -4,6 +4,8 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	Clock,
+	DECORATIVE,
 	EmptyState,
 	StandingsTable,
 	VenuePill,
@@ -96,7 +98,8 @@ function MatchDetailPage() {
 							homeScore={match.homeScore ?? 0}
 							awayScore={match.awayScore ?? 0}
 						/>
-						<span className="text-xs font-bold text-(--sea-ink-soft)">
+						<span className="flex items-center gap-1.5 text-xs font-bold text-(--sea-ink-soft)">
+							<Clock {...DECORATIVE} className="size-3.5 shrink-0" />
 							{MATCH_STATUS_LABELS[match.status]} · minuto{" "}
 							{match.events.at(-1)?.minuteOrSecond != null
 								? `${match.events.at(-1)!.minuteOrSecond}'`
@@ -116,6 +119,7 @@ function MatchDetailPage() {
 				</CardHeader>
 				{match.events.length === 0 ? (
 					<EmptyState
+						icon={Clock}
 						title="Sin eventos todavía"
 						description="Cada gol, tarjeta o cambio que se registre aparece aquí al momento."
 					/>

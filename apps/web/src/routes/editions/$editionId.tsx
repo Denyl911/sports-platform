@@ -5,8 +5,11 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
+	Layers,
 	Select,
+	Users,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -92,6 +95,7 @@ function EditionDetailPage() {
 			</div>
 			{stages.length === 0 && (
 				<EmptyState
+					icon={Layers}
 					title="Sin etapas"
 					description="La edición todavía no define etapas."
 				/>
@@ -126,6 +130,7 @@ function RosterSection({ editionId }: { editionId: string }) {
 			<h2 className="demo-section-title mb-2">Plantel</h2>
 			{teams.length === 0 ? (
 				<EmptyState
+					icon={Users}
 					title="Sin equipos"
 					description="Aún no hay equipos inscritos en esta edición."
 				/>
@@ -178,7 +183,10 @@ function RosterList({
 
 	if (roster.length === 0) {
 		return (
-			<div className="demo-card mt-2 text-center text-sm">Plantel vacío.</div>
+			<div className="demo-card mt-2 flex items-center justify-center gap-2 text-center text-sm">
+				<Users {...DECORATIVE} className="size-4 text-(--sea-ink-soft)" />
+				Plantel vacío.
+			</div>
 		);
 	}
 

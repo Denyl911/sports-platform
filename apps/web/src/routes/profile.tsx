@@ -1,6 +1,17 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import { useChangePassword } from "@sports/api-client/hooks";
-import { Badge, Button, Card, Input, Label, Skeleton, toast } from "@sports/ui";
+import {
+	Badge,
+	Button,
+	Card,
+	CircleUserRound,
+	DECORATIVE,
+	Input,
+	Label,
+	Save,
+	Skeleton,
+	toast,
+} from "@sports/ui";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../lib/api";
@@ -21,7 +32,13 @@ function ProfilePage() {
 
 	return (
 		<div className="demo-page space-y-6">
-			<h1 className="demo-title">Mi cuenta</h1>
+			<h1 className="demo-title flex items-center gap-2">
+				<CircleUserRound
+					{...DECORATIVE}
+					className="size-5 text-(--sea-ink-soft)"
+				/>
+				Mi cuenta
+			</h1>
 			<Card className="p-4">
 				<div className="font-bold">{user.fullName}</div>
 				<div className="mt-1 text-sm text-(--sea-ink-soft)">{user.email}</div>
@@ -98,7 +115,7 @@ function ChangePasswordForm() {
 						autoComplete="new-password"
 					/>
 				</div>
-				<Button type="submit" disabled={changePassword.isPending}>
+				<Button type="submit" icon={Save} disabled={changePassword.isPending}>
 					Guardar
 				</Button>
 				{error && <div className="demo-alert-danger text-sm">{error}</div>}

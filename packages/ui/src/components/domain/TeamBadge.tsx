@@ -2,6 +2,7 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
+import { Building2, DECORATIVE } from "../ui/icon";
 
 export interface TeamBadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 	team: {
@@ -40,7 +41,12 @@ export function TeamBadge({
 				</div>
 				{(team.clubName || showCategory) && (
 					<div className="flex items-center gap-1 text-xs text-(--sea-ink-soft)">
-						{team.clubName && <span className="truncate">{team.clubName}</span>}
+						{team.clubName && (
+							<>
+								<Building2 {...DECORATIVE} className="size-3.5 shrink-0" />
+								<span className="truncate">{team.clubName}</span>
+							</>
+						)}
 						{team.category && showCategory && (
 							<Badge variant="outline" className="h-4 px-1 py-0 text-[10px]">
 								{team.category}

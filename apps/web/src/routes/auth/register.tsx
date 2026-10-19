@@ -1,4 +1,13 @@
-import { Button, Input, Label, Select, toast } from "@sports/ui";
+import {
+	Button,
+	DECORATIVE,
+	Info,
+	Input,
+	Label,
+	Select,
+	toast,
+	UserPlus,
+} from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../../lib/auth";
@@ -50,10 +59,13 @@ function RegisterPage() {
 				className="demo-panel w-full max-w-md space-y-4"
 			>
 				<h1 className="demo-title text-2xl">Registro</h1>
-				<p className="demo-muted text-sm">
-					Crea tu cuenta. Solo <code>viewer_staff</code> /{" "}
-					<code>organizer</code> vía <code>POST /auth/register</code>; el resto
-					se normaliza a <code>viewer_staff</code>.
+				<p className="demo-muted flex items-start gap-1.5 text-sm">
+					<Info {...DECORATIVE} className="mt-0.5 size-4 shrink-0" />
+					<span>
+						Crea tu cuenta. Solo <code>viewer_staff</code> /{" "}
+						<code>organizer</code> vía <code>POST /auth/register</code>; el
+						resto se normaliza a <code>viewer_staff</code>.
+					</span>
 				</p>
 				<div className="space-y-2">
 					<Label htmlFor="fullName">Nombre completo</Label>
@@ -98,7 +110,12 @@ function RegisterPage() {
 						<option value="organizer">organizer</option>
 					</Select>
 				</div>
-				<Button type="submit" disabled={pending} className="w-full">
+				<Button
+					type="submit"
+					icon={UserPlus}
+					disabled={pending}
+					className="w-full"
+				>
 					{pending ? "Registrando…" : "Crear cuenta"}
 				</Button>
 				<p className="text-center text-sm text-(--sea-ink-soft)">

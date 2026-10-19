@@ -3,6 +3,17 @@ import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
 import { Card } from "../ui/card";
+import {
+	CalendarDays,
+	CircleAlert,
+	CircleCheck,
+	DECORATIVE,
+	Flag,
+	type LucideIcon,
+	MapPin,
+	Pause,
+	Radio,
+} from "../ui/icon";
 
 /** La tarjeta viva: lift muelle en hover (ADR 009 — runtime único motion). */
 const LiftCard = motion.create(Card);
@@ -37,6 +48,20 @@ const statusLabel: Record<MatchStatus, string> = {
 	walkover: "Walkover",
 };
 
+/**
+ * El estado, en icono. En vivo no lo pinta el icono sino el punto que late
+ * (el mismo marcador vivo de la fase 2), así que `in_progress` queda aquí
+ * solo para que el mapa sea total y el siguiente estado no se olvide.
+ */
+const statusIcon: Record<MatchStatus, LucideIcon> = {
+	scheduled: CalendarDays,
+	in_progress: Radio,
+	paused: Pause,
+	finished: CircleCheck,
+	cancelled: CircleAlert,
+	walkover: Flag,
+};
+
 const statusVariant: Record<
 	MatchStatus,
 	"default" | "success" | "destructive" | "secondary"
@@ -64,6 +89,7 @@ export function MatchCard({
 	...props
 }: MatchCardProps) {
 	const isLive = live ?? status === "in_progress";
+	const StatusIcon = statusIcon[status];
 	const showScore =
 		homeScore !== null &&
 		homeScore !== undefined &&
@@ -98,7 +124,8 @@ export function MatchCard({
 							<span className="text-2xl">{awayScore}</span>
 						</div>
 					) : (
-						<div className="text-xs font-bold text-(--sea-ink-soft)">
+						<div className="inline-flex items-center gap-1 text-xs font-bold text-(--sea-ink-soft)">
+							<CalendarDays {...DECORATIVE} className="size-3.5" />
 							{scheduledAt
 								? new Date(scheduledAt).toLocaleString(undefined, {
 										dateStyle: "short",
@@ -108,8 +135,10 @@ export function MatchCard({
 						</div>
 					)}
 					<Badge variant={statusVariant[status]} className="gap-1">
-						{isLive && (
+						{isLive ? (
 							<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-(--lagoon)" />
+						) : (
+							<StatusIcon {...DECORATIVE} className="size-3.5" />
 						)}
 						{statusLabel[status]}
 					</Badge>
@@ -117,7 +146,8 @@ export function MatchCard({
 				<TeamMini team={awayTeam} align="right" />
 			</div>
 			{venueName && (
-				<div className="mt-3 text-center text-xs text-(--sea-ink-soft)">
+				<div className="mt-3 flex items-center justify-center gap-1 text-xs text-(--sea-ink-soft)">
+					<MapPin {...DECORATIVE} className="size-3.5" />
 					{venueName}
 				</div>
 			)}

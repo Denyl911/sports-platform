@@ -1,5 +1,13 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
+import {
+	ArrowRight,
+	Card,
+	CardHeader,
+	CardTitle,
+	DECORATIVE,
+	EmptyState,
+	MapPin,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -45,10 +53,15 @@ function VenuesPage() {
 						className="no-underline"
 					>
 						<Card className="p-4 hover:border-(--lagoon-deep)">
-							<CardHeader className="p-0">
+							<CardHeader className="flex flex-row items-center justify-between gap-2 p-0">
 								<CardTitle className="text-base">{v.name}</CardTitle>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 							</CardHeader>
-							<p className="text-xs text-(--sea-ink-soft)">
+							<p className="flex items-center gap-1.5 text-xs text-(--sea-ink-soft)">
+								<MapPin {...DECORATIVE} className="size-3.5 shrink-0" />
 								{v.address ?? "Sin dirección"}
 							</p>
 						</Card>
@@ -57,6 +70,7 @@ function VenuesPage() {
 			</div>
 			{venues.length === 0 && (
 				<EmptyState
+					icon={MapPin}
 					title="No hay sedes"
 					description="Aún no se publica ninguna sede."
 				/>

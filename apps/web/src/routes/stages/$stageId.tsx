@@ -1,5 +1,16 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardContent, CardHeader, CardTitle } from "@sports/ui";
+import {
+	Badge,
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	DECORATIVE,
+	Radio,
+	Swords,
+	Table2,
+	Users,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -88,13 +99,17 @@ function StageDetailPage() {
 							params={{ groupId: g.id }}
 							className="no-underline"
 						>
-							<Badge variant="secondary" className="px-3 py-1">
+							<Badge variant="secondary" className="gap-1.5 px-3 py-1">
+								<Table2 {...DECORATIVE} className="size-3.5" />
 								{g.name}
 							</Badge>
 						</Link>
 					))}
 					{groups.length === 0 && (
-						<span className="text-sm text-(--sea-ink-soft)">Sin grupos</span>
+						<span className="inline-flex items-center gap-1.5 text-sm text-(--sea-ink-soft)">
+							<Table2 {...DECORATIVE} className="size-4" />
+							Sin grupos
+						</span>
 					)}
 				</div>
 			</div>
@@ -109,12 +124,17 @@ function StageDetailPage() {
 							<Link
 								to="/teams/$teamId"
 								params={{ teamId: team.id }}
-								className="no-underline font-semibold"
+								className="flex items-center gap-1.5 no-underline font-semibold"
 							>
+								<Users
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 								{team.name}
 							</Link>
 							{registration.groupId && groupNames.get(registration.groupId) ? (
-								<Badge variant="secondary">
+								<Badge variant="secondary" className="gap-1.5">
+									<Table2 {...DECORATIVE} className="size-3.5" />
 									{groupNames.get(registration.groupId)}
 								</Badge>
 							) : (
@@ -123,7 +143,8 @@ function StageDetailPage() {
 						</div>
 					))}
 					{registrations.length === 0 && (
-						<div className="demo-card text-center text-sm">
+						<div className="demo-card flex items-center justify-center gap-2 text-center text-sm">
+							<Users {...DECORATIVE} className="size-4 text-(--sea-ink-soft)" />
 							Sin inscripciones.
 						</div>
 					)}
@@ -147,14 +168,22 @@ function StageDetailPage() {
 									</CardTitle>
 								</CardHeader>
 								<CardContent className="p-0">
-									<Badge>{m.status}</Badge>
+									<Badge className="gap-1.5">
+										{m.status === "in_progress" && (
+											<Radio {...DECORATIVE} className="size-3.5" />
+										)}
+										{m.status}
+									</Badge>
 								</CardContent>
 							</Card>
 						</Link>
 					))}
 				</div>
 				{matches.length === 0 && (
-					<div className="demo-card text-center text-sm">Sin partidos.</div>
+					<div className="demo-card flex items-center justify-center gap-2 text-center text-sm">
+						<Swords {...DECORATIVE} className="size-4 text-(--sea-ink-soft)" />
+						Sin partidos.
+					</div>
 				)}
 			</div>
 		</div>

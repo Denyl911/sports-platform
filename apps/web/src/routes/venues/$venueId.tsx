@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, VenuePill } from "@sports/ui";
+import { Card, DECORATIVE, MapPin, VenuePill } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -50,7 +50,10 @@ function VenueDetailPage() {
 			<VenuePill name={v.name} address={v.address} />
 			<Card className="p-4 space-y-1 text-sm">
 				<div>ID: {v.id}</div>
-				<div>Dirección: {v.address ?? "—"}</div>
+				<div className="flex items-center gap-1.5">
+					<MapPin {...DECORATIVE} className="size-3.5 shrink-0" />
+					Dirección: {v.address ?? "—"}
+				</div>
 				<div>Canchas: {v.fieldCount ?? "—"}</div>
 			</Card>
 		</div>

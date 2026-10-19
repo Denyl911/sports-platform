@@ -1,5 +1,13 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
+import {
+	ArrowRight,
+	Building2,
+	Card,
+	CardHeader,
+	CardTitle,
+	DECORATIVE,
+	EmptyState,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -63,6 +71,10 @@ function ClubsPage() {
 										</span>
 									)}
 									<CardTitle className="text-base">{c.name}</CardTitle>
+									<ArrowRight
+										{...DECORATIVE}
+										className="ml-auto size-4 shrink-0 text-(--sea-ink-soft)"
+									/>
 								</div>
 							</CardHeader>
 						</Card>
@@ -71,6 +83,7 @@ function ClubsPage() {
 			</div>
 			{clubs.length === 0 && (
 				<EmptyState
+					icon={Building2}
 					title="No hay clubes"
 					description="Aún no se publica ningún club."
 				/>

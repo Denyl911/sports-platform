@@ -1,12 +1,17 @@
 import { queryKeys, unwrap } from "@sports/api-client";
 import {
+	ArrowRight,
 	Badge,
+	Building2,
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Input,
+	Search,
 	Select,
+	Users,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -82,12 +87,18 @@ function TeamsPage() {
 						</option>
 					))}
 				</Select>
-				<Input
-					value={category ?? ""}
-					onChange={(e) => setCategory(e.target.value || undefined)}
-					placeholder="Categoría (ej. open)"
-					className="max-w-xs"
-				/>
+				<div className="relative">
+					<Search
+						{...DECORATIVE}
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--sea-ink-soft)"
+					/>
+					<Input
+						value={category ?? ""}
+						onChange={(e) => setCategory(e.target.value || undefined)}
+						placeholder="Categoría (ej. open)"
+						className="max-w-xs pl-9"
+					/>
+				</div>
 			</div>
 			<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
 				{teams.map((t) => (
@@ -98,11 +109,18 @@ function TeamsPage() {
 						className="no-underline"
 					>
 						<Card className="p-4 hover:border-(--lagoon-deep)">
-							<CardHeader className="p-0">
+							<CardHeader className="flex flex-row items-center justify-between gap-2 p-0">
 								<CardTitle className="text-base">{t.name}</CardTitle>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 							</CardHeader>
 							<div className="mt-2 flex gap-2">
-								<Badge variant="outline">{t.clubId.slice(0, 8)}</Badge>
+								<Badge variant="outline" className="gap-1.5">
+									<Building2 {...DECORATIVE} className="size-3.5" />
+									{t.clubId.slice(0, 8)}
+								</Badge>
 								{t.category && <Badge>{t.category}</Badge>}
 							</div>
 						</Card>
@@ -111,6 +129,7 @@ function TeamsPage() {
 			</div>
 			{teams.length === 0 && (
 				<EmptyState
+					icon={Users}
 					title="No hay equipos con esos filtros"
 					description="Prueba con otro club o deporte en los filtros de arriba."
 				/>

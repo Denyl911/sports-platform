@@ -1,6 +1,14 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
+import {
+	CalendarDays,
+	DECORATIVE,
+	Dumbbell,
+	Layers,
+	MapPin,
+	Table2,
+} from "../ui/icon";
 
 export interface TournamentHeaderProps
 	extends React.HTMLAttributes<HTMLDivElement> {
@@ -43,31 +51,51 @@ export function TournamentHeader({
 			{...props}
 		>
 			<div className="flex flex-wrap items-center gap-2 text-xs">
-				<Badge variant="secondary">
+				<Badge variant="secondary" className="gap-1">
+					<Dumbbell {...DECORATIVE} className="size-3.5" />
 					{tournament.sportName ?? tournament.sportId ?? "Deporte"}
 				</Badge>
 				{edition && (
-					<Badge variant="outline">{edition.status ?? "edición"}</Badge>
+					<Badge variant="outline" className="gap-1">
+						<CalendarDays {...DECORATIVE} className="size-3.5" />
+						{edition.status ?? "edición"}
+					</Badge>
 				)}
-				{stage && <Badge>{stage.name}</Badge>}
-				{group && <Badge variant="success">{group.name}</Badge>}
+				{stage && (
+					<Badge className="gap-1">
+						<Layers {...DECORATIVE} className="size-3.5" />
+						{stage.name}
+					</Badge>
+				)}
+				{group && (
+					<Badge variant="success" className="gap-1">
+						<Table2 {...DECORATIVE} className="size-3.5" />
+						{group.name}
+					</Badge>
+				)}
 			</div>
 			<h2 className="mt-2 text-lg font-black leading-tight text-(--sea-ink)">
 				{tournament.name}
 			</h2>
 			{edition && (
 				<p className="mt-1 text-sm text-(--sea-ink-soft)">
-					{edition.name}{" "}
-					{edition.startDate &&
-						`· ${new Date(edition.startDate).toLocaleDateString()}`}
-					{edition.endDate &&
-						` – ${new Date(edition.endDate).toLocaleDateString()}`}
+					<span className="inline-flex items-center gap-1">
+						<CalendarDays {...DECORATIVE} className="size-3.5" />
+						{edition.name}{" "}
+						{edition.startDate &&
+							`· ${new Date(edition.startDate).toLocaleDateString()}`}
+						{edition.endDate &&
+							` – ${new Date(edition.endDate).toLocaleDateString()}`}
+					</span>
 				</p>
 			)}
 			{stage && (
 				<p className="text-xs text-(--sea-ink-soft)">
-					Etapa {stage.sequenceOrder ?? "—"}: {stage.name}{" "}
-					{stage.stageType && `· ${stage.stageType}`}
+					<span className="inline-flex items-center gap-1">
+						<Layers {...DECORATIVE} className="size-3.5" />
+						Etapa {stage.sequenceOrder ?? "—"}: {stage.name}{" "}
+						{stage.stageType && `· ${stage.stageType}`}
+					</span>
 				</p>
 			)}
 		</div>
@@ -91,7 +119,7 @@ export function VenuePill({
 			)}
 			{...props}
 		>
-			<span>📍</span>
+			<MapPin {...DECORATIVE} className="size-3.5 shrink-0" />
 			<span>{name}</span>
 			{address && (
 				<span className="hidden sm:inline opacity-60">· {address}</span>

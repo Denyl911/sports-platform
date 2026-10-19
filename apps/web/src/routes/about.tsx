@@ -1,3 +1,4 @@
+import { Building2, DECORATIVE, Swords, Trophy } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/about")({
@@ -33,21 +34,27 @@ function About() {
 					{
 						to: "/tournaments",
 						title: "Torneos",
+						icon: Trophy,
 						desc: "Ediciones, etapas, grupos e inscriptos.",
 					},
 					{
 						to: "/matches",
 						title: "Partidos y en vivo",
+						icon: Swords,
 						desc: "Fixture, resultados y eventos en tiempo real.",
 					},
 					{
 						to: "/clubs",
 						title: "Clubes y equipos",
+						icon: Building2,
 						desc: "Clubes, equipos, jugadores y planteles por edición.",
 					},
 				].map((c) => (
 					<Link key={c.to} to={c.to} className="demo-card no-underline">
-						<h3 className="font-bold">{c.title}</h3>
+						<h3 className="flex items-center gap-2 font-bold">
+							<c.icon {...DECORATIVE} className="size-4" />
+							{c.title}
+						</h3>
 						<p className="demo-muted text-sm">{c.desc}</p>
 					</Link>
 				))}

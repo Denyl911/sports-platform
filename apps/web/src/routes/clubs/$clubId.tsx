@@ -1,5 +1,12 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle } from "@sports/ui";
+import {
+	Badge,
+	Card,
+	CardHeader,
+	CardTitle,
+	DECORATIVE,
+	Users,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -105,7 +112,8 @@ function ClubDetailPage() {
 					))}
 				</div>
 				{teams.length === 0 && (
-					<div className="demo-card text-center text-sm">
+					<div className="demo-card flex items-center justify-center gap-2 text-center text-sm">
+						<Users {...DECORATIVE} className="size-4 text-(--sea-ink-soft)" />
 						Este club aún no tiene equipos.
 					</div>
 				)}

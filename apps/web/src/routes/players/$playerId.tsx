@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card } from "@sports/ui";
+import { CalendarDays, Card, DECORATIVE } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -56,7 +56,13 @@ function PlayerDetailPage() {
 			<Card className="p-4 space-y-1 text-sm">
 				<div>ID: {p.id}</div>
 				<div>DNI: {p.idCardNumber ?? "—"}</div>
-				<div>Nacimiento: {p.birthDate ?? "—"}</div>
+				<div className="flex items-center gap-1.5">
+					<CalendarDays
+						{...DECORATIVE}
+						className="size-3.5 shrink-0 text-(--sea-ink-soft)"
+					/>
+					Nacimiento: {p.birthDate ?? "—"}
+				</div>
 			</Card>
 		</div>
 	);

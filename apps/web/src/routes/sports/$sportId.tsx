@@ -1,5 +1,12 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, SportIcon } from "@sports/ui";
+import {
+	Badge,
+	Card,
+	DECORATIVE,
+	Dumbbell,
+	SportIcon,
+	Target,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -75,7 +82,10 @@ function SportDetailPage() {
 				<h1 className="demo-title">{s.name}</h1>
 			</div>
 			<div className="flex gap-2">
-				<Badge variant="outline">{s.id}</Badge>
+				<Badge variant="outline" className="gap-1.5">
+					<Dumbbell {...DECORATIVE} className="size-3.5" />
+					{s.id}
+				</Badge>
 				<Badge variant={s.hasDraws ? "success" : "secondary"}>
 					{s.hasDraws ? "Con empates" : "Sin empates"}
 				</Badge>
@@ -84,8 +94,15 @@ function SportDetailPage() {
 				<h2 className="demo-section-title mb-2">Tipos de evento</h2>
 				<div className="flex flex-wrap gap-2">
 					{eventTypes.map((e) => (
-						<Badge key={e.id} variant={e.affectsScore ? "success" : "outline"}>
-							{e.code} {e.affectsScore ? "⚽" : ""}
+						<Badge
+							key={e.id}
+							variant={e.affectsScore ? "success" : "outline"}
+							className="gap-1"
+						>
+							{e.code}
+							{e.affectsScore && (
+								<Target {...DECORATIVE} className="size-3.5" />
+							)}
 						</Badge>
 					))}
 				</div>

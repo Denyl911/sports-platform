@@ -1,5 +1,14 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
+import {
+	ArrowRight,
+	Badge,
+	Card,
+	CardHeader,
+	CardTitle,
+	DECORATIVE,
+	Dumbbell,
+	EmptyState,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -45,10 +54,17 @@ function SportsPage() {
 						className="no-underline"
 					>
 						<Card className="p-4 hover:border-(--lagoon-deep)">
-							<CardHeader className="p-0">
+							<CardHeader className="flex flex-row items-center justify-between gap-2 p-0">
 								<CardTitle className="text-base">{s.name}</CardTitle>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 							</CardHeader>
-							<Badge variant="outline">{s.id}</Badge>
+							<Badge variant="outline" className="gap-1.5">
+								<Dumbbell {...DECORATIVE} className="size-3.5" />
+								{s.id}
+							</Badge>
 							{s.hasDraws !== undefined && (
 								<Badge
 									className="ml-2"
@@ -63,6 +79,7 @@ function SportsPage() {
 			</div>
 			{sports.length === 0 && (
 				<EmptyState
+					icon={Dumbbell}
 					title="No hay deportes"
 					description="Aún no se publica ningún deporte."
 				/>

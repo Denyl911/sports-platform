@@ -1,10 +1,12 @@
 import { queryKeys, unwrap } from "@sports/api-client";
 import {
 	Badge,
+	CalendarDays,
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	TournamentHeader,
 } from "@sports/ui";
@@ -104,7 +106,11 @@ function TournamentDetailPage() {
 								<CardContent className="p-0">
 									<Badge variant="secondary">{e.status}</Badge>
 									{e.startDate && (
-										<div className="mt-2 text-xs text-(--sea-ink-soft)">
+										<div className="mt-2 flex items-center gap-1.5 text-xs text-(--sea-ink-soft)">
+											<CalendarDays
+												{...DECORATIVE}
+												className="size-3.5 shrink-0"
+											/>
 											{new Date(e.startDate).toLocaleDateString()}
 										</div>
 									)}
@@ -115,6 +121,7 @@ function TournamentDetailPage() {
 				</div>
 				{editions.length === 0 && (
 					<EmptyState
+						icon={CalendarDays}
 						title="Sin ediciones"
 						description="Esta edición del torneo todavía no tiene ediciones publicadas."
 					/>

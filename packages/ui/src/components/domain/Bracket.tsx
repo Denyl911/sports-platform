@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
 import { Card } from "../ui/card";
+import { Check, DECORATIVE } from "../ui/icon";
 
 export interface BracketMatch {
 	id: string;
@@ -105,7 +106,10 @@ export function Bracket({
 										{m.status}
 									</Badge>
 									{m.winnerTeamId && (
-										<span className="text-xs text-(--palm)">✓</span>
+										<span className="flex items-center gap-1 text-(--palm)">
+											<Check {...DECORATIVE} className="size-3.5" />
+											<span className="sr-only">Ganador</span>
+										</span>
 									)}
 								</div>
 							</Card>

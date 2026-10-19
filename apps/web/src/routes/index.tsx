@@ -1,13 +1,23 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import {
 	AnimatedList,
+	ArrowRight,
 	Badge,
+	Building2,
 	Card,
 	CardHeader,
 	CardTitle,
+	Clock,
 	CountUp,
+	DECORATIVE,
+	Dumbbell,
 	EmptyState,
+	Medal,
+	Radio,
 	SplitText,
+	Swords,
+	Trophy,
+	Users,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -104,16 +114,17 @@ function HomePage() {
 				</p>
 				<div className="flex flex-wrap gap-3">
 					{[
-						{ to: "/tournaments", label: "Torneos" },
-						{ to: "/matches", label: "Partidos" },
-						{ to: "/teams", label: "Equipos" },
-						{ to: "/clubs", label: "Clubes" },
+						{ to: "/tournaments", label: "Torneos", icon: Trophy },
+						{ to: "/matches", label: "Partidos", icon: Swords },
+						{ to: "/teams", label: "Equipos", icon: Users },
+						{ to: "/clubs", label: "Clubes", icon: Building2 },
 					].map((l) => (
 						<Link
 							key={l.to}
 							to={l.to}
-							className="rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-(--lagoon-deep) no-underline transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)]"
+							className="inline-flex items-center gap-2 rounded-full border border-[rgba(50,143,151,0.3)] bg-[rgba(79,184,178,0.14)] px-5 py-2.5 text-sm font-semibold text-(--lagoon-deep) no-underline transition hover:-translate-y-0.5 hover:bg-[rgba(79,184,178,0.24)]"
 						>
+							<l.icon {...DECORATIVE} className="size-4" />
 							{l.label}
 						</Link>
 					))}
@@ -122,9 +133,16 @@ function HomePage() {
 
 			<section>
 				<div className="mb-3 flex items-center justify-between">
-					<h2 className="demo-section-title">Torneos destacados</h2>
-					<Link to="/tournaments" className="text-sm">
+					<h2 className="demo-section-title flex items-center gap-2">
+						<Trophy {...DECORATIVE} className="size-4" />
+						Torneos destacados
+					</h2>
+					<Link
+						to="/tournaments"
+						className="inline-flex items-center gap-1 text-sm"
+					>
 						Ver todos
+						<ArrowRight {...DECORATIVE} className="size-4" />
 					</Link>
 				</div>
 				<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -136,11 +154,18 @@ function HomePage() {
 							className="no-underline"
 						>
 							<Card className="p-4 hover:border-(--lagoon-deep)">
-								<CardHeader className="p-0">
+								<CardHeader className="flex flex-row items-center justify-between gap-2 p-0">
 									<CardTitle className="text-base">{t.name}</CardTitle>
+									<ArrowRight
+										{...DECORATIVE}
+										className="size-4 shrink-0 text-(--sea-ink-soft)"
+									/>
 								</CardHeader>
 								<div className="mt-2">
-									<Badge variant="outline">{t.sportId}</Badge>
+									<Badge variant="outline" className="gap-1.5">
+										<Dumbbell {...DECORATIVE} className="size-3.5" />
+										{t.sportId}
+									</Badge>
 								</div>
 							</Card>
 						</Link>
@@ -148,6 +173,7 @@ function HomePage() {
 				</div>
 				{tournaments.length === 0 && (
 					<EmptyState
+						icon={Trophy}
 						title="Aún no hay torneos publicados"
 						description="Vuelve más pronto: los torneos aparecen cuando se abren."
 					/>
@@ -156,9 +182,16 @@ function HomePage() {
 
 			<section>
 				<div className="mb-3 flex items-center justify-between">
-					<h2 className="demo-section-title">En vivo ahora</h2>
-					<Link to="/matches" className="text-sm">
+					<h2 className="demo-section-title flex items-center gap-2">
+						<Radio {...DECORATIVE} className="size-4" />
+						En vivo ahora
+					</h2>
+					<Link
+						to="/matches"
+						className="inline-flex items-center gap-1 text-sm"
+					>
 						Ver fixture
+						<ArrowRight {...DECORATIVE} className="size-4" />
 					</Link>
 				</div>
 				{liveMatches.length > 0 ? (
@@ -193,6 +226,7 @@ function HomePage() {
 					/>
 				) : (
 					<EmptyState
+						icon={Swords}
 						title="Sin partidos en vivo ahora"
 						description="Cuando un partido esté en marcha, aparece aquí con su marcador en directo."
 					/>
@@ -200,7 +234,10 @@ function HomePage() {
 			</section>
 
 			<section>
-				<h2 className="demo-section-title mb-3">Resultados recientes</h2>
+				<h2 className="demo-section-title mb-3 flex items-center gap-2">
+					<Clock {...DECORATIVE} className="size-4" />
+					Resultados recientes
+				</h2>
 				<div className="grid gap-3 sm:grid-cols-2">
 					{recentMatches.map((m) => (
 						<LiveMatchCard key={m.id} match={m} />
@@ -208,6 +245,7 @@ function HomePage() {
 				</div>
 				{recentMatches.length === 0 && (
 					<EmptyState
+						icon={Medal}
 						title="Aún no hay resultados"
 						description="Cuando los partidos se jueguen, sus marcadores se listan aquí."
 					/>
@@ -225,15 +263,25 @@ function LiveMatchCard({ match: m }: { match: MatchWithTeams }) {
 			className="no-underline"
 		>
 			<Card className="p-4 hover:border-(--lagoon-deep)">
-				<CardHeader className="p-0">
+				<CardHeader className="flex flex-row items-start justify-between gap-2 p-0">
 					<CardTitle className="text-sm">
 						{m.homeTeam?.name ?? "Por definir"} vs{" "}
 						{m.awayTeam?.name ?? "Por definir"}
 					</CardTitle>
+					<ArrowRight
+						{...DECORATIVE}
+						className="size-4 shrink-0 text-(--sea-ink-soft)"
+					/>
 				</CardHeader>
 				<div className="mt-1 flex gap-2">
-					<Badge variant="outline">{m.status}</Badge>
+					<Badge variant="outline" className="gap-1.5">
+						{m.status === "in_progress" && (
+							<Radio {...DECORATIVE} className="size-3.5" />
+						)}
+						{m.status}
+					</Badge>
 					<Badge variant="outline" className="gap-1.5 tabular-nums">
+						<Medal {...DECORATIVE} className="size-3.5" />
 						<CountUp to={m.homeScore} duration={1.1} />
 						<span>:</span>
 						<CountUp to={m.awayScore} duration={1.1} />

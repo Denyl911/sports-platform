@@ -1,6 +1,7 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
+import { ArrowDown, ArrowUp, DECORATIVE, ListOrdered, Medal } from "../ui/icon";
 import {
 	Table,
 	TableBody,
@@ -43,11 +44,12 @@ export function StandingsTable({
 		return (
 			<div
 				className={cn(
-					"rounded-xl border border-(--line) bg-(--surface) p-6 text-center text-sm text-(--sea-ink-soft)",
+					"flex items-center justify-center gap-2 rounded-xl border border-(--line) bg-(--surface) p-6 text-center text-sm text-(--sea-ink-soft)",
 					className,
 				)}
 				{...props}
 			>
+				<ListOrdered {...DECORATIVE} className="size-4" />
 				No hay posiciones aún.
 			</div>
 		);
@@ -55,7 +57,10 @@ export function StandingsTable({
 	return (
 		<div className={cn("w-full", className)} {...props}>
 			{caption && (
-				<div className="mb-2 text-sm font-bold text-(--sea-ink)">{caption}</div>
+				<div className="mb-2 flex items-center gap-1.5 text-sm font-bold text-(--sea-ink)">
+					<ListOrdered {...DECORATIVE} className="size-4" />
+					{caption}
+				</div>
 			)}
 			<Table>
 				<TableHeader>
@@ -87,7 +92,15 @@ export function StandingsTable({
 									)}
 								>
 									<TableCell className="font-bold">
-										{r.rankPosition ?? "—"}
+										<span className="inline-flex items-center gap-1">
+											{r.rankPosition === 1 && (
+												<Medal
+													{...DECORATIVE}
+													className="size-3.5 text-(--palm)"
+												/>
+											)}
+											{r.rankPosition ?? "—"}
+										</span>
 										{isHighlight && (
 											<Badge variant="success" className="ml-2">
 												Tú
@@ -111,7 +124,21 @@ export function StandingsTable({
 										{r.scoreAgainst}
 									</TableCell>
 									<TableCell className="text-center font-bold">
-										{r.scoreDifference}
+										<span className="inline-flex items-center gap-0.5">
+											{r.scoreDifference > 0 && (
+												<ArrowUp
+													{...DECORATIVE}
+													className="size-3.5 text-(--palm)"
+												/>
+											)}
+											{r.scoreDifference < 0 && (
+												<ArrowDown
+													{...DECORATIVE}
+													className="size-3.5 text-[#9f3030]"
+												/>
+											)}
+											{r.scoreDifference}
+										</span>
 									</TableCell>
 									<TableCell className="text-center font-black">
 										{r.points}

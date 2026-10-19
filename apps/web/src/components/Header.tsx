@@ -1,4 +1,24 @@
-import { Sheet } from "@sports/ui";
+import {
+	Building2,
+	ChevronDown,
+	CircleUserRound,
+	DECORATIVE,
+	Dumbbell,
+	Gauge,
+	House,
+	Info,
+	LogIn,
+	LogOut,
+	type LucideIcon,
+	MapPin,
+	Menu,
+	Sheet,
+	Swords,
+	Trophy,
+	UserPlus,
+	UserRound,
+	Users,
+} from "@sports/ui";
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../lib/auth";
@@ -8,6 +28,7 @@ import ThemeToggle from "./ThemeToggle";
 interface NavItem {
 	to: string;
 	label: string;
+	icon: LucideIcon;
 }
 
 type AdminRole = "admin" | "organizer" | "super_admin";
@@ -18,21 +39,21 @@ const ADMIN_ROLES: AdminRole[] = [
 	"super_admin",
 ]; /** Nav reducida: lo visible en desktop son las tres rutas de competencia. */
 const PRIMARY_NAV: NavItem[] = [
-	{ to: "/tournaments", label: "Torneos" },
-	{ to: "/matches", label: "Partidos" },
-	{ to: "/teams", label: "Equipos" },
+	{ to: "/tournaments", label: "Torneos", icon: Trophy },
+	{ to: "/matches", label: "Partidos", icon: Swords },
+	{ to: "/teams", label: "Equipos", icon: Users },
 ];
 
 /** El catálogo restante y About viven debajo de “Más” y en el menú móvil. */
 const SECONDARY_NAV: NavItem[] = [
-	{ to: "/clubs", label: "Clubes" },
-	{ to: "/players", label: "Jugadores" },
-	{ to: "/venues", label: "Sedes" },
-	{ to: "/sports", label: "Deportes" },
-	{ to: "/about", label: "About" },
+	{ to: "/clubs", label: "Clubes", icon: Building2 },
+	{ to: "/players", label: "Jugadores", icon: UserRound },
+	{ to: "/venues", label: "Sedes", icon: MapPin },
+	{ to: "/sports", label: "Deportes", icon: Dumbbell },
+	{ to: "/about", label: "About", icon: Info },
 ];
 
-const navLink = "nav-link";
+const navLink = "nav-link gap-1.5";
 
 function MoreMenu() {
 	const [open, setOpen] = React.useState(false);
@@ -58,6 +79,7 @@ function MoreMenu() {
 				onClick={() => setOpen((v) => !v)}
 			>
 				Más
+				<ChevronDown {...DECORATIVE} className="size-4" />
 			</button>
 			{open && (
 				<div className="absolute left-0 top-full z-50 mt-1 w-44 rounded-xl border border-(--line) bg-(--surface-strong) p-1.5 shadow-[0_12px_32px_rgba(23,58,64,0.18)]">
@@ -66,8 +88,9 @@ function MoreMenu() {
 							key={item.to}
 							to={item.to}
 							onClick={() => setOpen(false)}
-							className="block rounded-lg px-3 py-2 text-(--sea-ink-soft) no-underline hover:bg-(--surface) hover:text-(--sea-ink)"
+							className="flex items-center gap-2 rounded-lg px-3 py-2 text-(--sea-ink-soft) no-underline hover:bg-(--surface) hover:text-(--sea-ink)"
 						>
+							<item.icon {...DECORATIVE} className="size-4 shrink-0" />
 							{item.label}
 						</Link>
 					))}
@@ -103,6 +126,7 @@ export default function Header() {
 							className={navLink}
 							activeProps={{ className: `${navLink} is-active` }}
 						>
+							<item.icon {...DECORATIVE} className="size-4" />
 							{item.label}
 						</Link>
 					))}
@@ -116,9 +140,9 @@ export default function Header() {
 						aria-label="Abrir menú"
 						aria-expanded={menuOpen}
 						onClick={() => setMenuOpen(true)}
-						className="rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) hover:bg-(--surface-strong)"
+						className="inline-flex items-center rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) hover:bg-(--surface-strong)"
 					>
-						☰
+						<Menu {...DECORATIVE} className="size-4" />
 					</button>
 				</div>
 
@@ -126,8 +150,9 @@ export default function Header() {
 					{isAdmin(hasRole) && (
 						<Link
 							to="/admin"
-							className="hidden rounded-full border border-(--chip-line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) no-underline hover:bg-(--surface-strong) md:inline-block"
+							className="hidden items-center gap-1.5 rounded-full border border-(--chip-line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) no-underline hover:bg-(--surface-strong) md:inline-flex"
 						>
+							<Gauge {...DECORATIVE} className="size-4" />
 							Admin
 						</Link>
 					)}
@@ -135,15 +160,17 @@ export default function Header() {
 						<button
 							type="button"
 							onClick={logout}
-							className="rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink-soft) hover:bg-(--surface-strong)"
+							className="inline-flex items-center gap-1.5 rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink-soft) hover:bg-(--surface-strong)"
 						>
+							<LogOut {...DECORATIVE} className="size-4" />
 							Salir
 						</button>
 					) : (
 						<Link
 							to="/auth/login"
-							className="rounded-full border border-(--lagoon-deep) bg-(--lagoon) px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+							className="inline-flex items-center gap-1.5 rounded-full border border-(--lagoon-deep) bg-(--lagoon) px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
 						>
+							<LogIn {...DECORATIVE} className="size-4" />
 							Entrar
 						</Link>
 					)}
@@ -156,6 +183,7 @@ export default function Header() {
 					<SheetLink
 						to="/"
 						label="Home"
+						icon={House}
 						onNavigate={() => setMenuOpen(false)}
 					/>
 					{PRIMARY_NAV.map((item) => (
@@ -163,6 +191,7 @@ export default function Header() {
 							key={item.to}
 							to={item.to}
 							label={item.label}
+							icon={item.icon}
 							onNavigate={() => setMenuOpen(false)}
 						/>
 					))}
@@ -173,6 +202,7 @@ export default function Header() {
 							key={item.to}
 							to={item.to}
 							label={item.label}
+							icon={item.icon}
 							onNavigate={() => setMenuOpen(false)}
 						/>
 					))}
@@ -182,6 +212,7 @@ export default function Header() {
 						<SheetLink
 							to="/admin"
 							label="Admin"
+							icon={Gauge}
 							onNavigate={() => setMenuOpen(false)}
 						/>
 					)}
@@ -189,6 +220,7 @@ export default function Header() {
 						<SheetLink
 							to="/profile"
 							label={user ? `${user.fullName} · ${user.role}` : "Mi cuenta"}
+							icon={CircleUserRound}
 							onNavigate={() => setMenuOpen(false)}
 						/>
 					) : (
@@ -196,11 +228,13 @@ export default function Header() {
 							<SheetLink
 								to="/auth/login"
 								label="Iniciar sesión"
+								icon={LogIn}
 								onNavigate={() => setMenuOpen(false)}
 							/>
 							<SheetLink
 								to="/auth/register"
 								label="Crear cuenta"
+								icon={UserPlus}
 								onNavigate={() => setMenuOpen(false)}
 							/>
 						</>
@@ -236,19 +270,25 @@ function SheetSection({
 function SheetLink({
 	to,
 	label,
+	icon: Icon,
 	onNavigate,
 }: {
 	to: string;
 	label: string;
+	icon?: LucideIcon;
 	onNavigate: () => void;
 }) {
 	return (
 		<Link
 			to={to}
 			onClick={onNavigate}
-			className="block rounded-lg px-3 py-2 text-(--sea-ink-soft) no-underline hover:bg-(--surface) hover:text-(--sea-ink)"
-			activeProps={{ className: "bg-(--surface) font-bold text-(--sea-ink)" }}
+			className="flex items-center gap-2 rounded-lg px-3 py-2 text-(--sea-ink-soft) no-underline hover:bg-(--surface) hover:text-(--sea-ink)"
+			activeProps={{
+				className:
+					"flex items-center gap-2 rounded-lg px-3 py-2 bg-(--surface) font-bold text-(--sea-ink)",
+			}}
 		>
+			{Icon && <Icon {...DECORATIVE} className="size-4 shrink-0" />}
 			{label}
 		</Link>
 	);

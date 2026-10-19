@@ -1,11 +1,17 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import {
+	ArrowRight,
 	Badge,
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
+	Medal,
+	Radio,
 	Select,
+	Swords,
+	Users,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -72,15 +78,31 @@ function MatchesPage() {
 						className="no-underline"
 					>
 						<Card className="p-4 hover:border-(--lagoon-deep)">
-							<CardHeader className="p-0">
-								<CardTitle className="text-sm">
-									{m.homeTeam?.name ?? "Por definir"} vs{" "}
-									{m.awayTeam?.name ?? "Por definir"}
+							<CardHeader className="flex flex-row items-start justify-between gap-2 p-0">
+								<CardTitle className="flex items-center gap-2 text-sm">
+									<Users
+										{...DECORATIVE}
+										className="size-4 shrink-0 text-(--sea-ink-soft)"
+									/>
+									<span>
+										{m.homeTeam?.name ?? "Por definir"} vs{" "}
+										{m.awayTeam?.name ?? "Por definir"}
+									</span>
 								</CardTitle>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 shrink-0 text-(--sea-ink-soft)"
+								/>
 							</CardHeader>
-							<div className="flex gap-2 mt-1">
-								<Badge>{m.status}</Badge>
-								<Badge variant="outline">
+							<div className="mt-1 flex gap-2">
+								<Badge className="gap-1.5">
+									{m.status === "in_progress" && (
+										<Radio {...DECORATIVE} className="size-3.5" />
+									)}
+									{m.status}
+								</Badge>
+								<Badge variant="outline" className="gap-1.5">
+									<Medal {...DECORATIVE} className="size-3.5" />
 									{m.homeScore} : {m.awayScore}
 								</Badge>
 							</div>
@@ -90,6 +112,7 @@ function MatchesPage() {
 			</div>
 			{matches.length === 0 && (
 				<EmptyState
+					icon={Swords}
 					title="No hay partidos con ese estado"
 					description="Prueba con otro filtro o revisa más tarde."
 				/>

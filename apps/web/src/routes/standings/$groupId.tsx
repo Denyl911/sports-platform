@@ -1,6 +1,6 @@
 import { queryKeys, unwrap } from "@sports/api-client";
 import { useGroupLive } from "@sports/api-client/live";
-import { Badge, StandingsTable } from "@sports/ui";
+import { Badge, DECORATIVE, Radio, StandingsTable } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api, getStoredAccessToken } from "../../lib/api";
@@ -76,7 +76,11 @@ function StandingsPage() {
 		<div className="demo-page space-y-4">
 			<div className="flex items-center gap-2">
 				<h1 className="demo-title">Tabla</h1>
-				<Badge variant={live.isOpen ? "success" : "secondary"}>
+				<Badge
+					variant={live.isOpen ? "success" : "secondary"}
+					className="gap-1.5"
+				>
+					<Radio {...DECORATIVE} className="size-3.5" />
 					{live.status}
 				</Badge>
 			</div>

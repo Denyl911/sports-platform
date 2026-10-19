@@ -1,6 +1,7 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils";
 import { Badge } from "../ui/badge";
+import { DECORATIVE, ShieldCheck, Users } from "../ui/icon";
 
 export interface PlayerRowProps extends React.HTMLAttributes<HTMLDivElement> {
 	player: {
@@ -50,7 +51,10 @@ export function PlayerRow({
 				</div>
 			</div>
 			{isCaptain && (
-				<span className="text-xs font-bold text-(--palm)">Capitán</span>
+				<span className="inline-flex items-center gap-1 text-xs font-bold text-(--palm)">
+					<ShieldCheck {...DECORATIVE} className="size-3.5" />
+					Capitán
+				</span>
 			)}
 		</div>
 	);
@@ -75,10 +79,11 @@ export function RosterTable({
 		return (
 			<div
 				className={cn(
-					"p-4 text-center text-sm text-(--sea-ink-soft)",
+					"flex items-center justify-center gap-2 p-4 text-center text-sm text-(--sea-ink-soft)",
 					className,
 				)}
 			>
+				<Users {...DECORATIVE} className="size-4" />
 				Plantel vacío.
 			</div>
 		);

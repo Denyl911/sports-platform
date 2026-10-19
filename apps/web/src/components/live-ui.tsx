@@ -1,5 +1,14 @@
 import type { LiveStatus } from "@sports/api-client/live";
-import { Badge } from "@sports/ui";
+import {
+	Badge,
+	CircleAlert,
+	CircleDot,
+	DECORATIVE,
+	type LucideIcon,
+	Radio,
+	RefreshCw,
+	WifiOff,
+} from "@sports/ui";
 import * as React from "react";
 
 /** Etiquetas del estado de la conexión WS, en español. */
@@ -10,6 +19,16 @@ export const LIVE_STATUS_LABELS: Record<LiveStatus, string> = {
 	closed: "Transmisión cerrada",
 	idle: "Sin conexión",
 	error: "Error de transmisión",
+};
+
+/** El estado de la conexión, en icono. `open` lo pinta el punto que late. */
+const LIVE_STATUS_ICONS: Record<LiveStatus, LucideIcon> = {
+	open: Radio,
+	connecting: RefreshCw,
+	reconnecting: RefreshCw,
+	closed: WifiOff,
+	idle: WifiOff,
+	error: CircleAlert,
 };
 
 export type MatchStatusLike =
@@ -55,11 +74,14 @@ export function LiveBadge({
 			: status === "error"
 				? ("destructive" as const)
 				: ("secondary" as const);
+	const StatusIcon = LIVE_STATUS_ICONS[status];
 
 	return (
 		<Badge variant={variant} className="gap-1">
-			{status === "open" && (
+			{status === "open" ? (
 				<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-(--lagoon-deep)" />
+			) : (
+				<StatusIcon {...DECORATIVE} className="size-3.5" />
 			)}
 			{LIVE_STATUS_LABELS[status]}
 		</Badge>
@@ -121,7 +143,12 @@ interface TimelineEvent {
 	minuteOrSecond?: number | null;
 }
 
-/** Icono por eventType; los códigos son de dominio (definidos por deporte). */
+/**
+ * El suceso, en glifo. Los códigos son de dominio (los define cada deporte) y
+ * los emoji son aquí la señal correcta: una tarjeta amarilla es amarilla y
+ * ninguna fuente de iconos sabe de tarjetas. El resto de la vista usa
+ * `lucide` (`@sports/ui`); esto es contenido, no cromo.
+ */
 const EVENT_ICONS: Record<string, string> = {
 	goal: "⚽",
 	yellow_card: "🟨",
@@ -153,6 +180,7 @@ export function MatchTimeline({
 		<ul className="space-y-2">
 			{ordered.map((ev) => {
 				const name = teamName(ev.teamId);
+				const glyph = EVENT_ICONS[ev.eventType];
 				return (
 					<li
 						key={ev.id}
@@ -163,7 +191,7 @@ export function MatchTimeline({
 							className="text-base leading-none"
 							title={ev.eventType}
 						>
-							{EVENT_ICONS[ev.eventType] ?? "•"}
+							{glyph ?? <CircleDot {...DECORATIVE} className="size-4" />}
 						</span>
 						<span className="font-bold text-(--sea-ink)">{ev.eventType}</span>
 						{name && (
