@@ -29,6 +29,12 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import {
+	LiveBadge,
+	MATCH_STATUS_LABELS,
+	type MatchStatusLike,
+	MatchTimeline,
+} from "../../../components/live-ui";
 import { api, getStoredAccessToken } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/matches/$matchId")({
@@ -153,6 +159,8 @@ function AdminMatchLivePage() {
 					{tab === "score" && (
 						<ScoreTab
 							matchId={matchId}
+							homeName={match.homeTeam?.name ?? "Local"}
+							awayName={match.awayTeam?.name ?? "Visita"}
 							homeScore={homeScore}
 							awayScore={awayScore}
 							status={status}
@@ -168,6 +176,8 @@ function AdminMatchLivePage() {
 					{tab === "events" && (
 						<EventsTab
 							matchId={matchId}
+							live={live}
+							events={match.events}
 							participants={[
 								...(match.homeTeam
 									? [{ id: match.homeTeam.id, name: match.homeTeam.name }]
@@ -198,6 +208,8 @@ function AdminMatchLivePage() {
 }
 
 function ScoreTab({
+	homeName,
+	awayName,
 	homeScore,
 	awayScore,
 	status,
@@ -210,6 +222,8 @@ function ScoreTab({
 	onPatchScore,
 }: {
 	matchId: string;
+	homeName: string;
+	awayName: string;
 	homeScore: number;
 	awayScore: number;
 	status: string;
@@ -221,52 +235,79 @@ function ScoreTab({
 	onSendLive: () => void;
 	onPatchScore: () => Promise<void>;
 }) {
+	const sendLive = (nextHome: number, nextAway: number, nextStatus: string) => {
+		try {
+			live.sendScore({
+				homeScore: nextHome,
+				awayScore: nextAway,
+				status: nextStatus,
+			});
+		} catch (err) {
+			toast.error("No se pudo transmitir en vivo", getApiErrorMessage(err));
+		}
+	};
+
+	// Rápido del árbitro: un toque = anotar y transmitir en la misma acción.
+	const quick = (side: "home" | "away", delta: -1 | 1) => {
+		const next = Math.max(0, (side === "home" ? homeScore : awayScore) + delta);
+		if (side === "home") setHomeScore(next);
+		else setAwayScore(next);
+		if (live.isOpen)
+			sendLive(
+				side === "home" ? next : homeScore,
+				side === "away" ? next : awayScore,
+				status,
+			);
+	};
+
 	return (
-		<div className="space-y-3">
-			<div className="flex items-center gap-2">
-				<Badge variant={live.isOpen ? "success" : "secondary"}>
-					{live.status}
-				</Badge>
-				<span className="text-xs text-(--sea-ink-soft)">
-					{live.lastAck ? `ack ${live.lastAck.action}` : "sin ack"}
+		<div className="space-y-4">
+			<LiveBadge status={live.status} matchStatus={status as MatchStatusLike} />
+
+			<div className="flex flex-wrap items-stretch justify-center gap-4 sm:gap-8">
+				<ScorePad
+					title={homeName}
+					score={homeScore}
+					onQuick={(d) => quick("home", d)}
+				/>
+				<span className="self-center pb-6 text-xl font-bold text-(--sea-ink-soft)">
+					:
 				</span>
-				<span className="text-xs text-(--sea-ink-soft)">
-					{live.lastScore ? `score` : ""}
-				</span>
+				<ScorePad
+					title={awayName}
+					score={awayScore}
+					onQuick={(d) => quick("away", d)}
+				/>
 			</div>
+
+			<div>
+				<Label>Estado del partido</Label>
+				<div className="mt-2 flex flex-wrap gap-1.5">
+					{(Object.keys(MATCH_STATUS_LABELS) as MatchStatusLike[]).map(
+						(key) => (
+							<button
+								type="button"
+								key={key}
+								onClick={() => setStatus(key)}
+								className={`rounded-full border px-3 py-1.5 text-xs font-bold ${status === key ? "bg-(--lagoon) text-white border-(--lagoon-deep)" : "bg-(--chip-bg) text-(--sea-ink-soft) border-(--line)"}`}
+							>
+								{MATCH_STATUS_LABELS[key]}
+							</button>
+						),
+					)}
+				</div>
+			</div>
+
 			<div className="flex flex-wrap gap-2">
-				<Input
-					type="number"
-					value={homeScore}
-					onChange={(e) => setHomeScore(Number(e.target.value))}
-					className="w-20"
-				/>
-				<span className="self-center">:</span>
-				<Input
-					type="number"
-					value={awayScore}
-					onChange={(e) => setAwayScore(Number(e.target.value))}
-					className="w-20"
-				/>
-				<Select value={status} onChange={(e) => setStatus(e.target.value)}>
-					<option value="scheduled">scheduled</option>
-					<option value="in_progress">in_progress</option>
-					<option value="paused">paused</option>
-					<option value="finished">finished</option>
-					<option value="cancelled">cancelled</option>
-					<option value="walkover">walkover</option>
-				</Select>
-			</div>
-			<div className="flex gap-2">
 				<Button onClick={onSendLive} disabled={!live.isOpen}>
-					Enviar vía WS (live)
+					{live.isOpen ? "Transmitir en vivo" : "Sin transmisión"}
 				</Button>
 				<Button
 					variant="secondary"
 					onClick={onPatchScore}
 					disabled={updateScore.isPending}
 				>
-					{updateScore.isPending ? "Guardando…" : "PATCH /score (REST)"}
+					{updateScore.isPending ? "Guardando…" : "Guardar definitivo"}
 				</Button>
 			</div>
 			{live.lastError && (
@@ -274,8 +315,42 @@ function ScoreTab({
 					WS error: {live.lastError.message}
 				</div>
 			)}
-			<div className="text-xs text-(--sea-ink-soft)">
-				WS isOpen={String(live.isOpen)} isConnecting={String(live.isConnecting)}
+		</div>
+	);
+}
+
+function ScorePad({
+	title,
+	score,
+	onQuick,
+}: {
+	title: string;
+	score: number;
+	onQuick: (delta: -1 | 1) => void;
+}) {
+	return (
+		<div className="flex flex-col items-center gap-2 rounded-xl border border-(--line) bg-(--surface) px-5 py-3">
+			<span className="text-xs font-bold uppercase tracking-widest text-(--sea-ink-soft)">
+				{title}
+			</span>
+			<span className="text-4xl font-black text-(--sea-ink)">{score}</span>
+			<div className="flex gap-2">
+				<button
+					type="button"
+					aria-label={`Restar gol de ${title}`}
+					onClick={() => onQuick(-1)}
+					className="h-9 w-9 rounded-full border border-(--line) bg-(--chip-bg) text-lg font-black text-(--sea-ink-soft) hover:bg-(--surface-strong)"
+				>
+					−
+				</button>
+				<button
+					type="button"
+					aria-label={`Anotar gol de ${title}`}
+					onClick={() => onQuick(1)}
+					className="h-9 w-9 rounded-full border border-(--lagoon-deep) bg-(--lagoon) text-lg font-black text-white hover:opacity-90"
+				>
+					+
+				</button>
 			</div>
 		</div>
 	);
@@ -283,16 +358,16 @@ function ScoreTab({
 
 function EventsTab({
 	matchId,
+	live,
+	events,
 	participants,
 }: {
 	matchId: string;
+	live: ReturnType<typeof useMatchLive>;
+	events: MatchDetail["events"];
 	participants: Array<{ id: string; name: string }>;
 }) {
 	const recordEvent = useRecordLiveEvent(api);
-	const live = useMatchLive(matchId, {
-		getToken: getStoredAccessToken,
-		updateCache: true,
-	});
 	const [teamId, setTeamId] = React.useState(participants[0]?.id ?? "");
 	const [eventType, setEventType] = React.useState("goal");
 	const [periodNumber, setPeriodNumber] = React.useState(1);
@@ -311,7 +386,15 @@ function EventsTab({
 		} as never;
 		try {
 			if (viaWs) {
-				live.sendEvent(payload as never);
+				if (live.isOpen) {
+					live.sendEvent(payload as never);
+				} else {
+					toast.error(
+						"No se pudo registrar el evento por WS",
+						"La conexión en vivo no está abierta; usa Registrar (REST).",
+					);
+					return;
+				}
 			} else {
 				await recordEvent.mutateAsync({ id: matchId, body: payload });
 				toast.success("Evento registrado");
@@ -322,15 +405,8 @@ function EventsTab({
 	};
 
 	return (
-		<div className="space-y-3">
-			<div className="flex items-center gap-2">
-				<Badge variant={live.isOpen ? "success" : "secondary"}>
-					{live.status}
-				</Badge>
-				<span className="text-xs text-(--sea-ink-soft)">
-					Envía evento vía WS (live) o REST (referee)
-				</span>
-			</div>
+		<div className="space-y-4">
+			<LiveBadge status={live.status} matchStatus="in_progress" />
 			<div className="grid gap-2 sm:grid-cols-2">
 				<div>
 					<Label>Equipo</Label>
@@ -344,12 +420,18 @@ function EventsTab({
 					</Select>
 				</div>
 				<div>
-					<Label>Tipo evento</Label>
+					<Label>Tipo de evento</Label>
 					<Input
 						value={eventType}
 						onChange={(e) => setEventType(e.target.value)}
-						placeholder="goal, foul, yellow_card..."
+						list="match-event-types"
+						placeholder="goal, tarjeta_amarilla…"
 					/>
+					<datalist id="match-event-types">
+						{COMMON_EVENT_TYPES.map((t) => (
+							<option key={t} value={t} />
+						))}
+					</datalist>
 				</div>
 				<div>
 					<Label>Periodo</Label>
@@ -372,24 +454,41 @@ function EventsTab({
 			</div>
 			<div className="flex gap-2">
 				<Button onClick={() => onSend(true)} disabled={!live.isOpen}>
-					Enviar WS
+					Envío en vivo (WS)
 				</Button>
 				<Button
 					variant="secondary"
 					onClick={() => onSend(false)}
 					disabled={recordEvent.isPending}
 				>
-					{recordEvent.isPending ? "Enviando…" : "POST /events"}
+					{recordEvent.isPending ? "Enviando…" : "Registrar (REST)"}
 				</Button>
 			</div>
-			{live.lastEvent && (
-				<div className="demo-alert text-sm">
-					Último evento WS: {JSON.stringify(live.lastEvent).slice(0, 200)}
+
+			<div>
+				<Label>Cronología</Label>
+				<div className="mt-2">
+					{events.length === 0 ? (
+						<p className="text-xs text-(--sea-ink-soft)">
+							Sin eventos registrados todavía.
+						</p>
+					) : (
+						<MatchTimeline events={events} teams={participants} />
+					)}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }
+
+const COMMON_EVENT_TYPES = [
+	"goal",
+	"yellow_card",
+	"red_card",
+	"substitution",
+	"timeout",
+	"foul",
+];
 
 function VenueTab({
 	matchId,

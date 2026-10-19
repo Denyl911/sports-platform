@@ -1,19 +1,22 @@
 import { type MatchDetail, queryKeys, unwrap } from "@sports/api-client";
 import { useGroupLive, useMatchLive } from "@sports/api-client/live";
 import {
-	Badge,
-	Button,
 	Card,
-	CardContent,
 	CardHeader,
 	CardTitle,
-	MatchCard,
+	EmptyState,
 	StandingsTable,
 	VenuePill,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import {
+	AnimatedScore,
+	LiveBadge,
+	MATCH_STATUS_LABELS,
+	MatchTimeline,
+} from "../../components/live-ui";
 import { api, getStoredAccessToken } from "../../lib/api";
 
 export const Route = createFileRoute("/matches/$matchId")({
@@ -55,97 +58,86 @@ function MatchDetailPage() {
 	});
 	const match = matchData as MatchDetail;
 
+	// Un solo socket por página; `updateCache` actualiza el marcador en cache
+	// y las tablas revalidan solas (standingKeys invalidadas por el hook).
 	const live = useMatchLive(matchId, {
 		getToken: getStoredAccessToken,
 		updateCache: true,
 	});
-	const groupLive = useGroupLive(match.groupId ?? "", {
+	useGroupLive(match.groupId ?? "", {
 		enabled: !!match.groupId,
 		getToken: getStoredAccessToken,
 		updateCache: true,
 	});
 
-	const [homeScore, setHomeScore] = React.useState(match.homeScore);
-	const [awayScore, setAwayScore] = React.useState(match.awayScore);
-
-	React.useEffect(() => {
-		setHomeScore(match.homeScore);
-		setAwayScore(match.awayScore);
-	}, [match.homeScore, match.awayScore]);
-
-	const handleSendScore = () => {
-		live.sendScore({ homeScore, awayScore, status: "in_progress" });
-	};
+	const teams = React.useMemo(
+		() =>
+			[
+				...(match.homeTeam ? [match.homeTeam] : []),
+				...(match.awayTeam ? [match.awayTeam] : []),
+			].map(({ id, name }) => ({ id, name })),
+		[match.homeTeam, match.awayTeam],
+	);
 
 	return (
 		<div className="demo-page space-y-6">
-			<MatchCard
-				homeTeam={{
-					id: match.homeTeam?.id ?? match.homeTeamId ?? "home",
-					name: match.homeTeam?.name ?? "Por definir",
-				}}
-				awayTeam={{
-					id: match.awayTeam?.id ?? match.awayTeamId ?? "away",
-					name: match.awayTeam?.name ?? "Por definir",
-				}}
-				homeScore={match.homeScore}
-				awayScore={match.awayScore}
-				status={match.status}
-				scheduledAt={match.scheduledAt}
-				live={live.isOpen}
-				roundLabel={live.status}
-			/>
+			{/* Hero en vivo: equipos, marcador que late al anotar, insignia honesta. */}
+			<Card className="relative overflow-hidden p-5 sm:p-6">
+				<div className="mb-3 flex items-center justify-between gap-3">
+					<span className="text-xs font-bold uppercase tracking-widest text-(--kicker)">
+						{match.groupId ? "Fase de grupos" : "Partido"}
+					</span>
+					<LiveBadge status={live.status} matchStatus={match.status} />
+				</div>
+				<div className="flex items-center justify-between gap-4">
+					<HeroTeam name={match.homeTeam?.name} />
+					<div className="flex flex-col items-center gap-2">
+						<AnimatedScore
+							homeScore={match.homeScore ?? 0}
+							awayScore={match.awayScore ?? 0}
+						/>
+						<span className="text-xs font-bold text-(--sea-ink-soft)">
+							{MATCH_STATUS_LABELS[match.status]} · minuto{" "}
+							{match.events.at(-1)?.minuteOrSecond != null
+								? `${match.events.at(-1)!.minuteOrSecond}'`
+								: "—"}
+						</span>
+					</div>
+					<HeroTeam name={match.awayTeam?.name} />
+				</div>
+			</Card>
 			{match.venue && (
 				<VenuePill name={match.venue.name} address={match.venue.address} />
 			)}
 
 			<Card className="p-4">
-				<CardHeader className="p-0 pb-2">
-					<CardTitle className="text-base">Live WS</CardTitle>
+				<CardHeader className="p-0 pb-3">
+					<CardTitle className="text-base">Cronología</CardTitle>
 				</CardHeader>
-				<CardContent className="p-0 space-y-2">
-					<div className="flex items-center gap-2 text-sm">
-						<Badge variant={live.isOpen ? "success" : "secondary"}>
-							{live.status}
-						</Badge>
-						<span className="text-(--sea-ink-soft)">
-							{live.lastMessage
-								? JSON.stringify(live.lastMessage).slice(0, 120)
-								: "sin mensajes"}
-						</span>
-					</div>
-					{match.groupId && (
-						<div className="text-xs text-(--sea-ink-soft)">
-							Group live: {groupLive.status}{" "}
-							{groupLive.lastStanding ? "· standing updated" : ""}
-						</div>
-					)}
-					<div className="flex gap-2">
-						<input
-							type="number"
-							value={homeScore}
-							onChange={(e) => setHomeScore(Number(e.target.value))}
-							className="demo-input w-20"
-						/>
-						<input
-							type="number"
-							value={awayScore}
-							onChange={(e) => setAwayScore(Number(e.target.value))}
-							className="demo-input w-20"
-						/>
-						<Button onClick={handleSendScore} disabled={!live.isOpen}>
-							Enviar score
-						</Button>
-					</div>
-					{live.lastError && (
-						<div className="demo-alert-danger text-sm">
-							{live.lastError.message}
-						</div>
-					)}
-				</CardContent>
+				{match.events.length === 0 ? (
+					<EmptyState
+						title="Sin eventos todavía"
+						description="Cada gol, tarjeta o cambio que se registre aparece aquí al momento."
+					/>
+				) : (
+					<MatchTimeline events={match.events} teams={teams} />
+				)}
 			</Card>
 
 			{match.groupId && <GroupStandingsInline groupId={match.groupId} />}
+		</div>
+	);
+}
+
+function HeroTeam({ name }: { name?: string | null }) {
+	return (
+		<div className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center">
+			<div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-(--line) bg-(--chip-bg) text-sm font-black sm:h-14 sm:w-14">
+				{(name ?? "?").slice(0, 2).toUpperCase()}
+			</div>
+			<span className="truncate text-sm font-bold text-(--sea-ink) sm:text-base">
+				{name ?? "Por definir"}
+			</span>
 		</div>
 	);
 }
