@@ -1,4 +1,5 @@
 import { cn } from "../../lib/utils";
+import { ArrowLeft, ArrowRight, DECORATIVE } from "./icon";
 
 /**
  * Pager compacto para listas administrativas: la API entrega el `total` del
@@ -46,7 +47,7 @@ export function Pagination({
 					className="rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) hover:bg-(--surface-strong) disabled:cursor-not-allowed disabled:opacity-50"
 					aria-label="Página anterior"
 				>
-					←
+					<ArrowLeft {...DECORATIVE} className="size-4" />
 				</button>
 				<span className="text-xs font-semibold text-(--sea-ink)">
 					Página {pageCount > 0 ? page : 0} de {pageCount}
@@ -58,7 +59,7 @@ export function Pagination({
 					className="rounded-full border border-(--line) bg-(--chip-bg) px-3 py-1.5 text-xs font-bold text-(--sea-ink) hover:bg-(--surface-strong) disabled:cursor-not-allowed disabled:opacity-50"
 					aria-label="Página siguiente"
 				>
-					→
+					<ArrowRight {...DECORATIVE} className="size-4" />
 				</button>
 			</div>
 		</nav>

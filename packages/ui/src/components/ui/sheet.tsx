@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
 import { Button } from "./button";
+import { X } from "./icon";
 
 /**
  * Panel lateral deslizante (drawer). Sin dependencias externas:
@@ -65,11 +66,10 @@ export function Sheet({
 						type="button"
 						variant="ghost"
 						size="sm"
+						icon={X}
 						onClick={onClose}
 						aria-label="Cerrar menú"
-					>
-						✕
-					</Button>
+					/>
 				</div>
 				{children}
 			</div>

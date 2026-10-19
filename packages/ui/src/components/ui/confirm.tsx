@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Button } from "./button";
+import { DECORATIVE, TriangleAlert } from "./icon";
 
 // ---------------------------------------------------------------------------
 // Confirmación con diálogo, no window.confirm: provider + hook que devuelve
@@ -60,14 +61,23 @@ export function ConfirmProvider({ children }: ConfirmProviderProps) {
 				>
 					<div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
 					<div className="relative w-full max-w-md rounded-2xl border border-(--line) bg-[linear-gradient(165deg,var(--surface-strong),var(--surface))] p-6 shadow-[0_24px_48px_rgba(23,58,64,0.25)]">
-						<h2 className="text-lg font-bold text-(--sea-ink)">
-							{pending.options.title}
-						</h2>
-						{pending.options.description && (
-							<p className="mt-1 text-sm text-(--sea-ink-soft)">
-								{pending.options.description}
-							</p>
-						)}
+						<div className="flex items-start gap-3">
+							{pending.options.destructive !== false && (
+								<span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[rgba(196,71,71,0.12)] text-[#9f3030]">
+									<TriangleAlert {...DECORATIVE} className="size-4" />
+								</span>
+							)}
+							<div className="min-w-0">
+								<h2 className="text-lg font-bold text-(--sea-ink)">
+									{pending.options.title}
+								</h2>
+								{pending.options.description && (
+									<p className="mt-1 text-sm text-(--sea-ink-soft)">
+										{pending.options.description}
+									</p>
+								)}
+							</div>
+						</div>
 						<div className="mt-5 flex justify-end gap-2">
 							<Button
 								type="button"

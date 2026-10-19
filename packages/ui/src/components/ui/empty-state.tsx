@@ -1,9 +1,12 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils";
+import { DECORATIVE, type LucideIcon } from "./icon";
 
 export interface EmptyStateProps {
 	title: string;
 	description?: string;
+	/** El icono del dominio que falta (ver el vocabulario en `icon.ts`). */
+	icon?: LucideIcon;
 	action?: React.ReactNode;
 	className?: string;
 }
@@ -16,6 +19,7 @@ export interface EmptyStateProps {
 export function EmptyState({
 	title,
 	description,
+	icon: Icon,
 	action,
 	className,
 }: EmptyStateProps) {
@@ -26,6 +30,11 @@ export function EmptyState({
 				className,
 			)}
 		>
+			{Icon && (
+				<span className="mb-2 flex size-12 items-center justify-center rounded-full bg-(--chip-bg) text-(--sea-ink-soft)">
+					<Icon {...DECORATIVE} className="size-5" />
+				</span>
+			)}
 			<p className="text-sm font-semibold text-(--sea-ink)">{title}</p>
 			{description && (
 				<p className="max-w-sm text-sm text-(--sea-ink-soft)">{description}</p>

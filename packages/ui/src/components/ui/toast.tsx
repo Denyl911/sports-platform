@@ -1,5 +1,13 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
+import {
+	CircleAlert,
+	CircleCheck,
+	DECORATIVE,
+	Info,
+	type LucideIcon,
+	X,
+} from "./icon";
 
 // ---------------------------------------------------------------------------
 // Toast mínimo, sin dependencias: emisor imperativo + <Toaster /> que pinta la
@@ -45,13 +53,13 @@ const variantClasses: Record<ToastVariant, string> = {
 	info: "border-[var(--line)] bg-[var(--surface-strong)]",
 };
 
-const variantGlyph: Record<ToastVariant, string> = {
-	success: "✓",
-	error: "✕",
-	info: "ℹ",
+const variantIcon: Record<ToastVariant, LucideIcon> = {
+	success: CircleCheck,
+	error: CircleAlert,
+	info: Info,
 };
 
-const variantGlyphColor: Record<ToastVariant, string> = {
+const variantIconColor: Record<ToastVariant, string> = {
 	success: "text-[var(--palm)]",
 	error: "text-[#9f3030]",
 	info: "text-(--sea-ink-soft)",
@@ -92,41 +100,45 @@ export function Toaster({ className }: ToasterProps) {
 				className,
 			)}
 		>
-			{items.map((item) => (
-				<div
-					key={item.id}
-					role="status"
-					className={cn(
-						"demo-card pointer-events-auto flex items-start gap-2 rounded-xl border px-3 py-2 text-sm shadow-[0_12px_24px_rgba(23,58,64,0.18)]",
-						variantClasses[item.variant],
-					)}
-				>
-					<span
-						aria-hidden="true"
-						className={cn("mt-0.5 font-bold", variantGlyphColor[item.variant])}
-					>
-						{variantGlyph[item.variant]}
-					</span>
-					<div className="min-w-0 flex-1">
-						<p className="font-semibold text-(--sea-ink)">{item.title}</p>
-						{item.description && (
-							<p className="text-xs text-(--sea-ink-soft)">
-								{item.description}
-							</p>
+			{items.map((item) => {
+				const Icon = variantIcon[item.variant];
+				return (
+					<div
+						key={item.id}
+						role="status"
+						className={cn(
+							"demo-card pointer-events-auto flex items-start gap-2 rounded-xl border px-3 py-2 text-sm shadow-[0_12px_24px_rgba(23,58,64,0.18)]",
+							variantClasses[item.variant],
 						)}
-					</div>
-					<button
-						type="button"
-						aria-label="Descartar aviso"
-						className="text-(--sea-ink-soft) hover:text-(--sea-ink)"
-						onClick={() =>
-							setItems((prev) => prev.filter((t) => t.id !== item.id))
-						}
 					>
-						✕
-					</button>
-				</div>
-			))}
+						<Icon
+							{...DECORATIVE}
+							className={cn(
+								"mt-0.5 size-4 shrink-0",
+								variantIconColor[item.variant],
+							)}
+						/>
+						<div className="min-w-0 flex-1">
+							<p className="font-semibold text-(--sea-ink)">{item.title}</p>
+							{item.description && (
+								<p className="text-xs text-(--sea-ink-soft)">
+									{item.description}
+								</p>
+							)}
+						</div>
+						<button
+							type="button"
+							aria-label="Descartar aviso"
+							className="text-(--sea-ink-soft) hover:text-(--sea-ink)"
+							onClick={() =>
+								setItems((prev) => prev.filter((t) => t.id !== item.id))
+							}
+						>
+							<X {...DECORATIVE} className="size-4" />
+						</button>
+					</div>
+				);
+			})}
 		</div>
 	);
 }

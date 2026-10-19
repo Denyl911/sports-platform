@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "../../lib/utils";
+import { DECORATIVE, type LucideIcon } from "./icon";
 
 export interface ButtonProps
 	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,7 +11,13 @@ export interface ButtonProps
 		| "destructive"
 		| "outline"
 		| "link";
-	size?: "default" | "sm" | "lg" | "icon";
+	size?: "default" | "sm" | "lg" | "icon" | "icon-sm";
+	/**
+	 * El verbo, en icono (`@sports/ui`). Con `children` acompaña a la palabra;
+	 * sin `children` va solo, y entonces el botón lleva su `aria-label`: el
+	 * icono es decorativo (ver `icon.ts`).
+	 */
+	icon?: LucideIcon;
 }
 
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
@@ -32,10 +39,30 @@ const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
 	sm: "h-8 rounded-md px-3 text-xs",
 	lg: "h-11 rounded-xl px-8 text-base",
 	icon: "h-10 w-10 p-0",
+	"icon-sm": "h-8 w-8 p-0 rounded-md",
+};
+
+/** El icono crece con el botón, no al revés. */
+const sizeIconClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
+	default: "size-4",
+	sm: "size-3.5",
+	lg: "size-5",
+	icon: "size-4",
+	"icon-sm": "size-3.5",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-	({ className, variant = "default", size = "default", ...props }, ref) => {
+	(
+		{
+			className,
+			variant = "default",
+			size = "default",
+			icon: Icon,
+			children,
+			...props
+		},
+		ref,
+	) => {
 		return (
 			<button
 				ref={ref}
@@ -47,7 +74,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 					className,
 				)}
 				{...props}
-			/>
+			>
+				{Icon && (
+					<Icon
+						{...DECORATIVE}
+						className={cn("shrink-0", sizeIconClasses[size])}
+					/>
+				)}
+				{children}
+			</button>
 		);
 	},
 );

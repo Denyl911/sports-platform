@@ -2,6 +2,7 @@ import * as React from "react";
 import { cn } from "../../lib/utils";
 import { Alert } from "./alert";
 import { Button } from "./button";
+import { X } from "./icon";
 
 export interface EditDialogProps {
 	open: boolean;
@@ -70,11 +71,10 @@ export function EditDialog({
 						type="button"
 						variant="ghost"
 						size="sm"
+						icon={X}
 						onClick={onClose}
 						aria-label="Cerrar diálogo"
-					>
-						✕
-					</Button>
+					/>
 				</div>
 				<div className="mt-4">{children}</div>
 				{error && (

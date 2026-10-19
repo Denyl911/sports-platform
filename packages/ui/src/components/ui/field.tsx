@@ -1,5 +1,6 @@
 import type * as React from "react";
 import { cn } from "../../lib/utils";
+import { CircleAlert, DECORATIVE } from "./icon";
 import { Label } from "./input";
 
 /**
@@ -32,9 +33,10 @@ export function Field({
 			{error ? (
 				<p
 					id={`${htmlFor}-error`}
-					className="text-xs font-semibold text-[#a83c3c] dark:text-[#e08c8c]"
+					className="flex items-center gap-1 text-xs font-semibold text-[#a83c3c] dark:text-[#e08c8c]"
 					role="alert"
 				>
+					<CircleAlert {...DECORATIVE} className="size-3.5 shrink-0" />
 					{error}
 				</p>
 			) : hint ? (
