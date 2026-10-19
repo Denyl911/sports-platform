@@ -32,6 +32,7 @@
 		"adr-check": "bun scripts/checks.ts adr",
 		"docs-check": "bun scripts/checks.ts docs",
 		"checks": "bun scripts/checks.ts gate",
+		"db:seed:admin": "bun apps/api/scripts/seed-admin.ts",
 		"gate": "bun scripts/checks.ts gate && turbo run check typecheck test"
 	},
 	"workspaces": [
