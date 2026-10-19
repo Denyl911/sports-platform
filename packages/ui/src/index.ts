@@ -14,6 +14,7 @@ export * from "./components/ui/confirm";
 export * from "./components/ui/dialog";
 export * from "./components/ui/empty-state";
 export * from "./components/ui/field";
+export * from "./components/ui/icon";
 export * from "./components/ui/input";
 export * from "./components/ui/pagination";
 export * from "./components/ui/separator";
