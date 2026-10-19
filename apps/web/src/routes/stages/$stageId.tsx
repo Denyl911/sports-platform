@@ -1,6 +1,7 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import {
 	Badge,
+	Bracket,
 	Card,
 	CardContent,
 	CardHeader,
@@ -186,6 +187,41 @@ function StageDetailPage() {
 					</div>
 				)}
 			</div>
+			{matches.some((m) => m.nextMatchId) && (
+				<div>
+					<h2 className="demo-section-title mb-2">Llave</h2>
+					<Bracket
+						matches={matches.map((m) => {
+							const maxRound = Math.max(
+								...matches.map((x) => x.roundNumber ?? 1),
+							);
+							const r = m.roundNumber ?? 1;
+							const distance = maxRound - r;
+							const label =
+								distance === 0
+									? "Final"
+									: distance === 1
+										? "Semifinal"
+										: distance === 2
+											? "Cuartos de final"
+											: distance === 3
+												? "Octavos de final"
+												: `Ronda ${r}`;
+							return {
+								id: m.id,
+								roundLabel: label,
+								homeTeam: m.homeTeam,
+								awayTeam: m.awayTeam,
+								homeScore: m.homeScore,
+								awayScore: m.awayScore,
+								status: m.status,
+								winnerTeamId: m.winnerTeamId,
+								nextMatchId: m.nextMatchId,
+							};
+						})}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }
