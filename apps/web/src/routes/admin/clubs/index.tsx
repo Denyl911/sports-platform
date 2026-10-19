@@ -5,14 +5,18 @@ import {
 	useDeleteClub,
 } from "@sports/api-client/hooks";
 import {
+	Building2,
 	Button,
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Field,
 	Input,
+	Plus,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
@@ -107,6 +111,7 @@ function AdminClubsPage() {
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={create.isPending}
 					>
@@ -133,11 +138,13 @@ function AdminClubsPage() {
 			) : clubs.length === 0 ? (
 				search.q ? (
 					<EmptyState
+						icon={Building2}
 						title={`Nada coincide con «${search.q}»`}
 						description="Prueba con otro nombre o borra la búsqueda."
 					/>
 				) : (
 					<EmptyState
+						icon={Building2}
 						title="No hay clubes"
 						description="Crea el primer club con el formulario de arriba."
 					/>
@@ -152,17 +159,24 @@ function AdminClubsPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">{c.name}</CardTitle>
+									<CardTitle className="flex items-center gap-2 text-base">
+										<Building2
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
+										{c.name}
+									</CardTitle>
 								</CardHeader>
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={() => onDelete(c.id, c.name)}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

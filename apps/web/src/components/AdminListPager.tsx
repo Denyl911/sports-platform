@@ -1,4 +1,11 @@
-import { Input, Pagination, Select } from "@sports/ui";
+import {
+	ArrowUpDown,
+	DECORATIVE,
+	Input,
+	Pagination,
+	Search,
+	Select,
+} from "@sports/ui";
 import * as React from "react";
 import { ADMIN_PAGE_SIZE, type AdminListSearch } from "../lib/admin-list";
 
@@ -46,19 +53,25 @@ export function AdminListPager({
 						e.preventDefault();
 						onQuery(q || undefined);
 					}}
+					className="relative"
 				>
+					<Search
+						{...DECORATIVE}
+						className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-(--sea-ink-soft)"
+					/>
 					<Input
 						name="q"
 						value={q}
 						onChange={(e) => setQ(e.target.value)}
 						placeholder="Buscar"
 						aria-label="Buscar por nombre"
-						className="w-56"
+						className="w-56 pl-9"
 					/>
 				</form>
 			)}
 			{hasOrder !== false && (
 				<span className="flex items-center gap-2 text-xs font-bold text-(--sea-ink-soft)">
+					<ArrowUpDown {...DECORATIVE} className="size-3.5" />
 					Orden
 					<Select
 						aria-label="Orden"

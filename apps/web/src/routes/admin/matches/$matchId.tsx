@@ -21,14 +21,18 @@ import {
 	Input,
 	Label,
 	MatchCard,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import {
 	LiveBadge,
 	MATCH_STATUS_LABELS,
@@ -110,9 +114,15 @@ function AdminMatchLivePage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/tournaments" className="text-sm text-(--sea-ink-soft)">
-				← Admin
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Torneos", to: "/admin/tournaments" },
+					{
+						label: `${match.homeTeam?.name ?? "Local"} vs ${match.awayTeam?.name ?? "Visitante"}`,
+					},
+				]}
+			/>
 
 			<MatchCard
 				homeTeam={{
@@ -304,6 +314,7 @@ function ScoreTab({
 				</Button>
 				<Button
 					variant="secondary"
+					icon={Save}
 					onClick={onPatchScore}
 					disabled={updateScore.isPending}
 				>
@@ -537,6 +548,7 @@ function VenueTab({
 				</Select>
 			</div>
 			<Button
+				icon={Plus}
 				onClick={onAssign}
 				disabled={assignVenue.isPending || !selectedVenueId}
 			>
@@ -579,7 +591,11 @@ function ScheduleTab({
 					onChange={(e) => setDt(e.target.value)}
 				/>
 			</div>
-			<Button onClick={onSchedule} disabled={scheduleMatch.isPending || !dt}>
+			<Button
+				icon={Save}
+				onClick={onSchedule}
+				disabled={scheduleMatch.isPending || !dt}
+			>
 				{scheduleMatch.isPending ? "Programando…" : "Programar"}
 			</Button>
 			<div className="text-xs text-(--sea-ink-soft)">
@@ -650,6 +666,7 @@ function InfoTab({
 				<h4 className="font-bold text-sm text-[#9f3030]">Zona peligrosa</h4>
 				<Button
 					variant="destructive"
+					icon={Trash2}
 					onClick={onDelete}
 					disabled={deleteMatch.isPending}
 					className="mt-2"

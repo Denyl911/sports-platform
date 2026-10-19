@@ -16,14 +16,19 @@ import {
 	EmptyState,
 	Input,
 	Label,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
+	UserCog,
 	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/users/$userId")({
@@ -114,9 +119,13 @@ function AdminUserDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/users" className="text-sm text-(--sea-ink-soft)">
-				← Usuarios
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Usuarios", to: "/admin/users" },
+					{ label: user.fullName },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>{user.fullName}</CardTitle>
@@ -147,7 +156,7 @@ function AdminUserDetailPage() {
 							<option value="super_admin">super_admin</option>
 						</Select>
 					</div>
-					<Button type="submit" disabled={update.isPending}>
+					<Button type="submit" icon={Save} disabled={update.isPending}>
 						Guardar
 					</Button>
 				</form>
@@ -182,7 +191,7 @@ function AdminUserDetailPage() {
 						<option value="statistician">statistician</option>
 						<option value="viewer_staff">viewer_staff</option>
 					</Select>
-					<Button type="submit" disabled={addMember.isPending}>
+					<Button type="submit" icon={Plus} disabled={addMember.isPending}>
 						Asignar
 					</Button>
 				</form>
@@ -214,6 +223,7 @@ function UserMemberships({ userId }: { userId: string }) {
 	if (memberships.length === 0) {
 		return (
 			<EmptyState
+				icon={UserCog}
 				title="Sin membresías"
 				description="Asigna al usuario a un torneo con el formulario de arriba."
 				className="mt-2"
@@ -292,10 +302,15 @@ function MembershipRow({
 					<option value="statistician">statistician</option>
 					<option value="viewer_staff">viewer_staff</option>
 				</Select>
-				<Button variant="ghost" size="sm" onClick={onSave}>
+				<Button variant="ghost" size="sm" icon={Save} onClick={onSave}>
 					Guardar
 				</Button>
-				<Button variant="destructive" size="sm" onClick={onRemove}>
+				<Button
+					variant="destructive"
+					size="sm"
+					icon={Trash2}
+					onClick={onRemove}
+				>
 					Quitar
 				</Button>
 			</div>

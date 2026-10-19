@@ -12,20 +12,28 @@ import {
 	useUsers,
 } from "@sports/api-client/hooks";
 import {
+	ArrowRight,
 	Badge,
 	Button,
+	CalendarDays,
 	Card,
 	CardContent,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EditDialog,
 	EmptyState,
 	Field,
 	Input,
 	Label,
+	Pencil,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
+	UserCog,
 	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
@@ -144,6 +152,7 @@ function AdminTournamentDetailPage() {
 						</Field>
 						<Button
 							type="submit"
+							icon={Save}
 							className="self-end"
 							disabled={update.isPending}
 						>
@@ -187,6 +196,7 @@ function AdminTournamentDetailPage() {
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={createEdition.isPending}
 					>
@@ -203,6 +213,7 @@ function AdminTournamentDetailPage() {
 				) : editions.length === 0 ? (
 					<EmptyState
 						className="mt-4"
+						icon={CalendarDays}
 						title="Sin ediciones todavía"
 						description="Crea la primera con el formulario de arriba: es el paso 2 de la cadena y habilita las etapas, los grupos y los partidos."
 					/>
@@ -224,14 +235,18 @@ function AdminTournamentDetailPage() {
 									<div className="flex shrink-0 gap-1">
 										<Button
 											variant="ghost"
-											size="sm"
+											size="icon-sm"
+											icon={Pencil}
+											aria-label="Editar"
+											title="Editar"
 											onClick={() => setEditingEdition(ed)}
-										>
-											Editar
-										</Button>
+										/>
 										<Button
-											variant="ghost"
-											size="sm"
+											variant="destructive"
+											size="icon-sm"
+											icon={Trash2}
+											aria-label="Eliminar"
+											title="Eliminar"
 											onClick={async () => {
 												const ok = await confirm({
 													title: "Eliminar edición",
@@ -249,9 +264,7 @@ function AdminTournamentDetailPage() {
 													);
 												}
 											}}
-										>
-											Eliminar
-										</Button>
+										/>
 									</div>
 								</div>
 								<Link
@@ -261,12 +274,10 @@ function AdminTournamentDetailPage() {
 									className="mt-3 inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
 								>
 									Etapas
-									<span
-										aria-hidden="true"
-										className="transition-transform group-hover:translate-x-0.5"
-									>
-										→
-									</span>
+									<ArrowRight
+										{...DECORATIVE}
+										className="size-4 transition-transform group-hover:translate-x-0.5"
+									/>
 								</Link>
 							</Card>
 						))}
@@ -369,7 +380,11 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 					<option value="statistician">statistician</option>
 					<option value="viewer_staff">viewer_staff</option>
 				</Select>
-				<Button type="submit" disabled={addMember.isPending || !userId}>
+				<Button
+					type="submit"
+					icon={Plus}
+					disabled={addMember.isPending || !userId}
+				>
 					Asignar
 				</Button>
 			</form>
@@ -384,6 +399,7 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 				))}
 				{members.length === 0 && (
 					<EmptyState
+						icon={UserCog}
 						title="Sin miembros"
 						description="Asigna referees, estadísticos u organizadores con el formulario de arriba."
 						className="mt-3"
@@ -457,10 +473,15 @@ function TournamentMemberRow({
 					<option value="statistician">statistician</option>
 					<option value="viewer_staff">viewer_staff</option>
 				</Select>
-				<Button variant="ghost" size="sm" onClick={onSave}>
+				<Button variant="ghost" size="sm" icon={Save} onClick={onSave}>
 					Guardar
 				</Button>
-				<Button variant="destructive" size="sm" onClick={onRemove}>
+				<Button
+					variant="destructive"
+					size="sm"
+					icon={Trash2}
+					onClick={onRemove}
+				>
 					Quitar
 				</Button>
 			</div>
@@ -532,6 +553,7 @@ function EditionEditDialog({
 					</Button>
 					<Button
 						size="sm"
+						icon={Save}
 						onClick={onSubmit}
 						disabled={updateEdition.isPending}
 					>

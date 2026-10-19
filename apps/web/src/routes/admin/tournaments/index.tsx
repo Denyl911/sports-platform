@@ -6,14 +6,18 @@ import {
 	useTournaments,
 } from "@sports/api-client/hooks";
 import {
+	ArrowRight,
 	Badge,
 	Button,
 	Card,
 	CardTitle,
+	DECORATIVE,
 	Field,
 	Input,
+	Plus,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
@@ -157,6 +161,7 @@ function AdminTournamentsPage() {
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={create.isPending || !sportId}
 					>
@@ -220,13 +225,14 @@ function AdminTournamentsPage() {
 									</Badge>
 								</div>
 								<Button
-									variant="ghost"
-									size="sm"
+									variant="destructive"
+									size="icon-sm"
+									icon={Trash2}
+									aria-label="Eliminar"
+									title="Eliminar"
 									className="shrink-0"
 									onClick={() => onDelete(t.id, t.name)}
-								>
-									Eliminar
-								</Button>
+								/>
 							</div>
 							<Link
 								to="/admin/tournaments/$tournamentId"
@@ -234,12 +240,10 @@ function AdminTournamentsPage() {
 								className="inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
 							>
 								Ediciones y etapas
-								<span
-									aria-hidden="true"
-									className="transition-transform group-hover:translate-x-0.5"
-								>
-									→
-								</span>
+								<ArrowRight
+									{...DECORATIVE}
+									className="size-4 transition-transform group-hover:translate-x-0.5"
+								/>
 							</Link>
 						</Card>
 					))}

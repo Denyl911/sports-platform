@@ -10,10 +10,14 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
+	Dumbbell,
 	EmptyState,
 	Field,
 	Input,
+	Plus,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
@@ -131,7 +135,7 @@ function AdminSportsPage() {
 						/>
 					</Field>
 					<div className="flex items-end">
-						<Button type="submit" disabled={create.isPending}>
+						<Button type="submit" icon={Plus} disabled={create.isPending}>
 							Crear
 						</Button>
 					</div>
@@ -157,11 +161,13 @@ function AdminSportsPage() {
 			) : sports.length === 0 ? (
 				search.q ? (
 					<EmptyState
+						icon={Dumbbell}
 						title={`Nada coincide con «${search.q}»`}
 						description="Prueba con otro nombre o borra la búsqueda."
 					/>
 				) : (
 					<EmptyState
+						icon={Dumbbell}
 						title="No hay deportes"
 						description="Crea el primer deporte con el formulario de arriba."
 					/>
@@ -176,7 +182,13 @@ function AdminSportsPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">{s.name}</CardTitle>
+									<CardTitle className="flex items-center gap-2 text-base">
+										<Dumbbell
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
+										{s.name}
+									</CardTitle>
 								</CardHeader>
 								<Badge variant="outline">{s.id}</Badge>
 								{s.hasDraws !== undefined && (
@@ -189,13 +201,14 @@ function AdminSportsPage() {
 								)}
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={() => onDelete(s.id, s.name)}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

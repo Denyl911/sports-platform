@@ -9,11 +9,15 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Field,
 	Input,
+	Plus,
 	Skeleton,
+	Trash2,
 	toast,
+	UserRound,
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -150,6 +154,7 @@ function AdminPlayersPage() {
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={create.isPending}
 					>
@@ -177,11 +182,13 @@ function AdminPlayersPage() {
 			) : players.length === 0 ? (
 				search.q ? (
 					<EmptyState
+						icon={UserRound}
 						title={`Nada coincide con «${search.q}»`}
 						description="Busca por apellido o nombre, o borra la búsqueda."
 					/>
 				) : (
 					<EmptyState
+						icon={UserRound}
 						title="No hay jugadores"
 						description="Crea el primer jugador con el formulario de arriba."
 					/>
@@ -196,7 +203,11 @@ function AdminPlayersPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">
+									<CardTitle className="flex items-center gap-2 text-base">
+										<UserRound
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
 										{p.firstName} {p.lastName}
 									</CardTitle>
 								</CardHeader>
@@ -205,13 +216,14 @@ function AdminPlayersPage() {
 								</div>
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={() => onDelete(p.id, `${p.firstName} ${p.lastName}`)}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

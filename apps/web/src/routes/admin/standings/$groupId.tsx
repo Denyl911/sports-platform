@@ -11,6 +11,9 @@ import {
 	EmptyState,
 	Input,
 	Label,
+	ListOrdered,
+	RefreshCw,
+	Save,
 	Select,
 	Skeleton,
 	StandingsTable,
@@ -116,7 +119,12 @@ function AdminStandingsPage() {
 				<Badge variant={live.isOpen ? "success" : "secondary"}>
 					{live.status}
 				</Badge>
-				<Button size="sm" onClick={onRecalc} disabled={recalc.isPending}>
+				<Button
+					size="sm"
+					icon={RefreshCw}
+					onClick={onRecalc}
+					disabled={recalc.isPending}
+				>
 					{recalc.isPending ? "Recalculando…" : "Recalcular"}
 				</Button>
 			</div>
@@ -129,6 +137,7 @@ function AdminStandingsPage() {
 			{standings ? (
 				rows.length === 0 ? (
 					<EmptyState
+						icon={ListOrdered}
 						title="Sin filas en la tabla"
 						description="Recalcula la tabla o registra resultados para poblarla."
 					/>
@@ -184,7 +193,7 @@ function AdminStandingsPage() {
 							className="w-20"
 						/>
 					</div>
-					<Button type="submit" disabled={updateRow.isPending}>
+					<Button type="submit" icon={Save} disabled={updateRow.isPending}>
 						Guardar fila
 					</Button>
 				</form>

@@ -25,9 +25,15 @@ import {
 	Field,
 	Input,
 	Label,
+	Pencil,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Table2,
+	Trash2,
 	toast,
+	Users,
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -206,6 +212,7 @@ function AdminStageDetailPage() {
 						</Field>
 						<Button
 							type="submit"
+							icon={Plus}
 							className="self-end"
 							disabled={createGroup.isPending}
 						>
@@ -219,6 +226,7 @@ function AdminStageDetailPage() {
 						</div>
 					) : groups.length === 0 ? (
 						<EmptyState
+							icon={Table2}
 							title="Sin grupos todavía"
 							description="Crea el primer grupo con el formulario de arriba: es el paso 4 y es donde inscribes los equipos."
 							className="mt-3"
@@ -240,18 +248,20 @@ function AdminStageDetailPage() {
 									<div className="flex gap-1">
 										<Button
 											variant="ghost"
-											size="sm"
+											size="icon-sm"
+											icon={Pencil}
+											aria-label="Editar"
+											title="Editar"
 											onClick={() => setEditingGroup(g)}
-										>
-											Editar
-										</Button>
+										/>
 										<Button
-											variant="ghost"
-											size="sm"
+											variant="destructive"
+											size="icon-sm"
+											icon={Trash2}
+											aria-label="Eliminar"
+											title="Eliminar"
 											onClick={() => onDeleteGroup(g.id, g.name)}
-										>
-											Eliminar
-										</Button>
+										/>
 									</div>
 								</div>
 							))}
@@ -278,7 +288,7 @@ function AdminStageDetailPage() {
 								</option>
 							))}
 						</Select>
-						<Button type="submit" disabled={registerTeam.isPending}>
+						<Button type="submit" icon={Plus} disabled={registerTeam.isPending}>
 							Inscribir
 						</Button>
 					</form>
@@ -293,6 +303,7 @@ function AdminStageDetailPage() {
 						))}
 						{registrations.length === 0 && (
 							<EmptyState
+								icon={Users}
 								title="Sin inscripciones"
 								description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos."
 							/>
@@ -377,7 +388,12 @@ function GroupEditDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button size="sm" onClick={onSubmit} disabled={updateGroup.isPending}>
+					<Button
+						size="sm"
+						icon={Save}
+						onClick={onSubmit}
+						disabled={updateGroup.isPending}
+					>
 						Guardar
 					</Button>
 				</>
@@ -452,7 +468,12 @@ function RegistrationRow({
 				<Button variant="ghost" size="sm" onClick={onMove}>
 					Mover
 				</Button>
-				<Button variant="destructive" size="sm" onClick={onRemove}>
+				<Button
+					variant="destructive"
+					size="sm"
+					icon={Trash2}
+					onClick={onRemove}
+				>
 					Quitar
 				</Button>
 			</div>
@@ -543,6 +564,7 @@ function CreateMatchInline({
 			</Field>
 			<Button
 				type="submit"
+				icon={Plus}
 				className="self-end"
 				disabled={createMatch.isPending}
 			>
@@ -664,6 +686,7 @@ function RosterSection({
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={addPlayer.isPending || !playerId}
 					>
@@ -674,6 +697,7 @@ function RosterSection({
 			<div className="space-y-1">
 				{roster.length === 0 ? (
 					<EmptyState
+						icon={Users}
 						title="Plantel vacío"
 						description={
 							players.length === 0
@@ -704,14 +728,16 @@ function RosterSection({
 								<span className="flex gap-1">
 									<Button
 										variant="ghost"
-										size="sm"
+										size="icon-sm"
+										icon={Pencil}
+										aria-label="Editar"
+										title="Editar"
 										onClick={() => setEditingEntry({ roster: r, player })}
-									>
-										Editar
-									</Button>
+									/>
 									<Button
-										variant="ghost"
+										variant="destructive"
 										size="sm"
+										icon={Trash2}
 										onClick={() =>
 											onRemovePlayer(
 												r.id,
@@ -788,7 +814,12 @@ function RosterEditDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button size="sm" onClick={onSubmit} disabled={updateEntry.isPending}>
+					<Button
+						size="sm"
+						icon={Save}
+						onClick={onSubmit}
+						disabled={updateEntry.isPending}
+					>
 						Guardar
 					</Button>
 				</>

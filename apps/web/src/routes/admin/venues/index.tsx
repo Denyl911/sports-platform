@@ -9,10 +9,14 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Field,
 	Input,
+	MapPin,
+	Plus,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
@@ -126,7 +130,7 @@ function AdminVenuesPage() {
 						/>
 					</Field>
 					<div className="flex items-end">
-						<Button type="submit" disabled={create.isPending}>
+						<Button type="submit" icon={Plus} disabled={create.isPending}>
 							Crear
 						</Button>
 					</div>
@@ -152,11 +156,13 @@ function AdminVenuesPage() {
 			) : venues.length === 0 ? (
 				search.q ? (
 					<EmptyState
+						icon={MapPin}
 						title={`Nada coincide con «${search.q}»`}
 						description="Prueba con otro nombre o borra la búsqueda."
 					/>
 				) : (
 					<EmptyState
+						icon={MapPin}
 						title="No hay sedes"
 						description="Crea la primera sede con el formulario de arriba."
 					/>
@@ -171,15 +177,24 @@ function AdminVenuesPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">{v.name}</CardTitle>
+									<CardTitle className="flex items-center gap-2 text-base">
+										<MapPin
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
+										{v.name}
+									</CardTitle>
 								</CardHeader>
 								<div className="text-sm text-(--sea-ink-soft)">
 									{v.address ?? "Sin dirección"} · {v.fieldCount ?? 1} canchas
 								</div>
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={async () => {
 									const ok = await confirm({
@@ -198,9 +213,7 @@ function AdminVenuesPage() {
 										);
 									}
 								}}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

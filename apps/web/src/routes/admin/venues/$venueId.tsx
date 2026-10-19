@@ -7,12 +7,14 @@ import {
 	CardTitle,
 	Input,
 	Label,
+	Save,
 	Skeleton,
 	toast,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/venues/$venueId")({
@@ -65,9 +67,13 @@ function AdminVenueDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/venues" className="text-sm text-(--sea-ink-soft)">
-				← Sedes
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Sedes", to: "/admin/venues" },
+					{ label: venue.name },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>Editar sede</CardTitle>
@@ -96,7 +102,7 @@ function AdminVenueDetailPage() {
 							onChange={(e) => setFieldCount(Number(e.target.value))}
 						/>
 					</div>
-					<Button type="submit" disabled={update.isPending}>
+					<Button type="submit" icon={Save} disabled={update.isPending}>
 						Guardar
 					</Button>
 				</form>

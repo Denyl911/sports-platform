@@ -7,12 +7,14 @@ import {
 	CardTitle,
 	Input,
 	Label,
+	Save,
 	Skeleton,
 	toast,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/players/$playerId")({
@@ -70,9 +72,13 @@ function AdminPlayerDetailPage() {
 	};
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/players" className="text-sm text-(--sea-ink-soft)">
-				← Jugadores
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Jugadores", to: "/admin/players" },
+					{ label: `${player.firstName} ${player.lastName}` },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>Editar jugador</CardTitle>
@@ -101,7 +107,7 @@ function AdminPlayerDetailPage() {
 							onChange={(e) => setIdCardNumber(e.target.value)}
 						/>
 					</div>
-					<Button type="submit" disabled={update.isPending}>
+					<Button type="submit" icon={Save} disabled={update.isPending}>
 						Guardar
 					</Button>
 				</form>

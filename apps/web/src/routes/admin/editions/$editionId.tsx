@@ -6,18 +6,25 @@ import {
 	useUpdateStage,
 } from "@sports/api-client/hooks";
 import {
+	ArrowRight,
 	Badge,
 	Button,
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EditDialog,
 	EmptyState,
 	Field,
 	Input,
 	Label,
+	Layers,
+	Pencil,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
@@ -163,6 +170,7 @@ function AdminEditionDetailPage() {
 					</Field>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={createStage.isPending}
 					>
@@ -177,6 +185,7 @@ function AdminEditionDetailPage() {
 				) : stages.length === 0 ? (
 					<EmptyState
 						className="mt-4"
+						icon={Layers}
 						title="Sin etapas todavía"
 						description="Crea la primera con el formulario de arriba: es el paso 3, y habilita los grupos y los partidos."
 					/>
@@ -202,14 +211,18 @@ function AdminEditionDetailPage() {
 									<div className="flex shrink-0 gap-1">
 										<Button
 											variant="ghost"
-											size="sm"
+											size="icon-sm"
+											icon={Pencil}
+											aria-label="Editar"
+											title="Editar"
 											onClick={() => setEditingStage(s)}
-										>
-											Editar
-										</Button>
+										/>
 										<Button
-											variant="ghost"
-											size="sm"
+											variant="destructive"
+											size="icon-sm"
+											icon={Trash2}
+											aria-label="Eliminar"
+											title="Eliminar"
 											onClick={async () => {
 												const ok = await confirm({
 													title: "Eliminar etapa",
@@ -227,9 +240,7 @@ function AdminEditionDetailPage() {
 													);
 												}
 											}}
-										>
-											Eliminar
-										</Button>
+										/>
 									</div>
 								</div>
 								<Link
@@ -242,12 +253,10 @@ function AdminEditionDetailPage() {
 									className="mt-3 inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
 								>
 									Grupos y equipos
-									<span
-										aria-hidden="true"
-										className="transition-transform group-hover:translate-x-0.5"
-									>
-										→
-									</span>
+									<ArrowRight
+										{...DECORATIVE}
+										className="size-4 transition-transform group-hover:translate-x-0.5"
+									/>
 								</Link>
 							</Card>
 						))}
@@ -308,7 +317,12 @@ function StageEditDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button size="sm" onClick={onSubmit} disabled={updateStage.isPending}>
+					<Button
+						size="sm"
+						icon={Save}
+						onClick={onSubmit}
+						disabled={updateStage.isPending}
+					>
 						Guardar
 					</Button>
 				</>

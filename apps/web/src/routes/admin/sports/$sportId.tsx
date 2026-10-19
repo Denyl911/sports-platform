@@ -12,18 +12,24 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	Dumbbell,
 	EditDialog,
 	EmptyState,
 	Input,
 	Label,
+	Pencil,
+	Plus,
+	Save,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
 	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/sports/$sportId")({
@@ -97,9 +103,13 @@ function AdminSportDetailPage() {
 
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/sports" className="text-sm text-(--sea-ink-soft)">
-				← Deportes
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Deportes", to: "/admin/sports" },
+					{ label: sport.name },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>{sport.name}</CardTitle>
@@ -159,7 +169,7 @@ function AdminSportDetailPage() {
 						<option value="true">afecta score</option>
 						<option value="false">no afecta</option>
 					</Select>
-					<Button type="submit" disabled={createEvent.isPending}>
+					<Button type="submit" icon={Plus} disabled={createEvent.isPending}>
 						Crear
 					</Button>
 				</form>
@@ -180,16 +190,20 @@ function AdminSportDetailPage() {
 							)}
 							<Button
 								variant="ghost"
-								size="sm"
-								className="h-5 px-1 text-xs"
+								size="icon-sm"
+								icon={Pencil}
+								aria-label="Editar"
+								title="Editar"
+								className="h-6 w-6"
 								onClick={() => setEditingEvent(et)}
-							>
-								Editar
-							</Button>
+							/>
 							<Button
-								variant="ghost"
-								size="sm"
-								className="h-5 px-1 text-xs"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
+								className="h-6 w-6"
 								onClick={async () => {
 									const ok = await confirm({
 										title: "Eliminar tipo de evento",
@@ -207,14 +221,13 @@ function AdminSportDetailPage() {
 										);
 									}
 								}}
-							>
-								×
-							</Button>
+							/>
 						</div>
 					))}
 				</div>
 				{eventTypes.length === 0 && (
 					<EmptyState
+						icon={Dumbbell}
 						title="Sin tipos de evento"
 						description="Define los códigos (gol, tarjeta…) con los que se registrarán las incidencias."
 						className="mt-3"
@@ -287,7 +300,12 @@ function EventTypeEditDialog({
 					<Button variant="ghost" size="sm" onClick={onClose}>
 						Cancelar
 					</Button>
-					<Button size="sm" onClick={onSubmit} disabled={updateEvent.isPending}>
+					<Button
+						size="sm"
+						icon={Save}
+						onClick={onSubmit}
+						disabled={updateEvent.isPending}
+					>
 						Guardar
 					</Button>
 				</>

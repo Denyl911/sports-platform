@@ -1,4 +1,4 @@
-import { Badge, cn } from "@sports/ui";
+import { Badge, Check, ChevronRight, cn, DECORATIVE } from "@sports/ui";
 
 /**
  * La cadena de una competencia, a la vista: torneo → edición → etapa →
@@ -52,13 +52,16 @@ export function AdminFlowSteps({
 							aria-current={active ? "step" : undefined}
 							variant={done ? "success" : active ? "default" : "outline"}
 						>
-							<span aria-hidden="true">{done ? "✓" : i + 1}</span>
+							<span aria-hidden="true">
+								{done ? <Check {...DECORATIVE} className="size-3.5" /> : i + 1}
+							</span>
 							{step.label}
 						</Badge>
 						{i < STEPS.length - 1 && (
-							<span aria-hidden="true" className="text-(--sea-ink-soft)/50">
-								›
-							</span>
+							<ChevronRight
+								{...DECORATIVE}
+								className="size-3.5 text-(--sea-ink-soft)/50"
+							/>
 						)}
 					</li>
 				);

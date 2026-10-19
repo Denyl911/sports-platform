@@ -11,12 +11,16 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Field,
 	Input,
+	Plus,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
+	Users,
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -158,6 +162,7 @@ function AdminTeamsPage() {
 					</div>
 					<Button
 						type="submit"
+						icon={Plus}
 						className="self-end"
 						disabled={create.isPending}
 					>
@@ -209,6 +214,7 @@ function AdminTeamsPage() {
 				</div>
 			) : teams.length === 0 ? (
 				<EmptyState
+					icon={Users}
 					title="No hay equipos"
 					description={
 						clubFilter
@@ -226,13 +232,22 @@ function AdminTeamsPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">{t.name}</CardTitle>
+									<CardTitle className="flex items-center gap-2 text-base">
+										<Users
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
+										{t.name}
+									</CardTitle>
 								</CardHeader>
 								<Badge variant="outline">{t.category ?? "open"}</Badge>
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={async () => {
 									const ok = await confirm({
@@ -251,9 +266,7 @@ function AdminTeamsPage() {
 										);
 									}
 								}}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

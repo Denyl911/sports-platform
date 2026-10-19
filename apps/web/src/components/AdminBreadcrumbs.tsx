@@ -3,6 +3,7 @@ import {
 	useStagesByEdition,
 	useTournamentEditions,
 } from "@sports/api-client/hooks";
+import { ChevronRight, DECORATIVE } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { api } from "../lib/api";
@@ -28,7 +29,7 @@ export function AdminBreadcrumbs({ pieces }: { pieces: ChainPiece[] }) {
 					const isLast = piece === pieces[pieces.length - 1];
 					return (
 						<li
-							key={`${piece.label}→${piece.to ?? "current"}`}
+							key={`${piece.label}:${piece.to ?? "current"}`}
 							className="flex items-center gap-1.5"
 						>
 							{piece.to && !isLast ? (
@@ -47,9 +48,10 @@ export function AdminBreadcrumbs({ pieces }: { pieces: ChainPiece[] }) {
 								</span>
 							)}
 							{!isLast && (
-								<span aria-hidden="true" className="text-(--sea-ink-soft)/50">
-									›
-								</span>
+								<ChevronRight
+									{...DECORATIVE}
+									className="size-3.5 text-(--sea-ink-soft)/50"
+								/>
 							)}
 						</li>
 					);

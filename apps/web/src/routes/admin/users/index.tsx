@@ -10,12 +10,16 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	DECORATIVE,
 	EmptyState,
 	Field,
 	Input,
+	Plus,
 	Select,
 	Skeleton,
+	Trash2,
 	toast,
+	UserCog,
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -168,7 +172,7 @@ function AdminUsersPage() {
 						</Select>
 					</div>
 					<div className="sm:col-span-2">
-						<Button type="submit" disabled={create.isPending}>
+						<Button type="submit" icon={Plus} disabled={create.isPending}>
 							Crear
 						</Button>
 					</div>
@@ -193,6 +197,7 @@ function AdminUsersPage() {
 				</div>
 			) : users.length === 0 ? (
 				<EmptyState
+					icon={UserCog}
 					title="No hay usuarios"
 					description="Crea la primera cuenta con el formulario de arriba."
 				/>
@@ -206,7 +211,13 @@ function AdminUsersPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="text-base">{u.fullName}</CardTitle>
+									<CardTitle className="flex items-center gap-2 text-base">
+										<UserCog
+											{...DECORATIVE}
+											className="size-4 shrink-0 text-(--sea-ink-soft)"
+										/>
+										{u.fullName}
+									</CardTitle>
 								</CardHeader>
 								<div className="text-sm text-(--sea-ink-soft)">{u.email}</div>
 								<Badge
@@ -217,13 +228,14 @@ function AdminUsersPage() {
 								</Badge>
 							</Link>
 							<Button
-								variant="ghost"
-								size="sm"
+								variant="destructive"
+								size="icon-sm"
+								icon={Trash2}
+								aria-label="Eliminar"
+								title="Eliminar"
 								className="mt-2 self-start"
 								onClick={() => onDelete(u.id, u.fullName)}
-							>
-								Eliminar
-							</Button>
+							/>
 						</Card>
 					))}
 				</div>

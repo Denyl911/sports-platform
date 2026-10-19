@@ -8,13 +8,16 @@ import {
 	EmptyState,
 	Input,
 	Label,
+	Save,
 	Select,
 	Skeleton,
 	toast,
+	Users,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
+import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/teams/$teamId")({
@@ -43,6 +46,7 @@ function AdminTeamDetailPage() {
 	if (!team)
 		return (
 			<EmptyState
+				icon={Users}
 				title="Equipo no encontrado"
 				description="El equipo no existe o la consulta falló. Vuelve a la lista para intentarlo."
 			/>
@@ -61,9 +65,13 @@ function AdminTeamDetailPage() {
 	};
 	return (
 		<div className="space-y-6">
-			<Link to="/admin/teams" className="text-sm text-(--sea-ink-soft)">
-				← Equipos
-			</Link>
+			<AdminBreadcrumbs
+				pieces={[
+					{ label: "Admin", to: "/admin" },
+					{ label: "Equipos", to: "/admin/teams" },
+					{ label: team.name },
+				]}
+			/>
 			<Card className="p-4">
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>Editar equipo</CardTitle>
@@ -88,7 +96,7 @@ function AdminTeamDetailPage() {
 							<option value="senior">senior</option>
 						</Select>
 					</div>
-					<Button type="submit" disabled={update.isPending}>
+					<Button type="submit" icon={Save} disabled={update.isPending}>
 						Guardar
 					</Button>
 				</form>

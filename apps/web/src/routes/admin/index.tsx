@@ -4,6 +4,19 @@ import {
 	useTournaments,
 	useUsers,
 } from "@sports/api-client/hooks";
+import {
+	Building2,
+	DECORATIVE,
+	Dumbbell,
+	ExternalLink,
+	type LucideIcon,
+	MapPin,
+	Radio,
+	Trophy,
+	UserCog,
+	UserRound,
+	Users,
+} from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FirstTournamentGuide } from "../../components/FirstTournamentGuide";
 import { api } from "../../lib/api";
@@ -25,11 +38,20 @@ function AdminDashboard() {
 		usuarios: (usersData as { total: number } | undefined)?.total,
 	};
 
-	const cards = [
+	const cards: Array<{
+		to: string;
+		title: string;
+		desc: string;
+		icon: LucideIcon;
+		stat: number | undefined;
+		statOne: string;
+		statMany: string;
+	}> = [
 		{
 			to: "/admin/tournaments",
 			title: "Torneos",
 			desc: "Crear y editar torneos, ediciones, etapas, grupos y miembros.",
+			icon: Trophy,
 			stat: totals.torneos,
 			statOne: "torneo",
 			statMany: "torneos",
@@ -38,6 +60,7 @@ function AdminDashboard() {
 			to: "/admin/clubs",
 			title: "Clubes",
 			desc: "Catálogo de clubes.",
+			icon: Building2,
 			stat: undefined,
 			statOne: "club",
 			statMany: "clubes",
@@ -46,6 +69,7 @@ function AdminDashboard() {
 			to: "/admin/teams",
 			title: "Equipos",
 			desc: "Equipos por club y categoría.",
+			icon: Users,
 			stat: totals.equipos,
 			statOne: "equipo",
 			statMany: "equipos",
@@ -54,6 +78,7 @@ function AdminDashboard() {
 			to: "/admin/players",
 			title: "Jugadores",
 			desc: "Registro de jugadores.",
+			icon: UserRound,
 			stat: undefined,
 			statOne: "jugador",
 			statMany: "jugadores",
@@ -62,6 +87,7 @@ function AdminDashboard() {
 			to: "/admin/venues",
 			title: "Sedes",
 			desc: "Canchas y sedes de partidos.",
+			icon: MapPin,
 			stat: undefined,
 			statOne: "sede",
 			statMany: "sedes",
@@ -70,6 +96,7 @@ function AdminDashboard() {
 			to: "/admin/sports",
 			title: "Deportes",
 			desc: "Deportes y tipos de evento.",
+			icon: Dumbbell,
 			stat: undefined,
 			statOne: "deporte",
 			statMany: "deportes",
@@ -78,6 +105,7 @@ function AdminDashboard() {
 			to: "/admin/users",
 			title: "Usuarios",
 			desc: "Usuarios y membresías por torneo.",
+			icon: UserCog,
 			stat: totals.usuarios,
 			statOne: "usuario",
 			statMany: "usuarios",
@@ -96,12 +124,14 @@ function AdminDashboard() {
 				<div className="mt-4 flex flex-wrap gap-2">
 					<Link
 						to="/"
-						className="demo-button-secondary rounded-full border px-4 py-2 text-sm"
+						className="demo-button-secondary inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm"
 					>
 						Volver al sitio público
+						<ExternalLink {...DECORATIVE} className="size-4" />
 					</Link>
 					{totals.enVivo != null && totals.enVivo > 0 && (
-						<span className="rounded-full border px-4 py-2 text-sm font-bold">
+						<span className="inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold">
+							<Radio {...DECORATIVE} className="size-4 text-[var(--palm)]" />
 							{totals.enVivo} en vivo ahora
 						</span>
 					)}
@@ -113,6 +143,9 @@ function AdminDashboard() {
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				{cards.map((c) => (
 					<Link key={c.to} to={c.to} className="demo-card no-underline">
+						<span className="mb-2 flex size-10 items-center justify-center rounded-xl bg-(--chip-bg) text-(--sea-ink)">
+							<c.icon {...DECORATIVE} className="size-5" />
+						</span>
 						<h3 className="font-bold">{c.title}</h3>
 						<p className="demo-muted text-sm">{c.desc}</p>
 						{c.stat != null && (

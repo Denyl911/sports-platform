@@ -1,3 +1,17 @@
+import {
+	Building2,
+	ChevronDown,
+	ChevronRight,
+	DECORATIVE,
+	Dumbbell,
+	Gauge,
+	type LucideIcon,
+	MapPin,
+	Trophy,
+	UserCog,
+	UserRound,
+	Users,
+} from "@sports/ui";
 import { Link, useMatches } from "@tanstack/react-router";
 import * as React from "react";
 
@@ -5,10 +19,13 @@ import * as React from "react";
  * Nav admin en una sola fuente: la sidebar (≥sm) y las pills (<sm)
  * renderizan de aquí y por eso no pueden desalinearse de nuevo.
  * `exact` solo en Dashboard — /admin es prefijo de todo lo demás.
+ * El icono es el del vocabulario de dominio (packages/ui icon.ts), uno por
+ * término, y viaja con el item para que las dos navs digan lo mismo.
  */
 export interface AdminNavItem {
 	to: string;
 	label: string;
+	icon: LucideIcon;
 	exact?: boolean;
 }
 
@@ -21,23 +38,23 @@ export const ADMIN_NAV: AdminNavGroup[] = [
 	{
 		title: "Competencia",
 		items: [
-			{ to: "/admin", label: "Dashboard", exact: true },
-			{ to: "/admin/tournaments", label: "Torneos" },
+			{ to: "/admin", label: "Dashboard", icon: Gauge, exact: true },
+			{ to: "/admin/tournaments", label: "Torneos", icon: Trophy },
 		],
 	},
 	{
 		title: "Catálogo",
 		items: [
-			{ to: "/admin/venues", label: "Sedes" },
-			{ to: "/admin/clubs", label: "Clubes" },
-			{ to: "/admin/teams", label: "Equipos" },
-			{ to: "/admin/players", label: "Jugadores" },
-			{ to: "/admin/sports", label: "Deportes" },
+			{ to: "/admin/venues", label: "Sedes", icon: MapPin },
+			{ to: "/admin/clubs", label: "Clubes", icon: Building2 },
+			{ to: "/admin/teams", label: "Equipos", icon: Users },
+			{ to: "/admin/players", label: "Jugadores", icon: UserRound },
+			{ to: "/admin/sports", label: "Deportes", icon: Dumbbell },
 		],
 	},
 	{
 		title: "Acceso",
-		items: [{ to: "/admin/users", label: "Usuarios" }],
+		items: [{ to: "/admin/users", label: "Usuarios", icon: UserCog }],
 	},
 ];
 
@@ -108,9 +125,11 @@ export function AdminSidebar() {
 							className="flex w-full items-center justify-between gap-2 rounded-lg px-3 pt-3 pb-1 text-[10px] font-bold tracking-widest text-(--sea-ink-soft) uppercase hover:text-(--sea-ink)"
 						>
 							{group.title}
-							<span aria-hidden="true" className="text-xs leading-none">
-								{userCollapsed ? "▸" : "▾"}
-							</span>
+							{userCollapsed ? (
+								<ChevronRight {...DECORATIVE} className="size-3.5" />
+							) : (
+								<ChevronDown {...DECORATIVE} className="size-3.5" />
+							)}
 						</button>
 						{isOpen && (
 							<div className="flex flex-col gap-0.5">
@@ -119,11 +138,12 @@ export function AdminSidebar() {
 										key={item.to}
 										to={item.to}
 										{...(item.exact ? { activeOptions: { exact: true } } : {})}
-										className={`${sidebarIdle} block whitespace-nowrap`}
+										className={`${sidebarIdle} flex items-center gap-2 whitespace-nowrap`}
 										activeProps={{
-											className: `${sidebarIdle} ${sidebarActive}`,
+											className: `${sidebarIdle} ${sidebarActive} flex items-center gap-2 whitespace-nowrap`,
 										}}
 									>
+										<item.icon {...DECORATIVE} className="size-4 shrink-0" />
 										{item.label}
 									</Link>
 								))}
@@ -150,6 +170,7 @@ export function AdminMobileNav() {
 						className="demo-pill"
 						activeProps={{ className: `demo-pill ${pillActive}` }}
 					>
+						<item.icon {...DECORATIVE} className="size-3.5" />
 						{item.label}
 					</Link>
 				)),
