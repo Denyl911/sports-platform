@@ -31,7 +31,12 @@ function AdminTeamDetailPage() {
 		queryFn: () => unwrap(api.teams({ id: teamId }).get()),
 	});
 	const team = data as
-		| { id: string; name: string; clubId: string; category?: string | null }
+		| {
+				id: string;
+				name: string;
+				clubId: string | null;
+				category?: string | null;
+		  }
 		| undefined;
 	const update = useUpdateTeam(api);
 	const [name, setName] = React.useState("");

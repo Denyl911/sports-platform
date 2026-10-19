@@ -51,6 +51,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- **Un equipo sin club ya no rompe la lista pública.** `GET /teams` devuelve `clubId: null` para un equipo dado de alta sin club (el alta rápida desde la etapa lo hace), y las dos vistas públicas asumían el id: `/teams` y `/teams/:id` tiraban `t.clubId.slice(...)`. Ahora la lista muestra el nombre del club (los clubes ya viajan en la misma pantalla) o "Sin club", el detalle resuelve el club en el loader, y los tipos de las cuatro vistas dejan de mentir (`clubId: string | null`).
+
 - **Un triple suma 3 en el marcador, no 1.** El contrato de `POST /matches/:id/events` defaulteaba `eventValue` a 1 antes de que el service pudiera leer el `defaultValue` del tipo de evento, así que el catálogo por deporte era decorativo en el marcador: todo evento puntuable sumaba 1. Ahora un `eventValue` omitido vale lo que dice el tipo de evento (triple 3, tiro libre 1, canasta de 2 dos) y un valor explícito sigue mandando para corregir. Regresión en `apps/api/test/sports-seed.test.ts` (el triple suma 3 y un override de 2 deja el marcador en 5).
 
 - **`GET /sports/:id/event-types` deja de exigir el deporte dos veces.** El endpoint pedía `sportId` en la query además de leerlo de la ruta: el hook del admin lo repetía para pasar la validación y la ficha pública no, así que `/sports/:id` respondía 500 con el 400 de validación dentro. La query filtra ahora solo por `affectsScore`; el deporte lo pone la ruta, el hook deja de mandar `sportId` y los dos `{} as never` del loader público desaparecen. Test de regresión en `catalog.test.ts`: lee sin query y no mezcla el catálogo de un deporte con el de otro.

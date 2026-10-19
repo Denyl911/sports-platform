@@ -64,7 +64,7 @@ function AdminTeamsPage() {
 				items: Array<{
 					id: string;
 					name: string;
-					clubId: string;
+					clubId: string | null;
 					category?: string | null;
 				}>;
 				total: number;

@@ -61,7 +61,9 @@ function TeamsPage() {
 			items: Array<{
 				id: string;
 				name: string;
-				clubId: string;
+				// El club es opcional: un equipo puede existir sin club (alta
+				// rápida desde la etapa), y la lista pública no puede asumirlo.
+				clubId: string | null;
 				category?: string | null;
 			}>;
 			total: number;
@@ -70,6 +72,7 @@ function TeamsPage() {
 	const clubs = (
 		clubsData as { items: Array<{ id: string; name: string }>; total: number }
 	).items;
+	const clubName = new Map(clubs.map((c) => [c.id, c.name]));
 
 	return (
 		<div className="demo-page space-y-4">
@@ -119,7 +122,9 @@ function TeamsPage() {
 							<div className="mt-2 flex gap-2">
 								<Badge variant="outline" className="gap-1.5">
 									<Building2 {...DECORATIVE} className="size-3.5" />
-									{t.clubId.slice(0, 8)}
+									{t.clubId
+										? (clubName.get(t.clubId) ?? t.clubId.slice(0, 8))
+										: "Sin club"}
 								</Badge>
 								{t.category && <Badge>{t.category}</Badge>}
 							</div>

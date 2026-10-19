@@ -1,6 +1,6 @@
 import { queryKeys, unwrap } from "@sports/api-client";
 import { Badge, Building2, Card, DECORATIVE } from "@sports/ui";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../../lib/api";
 
@@ -14,6 +14,15 @@ export const Route = createFileRoute("/teams/$teamId")({
 			queryKey: queryKeys.teams.detail(params.teamId),
 			queryFn: () => unwrap(api.teams({ id: params.teamId }).get()),
 		});
+		// El club es opcional: se precarga solo si el equipo tiene uno.
+		const clubId = (team as { clubId?: string | null } | undefined)?.clubId;
+		if (clubId) {
+			await qc.query({
+				staleTime: "static",
+				queryKey: queryKeys.clubs.detail(clubId),
+				queryFn: () => unwrap(api.clubs({ id: clubId }).get()),
+			});
+		}
 		return team;
 	},
 	head: ({ loaderData }) => {
@@ -40,9 +49,16 @@ function TeamDetailPage() {
 	const team = data as {
 		id: string;
 		name: string;
-		clubId: string;
+		clubId: string | null;
 		category?: string | null;
 	};
+	// El club se precargó en el loader cuando existe: acá se lee de cache.
+	const { data: clubData } = useQuery({
+		queryKey: queryKeys.clubs.detail(team.clubId ?? ""),
+		queryFn: () => unwrap(api.clubs({ id: team.clubId as string }).get()),
+		enabled: !!team.clubId,
+	});
+	const club = clubData as { id: string; name: string } | undefined;
 
 	return (
 		<div className="demo-page space-y-4">
@@ -51,7 +67,7 @@ function TeamDetailPage() {
 				<div className="flex gap-2">
 					<Badge variant="outline" className="gap-1.5">
 						<Building2 {...DECORATIVE} className="size-3.5" />
-						Club {team.clubId.slice(0, 8)}
+						{team.clubId ? (club?.name ?? "Club") : "Sin club"}
 					</Badge>
 					{team.category && <Badge>{team.category}</Badge>}
 				</div>
