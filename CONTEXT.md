@@ -20,6 +20,14 @@ _Avoid_: temporada, temporada deportiva, categoría, versión, "torneo nuevo" (p
 Una subdivisión de la edición con su formato (grupos, eliminación, liga) y sus partidos. Es donde se inscribe un equipo y donde vive la tabla de posiciones.
 _Avoid_: fase, ronda (la ronda es `roundNumber`: la fila de partidos dentro de una etapa), llave (una llave es la forma de una etapa de eliminación, no la etapa en general)
 
+**Avance** (advancement):
+La regla que decide qué equipos pasan de una etapa a la siguiente, y su materialización. Vive en `advancementRules` de la etapa de origen (cuántos por grupo y cómo se cruzan) y se recomputa en cada resultado: la previa (`GET /stages/:id/qualifiers`) dice quién clasifica hoy, y la escritura que termina un partido re-inscribe a los clasificados en la etapa siguiente. No es un comando que alguien corre una vez ni una cola.
+_Avoid_: progresión, pase, ascenso, "los que pasan" (como nombre de feature)
+
+**Clasificado** (qualifier):
+Un equipo que la regla de avance de su etapa manda a la etapa siguiente. Es una posición de la tabla aplicada a la regla, no una inscripción nueva: la etapa siguiente, cuando tiene regla, es derivada y sus inscritos son exactamente los clasificados.
+_Avoid_: ganador, "los que pasan" (como entidad)
+
 **Grupo** (stageGroup):
 Una agrupación de equipos dentro de una etapa de formato de grupos.
 _Avoid_: zona, sector, serie, categoría
