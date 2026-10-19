@@ -501,9 +501,9 @@ describe("catalog - sports y sport-event-types", () => {
 		}).patch({ code: "goal" } as never, { headers: await h(admin) });
 		expect(patchDup.status).toBe(409);
 
-		// GET con filtro affectsScore (requiere sportId en query por schema actual)
+		// GET con filtro affectsScore; el deporte lo pone la ruta
 		const filtered = await api.sports({ id: football.id })["event-types"].get({
-			query: { sportId: football.id, affectsScore: true } as never,
+			query: { affectsScore: true },
 		});
 		expect(filtered.status).toBe(200);
 		if (!filtered.data) throw new Error("no data");
@@ -518,6 +518,39 @@ describe("catalog - sports y sport-event-types", () => {
 			headers: await h(admin),
 		});
 		expect(delOk.status).toBe(200);
+	});
+
+	it("GET event-types sin query: el deporte lo pone la ruta y los catálogos no se mezclan", async () => {
+		const admin = await seedUser({ role: "admin" });
+		const football = await seedSport("football");
+		const basketball = await seedSport("basketball");
+
+		await api
+			.sports({ id: football.id })
+			["event-types"].post(
+				{ code: "goal", name: "Gol", affectsScore: true } as never,
+				{ headers: await h(admin) },
+			);
+		await api
+			.sports({ id: football.id })
+			["event-types"].post({ code: "yellow_card", name: "Amarilla" } as never, {
+				headers: await h(admin),
+			});
+		await api
+			.sports({ id: basketball.id })
+			["event-types"].post({ code: "foul", name: "Falta" } as never, {
+				headers: await h(admin),
+			});
+
+		// El cliente que no repite el id en la query también lee.
+		const all = await api.sports({ id: football.id })["event-types"].get();
+		expect(all.status).toBe(200);
+		if (!all.data) throw new Error("no data");
+		expect(all.data.items.map((e) => e.code)).toEqual(["goal", "yellow_card"]);
+		expect(all.data.total).toBe(2);
+
+		const other = await api.sports({ id: basketball.id })["event-types"].get();
+		expect(other.data?.items.map((e) => e.code)).toEqual(["foul"]);
 	});
 
 	it("concurrente mismo code mismo deporte -> [200,409]", async () => {

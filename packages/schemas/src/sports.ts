@@ -41,9 +41,10 @@ export const sportEventTypeParamsSchema = t.Object({
 	eventTypeId: t.String({ format: "uuid" }),
 });
 
-// Query params para el catálogo de eventos de un deporte
+// Query params para el catálogo de eventos de un deporte. El deporte viaja en
+// la ruta (`/sports/:id/event-types`), no en la query: repetirlo invitaba a
+// contradecirlo, y el cliente que no lo repetía recibía un 400.
 export const sportEventTypeFilterQuerySchema = t.Object({
-	sportId: t.String({ minLength: 1, maxLength: 32 }),
 	affectsScore: t.Optional(t.Boolean()),
 });
 

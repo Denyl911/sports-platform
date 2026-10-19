@@ -25,11 +25,7 @@ export const Route = createFileRoute("/sports/$sportId")({
 			staleTime: "static",
 			queryKey: queryKeys.sports.eventTypes(params.sportId),
 			queryFn: () =>
-				unwrap(
-					api
-						.sports({ id: params.sportId })
-						["event-types"].get({ query: {} as never }),
-				),
+				unwrap(api.sports({ id: params.sportId })["event-types"].get()),
 		});
 		return sport;
 	},
@@ -56,10 +52,7 @@ function SportDetailPage() {
 	});
 	const { data: eventTypesData } = useSuspenseQuery({
 		queryKey: queryKeys.sports.eventTypes(sportId),
-		queryFn: () =>
-			unwrap(
-				api.sports({ id: sportId })["event-types"].get({ query: {} as never }),
-			),
+		queryFn: () => unwrap(api.sports({ id: sportId })["event-types"].get()),
 	});
 
 	const s = sport as { id: string; name: string; hasDraws?: boolean | null };

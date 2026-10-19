@@ -65,7 +65,7 @@ export function useSportEventTypes(
 		queryFn: () =>
 			unwrap(
 				client.sports({ id: sportId })["event-types"].get({
-					query: { sportId, ...(filters ?? {}) },
+					query: { ...(filters ?? {}) },
 				}),
 			),
 		enabled: !!sportId && options?.enabled !== false,

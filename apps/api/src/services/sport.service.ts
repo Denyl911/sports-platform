@@ -87,7 +87,9 @@ export async function deleteSport(id: string) {
 // Catálogo de tipos de evento por deporte
 // ==========================================
 
-export async function listSportEventTypes(filter: SportEventTypeFilterQuery) {
+export async function listSportEventTypes(
+	filter: SportEventTypeFilterQuery & { sportId: string },
+) {
 	const conditions = [eq(sportEventTypes.sportId, filter.sportId)];
 	if (filter.affectsScore !== undefined) {
 		conditions.push(eq(sportEventTypes.affectsScore, filter.affectsScore));

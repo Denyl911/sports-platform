@@ -82,10 +82,7 @@ describe("validation - P3 transversal (uuid, limit, bodies)", () => {
 			["GET /venues/:id", () => api.venues({ id: BAD_UUID }).get()],
 			[
 				"GET /sports/:id/event-types (id largo 33)",
-				() =>
-					api.sports({ id: "a".repeat(33) as never })["event-types"].get({
-						query: { sportId: "a".repeat(33) } as never,
-					}),
+				() => api.sports({ id: "a".repeat(33) as never })["event-types"].get(),
 			],
 			[
 				"GET /groups/:groupId/standings",
