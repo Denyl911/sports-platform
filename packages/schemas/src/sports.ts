@@ -26,8 +26,14 @@ export const updateSportSchema = createUpdateSchema(sports, {
 });
 
 export const selectVenueSchema = createSelectSchema(venues);
-export const insertVenueSchema = createInsertSchema(venues);
-export const updateVenueSchema = createUpdateSchema(venues);
+export const insertVenueSchema = createInsertSchema(venues, {
+	latitude: t.Optional(t.Number({ minimum: -90, maximum: 90 })),
+	longitude: t.Optional(t.Number({ minimum: -180, maximum: 180 })),
+});
+export const updateVenueSchema = createUpdateSchema(venues, {
+	latitude: t.Optional(t.Number({ minimum: -90, maximum: 90 })),
+	longitude: t.Optional(t.Number({ minimum: -180, maximum: 180 })),
+});
 
 export const selectSportEventTypeSchema = createSelectSchema(sportEventTypes);
 export const insertSportEventTypeSchema = createInsertSchema(sportEventTypes);
