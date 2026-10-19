@@ -15,6 +15,7 @@ import {
 	Dumbbell,
 	EditDialog,
 	EmptyState,
+	Field,
 	Input,
 	Label,
 	Pencil,
@@ -49,7 +50,14 @@ function AdminSportDetailPage() {
 	const confirm = useConfirm();
 
 	const sport = sportData as
-		| { id: string; name: string; hasDraws?: boolean | null }
+		| {
+				id: string;
+				name: string;
+				hasDraws?: boolean | null;
+				periodName?: string | null;
+				regularPeriods?: number | null;
+				scoringRules?: Record<string, number> | null;
+		  }
 		| undefined;
 	const eventTypes =
 		(
@@ -70,9 +78,32 @@ function AdminSportDetailPage() {
 	const [code, setCode] = React.useState("");
 	const [name, setName] = React.useState("");
 	const [affectsScore, setAffectsScore] = React.useState(false);
+	const [defaultValue, setDefaultValue] = React.useState("1");
 	const [editingEvent, setEditingEvent] = React.useState<
 		(typeof eventTypes)[number] | null
 	>(null);
+
+	// Reglamento del deporte: lo que el seed escribe y hasta ahora era invisible.
+	const [sportName, setSportName] = React.useState("");
+	const [hasDraws, setHasDraws] = React.useState(true);
+	const [periodName, setPeriodName] = React.useState("periodo");
+	const [regularPeriods, setRegularPeriods] = React.useState("2");
+	const [winPts, setWinPts] = React.useState("3");
+	const [drawPts, setDrawPts] = React.useState("1");
+	const [lossPts, setLossPts] = React.useState("0");
+
+	React.useEffect(() => {
+		if (!sport) return;
+		const rules = sport.scoringRules ?? {};
+		setSportName(sport.name);
+		setHasDraws(sport.hasDraws ?? true);
+		setPeriodName(sport.periodName ?? "periodo");
+		setRegularPeriods(String(sport.regularPeriods ?? 2));
+		// Los mismos valores por defecto que aplica la tabla de posiciones.
+		setWinPts(String(rules.win ?? 3));
+		setDrawPts(String(rules.draw ?? 1));
+		setLossPts(String(rules.loss ?? 0));
+	}, [sport]);
 
 	if (!sport)
 		return (
@@ -83,15 +114,53 @@ function AdminSportDetailPage() {
 			</div>
 		);
 
+	const onSaveConfig = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		if (!sportName.trim()) {
+			toast.error("El nombre es obligatorio");
+			return;
+		}
+		if (Number(regularPeriods) < 1) {
+			toast.error("Un deporte tiene al menos un periodo");
+			return;
+		}
+		try {
+			await updateSport.mutateAsync({
+				id: sportId,
+				body: {
+					name: sportName.trim(),
+					hasDraws,
+					periodName: periodName.trim() || "periodo",
+					regularPeriods: Number(regularPeriods),
+					scoringRules: {
+						win: Number(winPts),
+						draw: Number(drawPts),
+						loss: Number(lossPts),
+					},
+				},
+			});
+			toast.success("Reglamento guardado");
+		} catch (err) {
+			toast.error("No se pudo guardar el reglamento", getApiErrorMessage(err));
+		}
+	};
+
 	const onCreateEvent = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		try {
 			await createEvent.mutateAsync({
 				sportId,
-				body: { code, name, affectsScore, sportId },
+				body: {
+					code,
+					name,
+					affectsScore,
+					defaultValue: affectsScore ? Number(defaultValue) : 0,
+					sportId,
+				},
 			});
 			setCode("");
 			setName("");
+			setDefaultValue("1");
 			toast.success("Tipo de evento creado");
 		} catch (err) {
 			toast.error(
@@ -114,34 +183,96 @@ function AdminSportDetailPage() {
 				<CardHeader className="p-0 pb-2">
 					<CardTitle>{sport.name}</CardTitle>
 				</CardHeader>
-				<div className="flex gap-2">
+				<div className="mb-4 flex flex-wrap gap-2">
 					<Badge variant="outline">{sport.id}</Badge>
 					<Badge variant={sport.hasDraws ? "success" : "secondary"}>
 						{sport.hasDraws ? "con empates" : "sin empates"}
 					</Badge>
-					<Button
-						variant="ghost"
-						size="sm"
-						onClick={async () => {
-							try {
-								await updateSport.mutateAsync({
-									id: sportId,
-									body: { hasDraws: !sport.hasDraws },
-								});
-								toast.success(
-									sport.hasDraws ? "Empates desactivados" : "Empates activados",
-								);
-							} catch (err) {
-								toast.error(
-									"No se pudo actualizar el deporte",
-									getApiErrorMessage(err),
-								);
-							}
-						}}
-					>
-						Toggle empates
-					</Button>
+					<Badge variant="outline">
+						{sport.regularPeriods ?? 2} · {sport.periodName ?? "periodo"}
+					</Badge>
+					<Badge variant="outline">
+						{winPts} / {drawPts} / {lossPts} puntos
+					</Badge>
 				</div>
+				<form
+					onSubmit={onSaveConfig}
+					className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4"
+				>
+					<Field label="Nombre" htmlFor="sport-name" className="sm:col-span-2">
+						<Input
+							id="sport-name"
+							value={sportName}
+							onChange={(e) => setSportName(e.target.value)}
+							required
+							maxLength={50}
+						/>
+					</Field>
+					<Field label="Empates" htmlFor="sport-draws">
+						<Select
+							id="sport-draws"
+							value={String(hasDraws)}
+							onChange={(e) => setHasDraws(e.target.value === "true")}
+						>
+							<option value="true">Se permiten</option>
+							<option value="false">No se permiten</option>
+						</Select>
+					</Field>
+					<Field label="Cómo se llama el periodo" htmlFor="sport-period-name">
+						<Input
+							id="sport-period-name"
+							value={periodName}
+							onChange={(e) => setPeriodName(e.target.value)}
+							placeholder="tiempo, set, entrada"
+							maxLength={20}
+						/>
+					</Field>
+					<Field label="Periodos regulares" htmlFor="sport-periods">
+						<Input
+							id="sport-periods"
+							type="number"
+							min={1}
+							value={regularPeriods}
+							onChange={(e) => setRegularPeriods(e.target.value)}
+							required
+						/>
+					</Field>
+					<Field label="Puntos por victoria" htmlFor="sport-win">
+						<Input
+							id="sport-win"
+							type="number"
+							min={0}
+							value={winPts}
+							onChange={(e) => setWinPts(e.target.value)}
+							required
+						/>
+					</Field>
+					<Field label="Puntos por empate" htmlFor="sport-draw">
+						<Input
+							id="sport-draw"
+							type="number"
+							min={0}
+							value={drawPts}
+							onChange={(e) => setDrawPts(e.target.value)}
+							required
+						/>
+					</Field>
+					<Field label="Puntos por derrota" htmlFor="sport-loss">
+						<Input
+							id="sport-loss"
+							type="number"
+							min={0}
+							value={lossPts}
+							onChange={(e) => setLossPts(e.target.value)}
+							required
+						/>
+					</Field>
+					<div className="flex items-end">
+						<Button type="submit" icon={Save} disabled={updateSport.isPending}>
+							{updateSport.isPending ? "Guardando…" : "Guardar reglamento"}
+						</Button>
+					</div>
+				</form>
 			</Card>
 
 			<Card className="p-4">
@@ -169,6 +300,16 @@ function AdminSportDetailPage() {
 						<option value="true">afecta score</option>
 						<option value="false">no afecta</option>
 					</Select>
+					<Input
+						type="number"
+						min={0}
+						value={defaultValue}
+						onChange={(e) => setDefaultValue(e.target.value)}
+						disabled={!affectsScore}
+						title="Cuánto suma al marcador (solo si afecta)"
+						placeholder="Valor"
+						className="w-24"
+					/>
 					<Button type="submit" icon={Plus} disabled={createEvent.isPending}>
 						Crear
 					</Button>
@@ -183,9 +324,9 @@ function AdminSportDetailPage() {
 								{et.code}
 							</Badge>
 							<span>{et.name}</span>
-							{et.defaultValue != null && et.defaultValue !== 1 && (
+							{et.affectsScore && (
 								<span className="text-(--sea-ink-soft)">
-									+{et.defaultValue}
+									+{et.defaultValue ?? 1}
 								</span>
 							)}
 							<Button

@@ -461,6 +461,31 @@ describe("catalog - sports y sport-event-types", () => {
 		expect(delOk.status).toBe(200);
 	});
 
+	it("PATCH sports guarda el reglamento: periodos, empates y puntos por resultado", async () => {
+		const admin = await seedUser({ role: "admin" });
+		const sport = await seedSport("football");
+
+		const patched = await api.sports({ id: sport.id }).patch(
+			{
+				periodName: "tiempo",
+				regularPeriods: 4,
+				hasDraws: false,
+				scoringRules: { win: 3, draw: 1, loss: 0 },
+			} as never,
+			{ headers: await h(admin) },
+		);
+		expect(patched.status).toBe(200);
+
+		// El reglamento vuelve en la lectura pública del deporte.
+		const read = await api.sports({ id: sport.id }).get();
+		expect(read.status).toBe(200);
+		if (!read.data) throw new Error("no data");
+		expect(read.data.periodName).toBe("tiempo");
+		expect(read.data.regularPeriods).toBe(4);
+		expect(read.data.hasDraws).toBe(false);
+		expect(read.data.scoringRules).toEqual({ win: 3, draw: 1, loss: 0 });
+	});
+
 	it("event-types: CRUD, duplicado code por deporte, mismo code otro deporte -> 200, PATCH 409 explícito", async () => {
 		const admin = await seedUser({ role: "admin" });
 		const football = await seedSport("football");

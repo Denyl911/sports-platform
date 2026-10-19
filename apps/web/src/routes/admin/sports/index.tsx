@@ -56,6 +56,8 @@ function AdminSportsPage() {
 					id: string;
 					name: string;
 					hasDraws?: boolean | null;
+					periodName?: string | null;
+					regularPeriods?: number | null;
 				}>;
 				total: number;
 		  }
@@ -197,6 +199,11 @@ function AdminSportsPage() {
 										variant={s.hasDraws ? "success" : "secondary"}
 									>
 										{s.hasDraws ? "empates" : "sin empates"}
+									</Badge>
+								)}
+								{s.regularPeriods != null && (
+									<Badge className="ml-2" variant="outline">
+										{s.regularPeriods} · {s.periodName ?? "periodo"}
 									</Badge>
 								)}
 							</Link>
