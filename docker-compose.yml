@@ -1,0 +1,21 @@
+services:
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs-dev
+    ports:
+      - "9000:9000"
+    environment:
+      - RUSTFS_ACCESS_KEY=minioadmin
+      - RUSTFS_SECRET_KEY=minioadmin
+      - RUSTFS_BUCKET=sports-platform-dev
+    command: >
+      rustfs
+      --endpoint 0.0.0.0:9000
+      --access-key minioadmin
+      --secret-key minioadmin
+      --bucket sports-platform-dev
+    volumes:
+      - rustfs-data:/data
+
+volumes:
+  rustfs-data:
