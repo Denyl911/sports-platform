@@ -1,14 +1,15 @@
 import { db } from "@sports/db";
 import type { AdvancementRules } from "@sports/db/tables";
 import {
+	matches,
 	stageGroups,
 	stageStandings,
 	stageTeamRegistrations,
 	teams,
 } from "@sports/db/tables";
 import type { AdvancementRulesInput, StageQualifiers } from "@sports/schemas";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
-import { findStageById } from "./stage.service";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { findNextStage, findStageById } from "./stage.service";
 
 // ==========================================
 // Avance entre etapas
@@ -106,4 +107,108 @@ export function normalizeAdvancementRules(
 		qualifyPerGroup,
 		...(raw.seeding ? { seeding: raw.seeding } : {}),
 	};
+}
+
+// ==========================================
+// Materialización de los clasificados en la etapa siguiente
+// ==========================================
+
+export interface SyncAdvancementResult {
+	synced: boolean;
+	reason: string | null;
+	registered: number;
+}
+
+/**
+ * Mueve los clasificados de `sourceStageId` a la etapa siguiente (la de
+ * menor `sequenceOrder` mayor en la misma edición), **solo si la etapa
+ * siguiente no ha empezado**: una etapa con partidos en curso o terminados
+ * ya tiene resultados y reescribir sus equipos rompería la integridad.
+ *
+ * La inscripción del destino pasa a ser *derivada*: se insertan los
+ * faltantes, se ajusta el `seedNumber` y se quitan los que ya no clasifican.
+ * Idempotente: correrla dos veces deja el mismo conjunto.
+ *
+ * Round trips: etapa origen (regla), etapa siguiente, partidos del destino
+ * (seguridad) y las filas de clasificados — 4, medidos cuando se fije la fila.
+ */
+export async function syncAdvancement(
+	sourceStageId: string,
+): Promise<SyncAdvancementResult> {
+	const source = await findStageById(sourceStageId);
+	const rule = normalizeAdvancementRules(
+		source.advancementRules as AdvancementRules,
+	);
+	if (!rule) return { synced: false, reason: "no_rule", registered: 0 };
+
+	const next = await findNextStage(source.editionId, source.sequenceOrder);
+	if (!next) return { synced: false, reason: "no_next_stage", registered: 0 };
+
+	// Seguridad: si la etapa siguiente ya tiene partidos no programados, no
+	// se toca — los equipos ya están compitiendo.
+	const started = await db
+		.select({ id: matches.id })
+		.from(matches)
+		.where(
+			and(
+				eq(matches.stageId, next.id),
+				inArray(matches.status, [
+					"in_progress",
+					"paused",
+					"finished",
+					"walkover",
+					"cancelled",
+				]),
+			),
+		)
+		.limit(1);
+	if (started.length > 0) {
+		return { synced: false, reason: "target_started", registered: 0 };
+	}
+
+	const { items } = await listStageQualifiers(sourceStageId);
+	const qualified = items.filter((q) => q.qualified);
+
+	await db.transaction(async (tx) => {
+		const current = await tx
+			.select({
+				id: stageTeamRegistrations.id,
+				teamId: stageTeamRegistrations.teamId,
+			})
+			.from(stageTeamRegistrations)
+			.where(eq(stageTeamRegistrations.stageId, next.id));
+
+		const currentByTeam = new Map(current.map((r) => [r.teamId, r.id]));
+		const qualifiedIds = new Set(qualified.map((q) => q.team.id));
+
+		// Insertar / actualizar los que clasifican, con seedNumber por orden.
+		let seed = 1;
+		for (const q of qualified) {
+			const existingId = currentByTeam.get(q.team.id);
+			if (existingId) {
+				await tx
+					.update(stageTeamRegistrations)
+					.set({ seedNumber: seed })
+					.where(eq(stageTeamRegistrations.id, existingId));
+			} else {
+				await tx.insert(stageTeamRegistrations).values({
+					stageId: next.id,
+					teamId: q.team.id,
+					seedNumber: seed,
+				});
+			}
+			seed++;
+		}
+
+		// Quitar los que ya no clasifican.
+		for (const r of current) {
+			if (!qualifiedIds.has(r.teamId)) {
+				await tx
+					.delete(stageTeamRegistrations)
+					.where(eq(stageTeamRegistrations.id, r.id));
+			}
+		}
+	});
+
+	return { synced: true, reason: null, registered: qualified.length };
 }

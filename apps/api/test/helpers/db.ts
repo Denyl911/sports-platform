@@ -126,7 +126,11 @@ export async function seedEdition(
 	return edition;
 }
 
-export async function seedStage(editionId: string, sequenceOrder?: number) {
+export async function seedStage(
+	editionId: string,
+	sequenceOrder?: number,
+	stageType: (typeof tournamentStages.$inferSelect)["stageType"] = "round_robin",
+) {
 	// Secuencia automática si no se indica (evita chocar con stage_sequence_unique)
 	const order =
 		sequenceOrder ??
@@ -144,7 +148,7 @@ export async function seedStage(editionId: string, sequenceOrder?: number) {
 		.values({
 			editionId,
 			name: `Stage ${unique()}`,
-			stageType: "round_robin",
+			stageType,
 			sequenceOrder: order,
 		})
 		.returning();

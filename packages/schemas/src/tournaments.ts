@@ -67,6 +67,12 @@ export const stageQualifiersSchema = t.Object({
 	items: t.Array(stageQualifierSchema),
 });
 
+export const advanceStageResultSchema = t.Object({
+	synced: t.Boolean(),
+	reason: t.Union([t.String(), t.Null()]),
+	registered: t.Integer({ minimum: 0 }),
+});
+
 // ==========================================
 // DTOs PARA ENDPOINTS Y FORMULARIOS
 // ==========================================
@@ -130,3 +136,4 @@ export type UpdateStageGroup = Static<typeof updateStageGroupSchema>;
 export type AdvancementRulesInput = Static<typeof advancementRulesSchema>;
 export type StageQualifier = Static<typeof stageQualifierSchema>;
 export type StageQualifiers = Static<typeof stageQualifiersSchema>;
+export type AdvanceStageResult = Static<typeof advanceStageResultSchema>;

@@ -21,6 +21,7 @@ import type {
 import { and, asc, count, eq, getTableColumns, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { publishMatch } from "../lib/live";
+import { syncAdvancement } from "./advancement.service";
 import { DomainError } from "./errors";
 import { getStageTournamentId } from "./scoped-ids.service";
 import { findGroupById, findStageById } from "./stage.service";
@@ -343,6 +344,10 @@ export async function updateMatchScore(id: string, payload: UpdateMatchScore) {
 	});
 
 	await recalculateStandingsIfFinished(id);
+	// El avance entre etapas es una recomputación: al terminar un partido se
+	// re-sincronizan los clasificados en la etapa siguiente (si la regla y la
+	// seguridad lo permiten). No-op en el resto de los casos.
+	await syncAdvancement(updated.stageId).catch(() => undefined);
 	publishMatch(id, { type: "score", matchId: id, payload: updated });
 	return updated;
 }
@@ -417,6 +422,12 @@ export async function recordLiveEvent(
 	});
 
 	await recalculateStandingsIfFinished(matchId);
+	const [matchRow] = await db
+		.select({ stageId: matches.stageId })
+		.from(matches)
+		.where(eq(matches.id, matchId))
+		.limit(1);
+	if (matchRow) await syncAdvancement(matchRow.stageId).catch(() => undefined);
 	publishMatch(matchId, { type: "event", matchId, payload: event });
 	return event;
 }
