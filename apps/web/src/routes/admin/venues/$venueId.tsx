@@ -1,6 +1,15 @@
 import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
 import { useUpdateVenue } from "@sports/api-client/hooks";
-import { Button, Card, CardHeader, CardTitle, Input, Label } from "@sports/ui";
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	Input,
+	Label,
+	Skeleton,
+	toast,
+} from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -12,7 +21,7 @@ export const Route = createFileRoute("/admin/venues/$venueId")({
 
 function AdminVenueDetailPage() {
 	const { venueId } = Route.useParams();
-	const { data } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: queryKeys.venues.detail(venueId),
 		queryFn: () => unwrap(api.venues({ id: venueId }).get()),
 	});
@@ -28,7 +37,6 @@ function AdminVenueDetailPage() {
 	const [name, setName] = React.useState("");
 	const [address, setAddress] = React.useState("");
 	const [fieldCount, setFieldCount] = React.useState(1);
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (venue) {
@@ -38,18 +46,20 @@ function AdminVenueDetailPage() {
 		}
 	}, [venue]);
 
-	if (!venue) return <div className="demo-center text-sm">Cargando sede…</div>;
+	if (isPending) return <Skeleton className="h-64 rounded-xl" />;
+
+	if (!venue) return <Skeleton className="h-64 rounded-xl" />;
 
 	const onUpdate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({
 				id: venueId,
 				body: { name, address: address || null, fieldCount } as never,
 			});
+			toast.success("Sede guardada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar la sede", getApiErrorMessage(err));
 		}
 	};
 
@@ -89,10 +99,6 @@ function AdminVenueDetailPage() {
 					<Button type="submit" disabled={update.isPending}>
 						Guardar
 					</Button>
-					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && (
-						<div className="demo-alert text-sm">Guardado</div>
-					)}
 				</form>
 			</Card>
 		</div>

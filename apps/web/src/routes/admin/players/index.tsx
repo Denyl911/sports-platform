@@ -4,7 +4,17 @@ import {
 	useDeletePlayer,
 	usePlayers,
 } from "@sports/api-client/hooks";
-import { Button, Card, CardHeader, CardTitle, Input } from "@sports/ui";
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	EmptyState,
+	Input,
+	Skeleton,
+	toast,
+	useConfirm,
+} from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../../../lib/api";
@@ -14,9 +24,10 @@ export const Route = createFileRoute("/admin/players/")({
 });
 
 function AdminPlayersPage() {
-	const { data: playersData } = usePlayers(api);
+	const { data: playersData, isPending } = usePlayers(api);
 	const create = useCreatePlayer(api);
 	const del = useDeletePlayer(api);
+	const confirm = useConfirm();
 	const players =
 		(
 			playersData as
@@ -34,11 +45,9 @@ function AdminPlayersPage() {
 	const [firstName, setFirstName] = React.useState("");
 	const [lastName, setLastName] = React.useState("");
 	const [idCardNumber, setIdCardNumber] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await create.mutateAsync({
 				firstName,
@@ -48,8 +57,24 @@ function AdminPlayersPage() {
 			setFirstName("");
 			setLastName("");
 			setIdCardNumber("");
+			toast.success("Jugador creado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el jugador", getApiErrorMessage(err));
+		}
+	};
+
+	const onDelete = async (id: string, name: string) => {
+		const ok = await confirm({
+			title: "Eliminar jugador",
+			description: `Se elimina la ficha de «${name}». No se puede deshacer.`,
+			confirmLabel: "Eliminar",
+		});
+		if (!ok) return;
+		try {
+			await del.mutateAsync(id);
+			toast.success("Jugador eliminado");
+		} catch (err) {
+			toast.error("No se pudo eliminar el jugador", getApiErrorMessage(err));
 		}
 	};
 
@@ -83,46 +108,48 @@ function AdminPlayersPage() {
 						Crear
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 			</Card>
-			<div className="grid gap-3 sm:grid-cols-2">
-				{players.map((p) => (
-					<Card key={p.id} className="p-4 flex flex-col">
-						<Link
-							to="/admin/players/$playerId"
-							params={{ playerId: p.id }}
-							className="no-underline"
-						>
-							<CardHeader className="p-0">
-								<CardTitle className="text-base">
-									{p.firstName} {p.lastName}
-								</CardTitle>
-							</CardHeader>
-							<div className="text-xs text-(--sea-ink-soft)">
-								{p.idCardNumber ?? "—"}
-							</div>
-						</Link>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="mt-2 self-start"
-							onClick={async () => {
-								if (!confirm(`¿Eliminar jugador ${p.firstName} ${p.lastName}?`))
-									return;
-								try {
-									await del.mutateAsync(p.id);
-								} catch (err) {
-									setError(getApiErrorMessage(err));
-								}
-							}}
-						>
-							Eliminar
-						</Button>
-					</Card>
-				))}
-			</div>
-			{players.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay jugadores</div>
+			{isPending ? (
+				<div className="grid gap-3 sm:grid-cols-2">
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+				</div>
+			) : players.length === 0 ? (
+				<EmptyState
+					title="No hay jugadores"
+					description="Crea el primer jugador con el formulario de arriba."
+				/>
+			) : (
+				<div className="grid gap-3 sm:grid-cols-2">
+					{players.map((p) => (
+						<Card key={p.id} className="p-4 flex flex-col">
+							<Link
+								to="/admin/players/$playerId"
+								params={{ playerId: p.id }}
+								className="no-underline"
+							>
+								<CardHeader className="p-0">
+									<CardTitle className="text-base">
+										{p.firstName} {p.lastName}
+									</CardTitle>
+								</CardHeader>
+								<div className="text-xs text-(--sea-ink-soft)">
+									{p.idCardNumber ?? "—"}
+								</div>
+							</Link>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="mt-2 self-start"
+								onClick={() => onDelete(p.id, `${p.firstName} ${p.lastName}`)}
+							>
+								Eliminar
+							</Button>
+						</Card>
+					))}
+				</div>
 			)}
 		</div>
 	);

@@ -1,5 +1,13 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle, Input, Select } from "@sports/ui";
+import {
+	Badge,
+	Card,
+	CardHeader,
+	CardTitle,
+	EmptyState,
+	Input,
+	Select,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -102,9 +110,10 @@ function TeamsPage() {
 				))}
 			</div>
 			{teams.length === 0 && (
-				<div className="demo-card text-center text-sm">
-					No hay equipos con esos filtros.
-				</div>
+				<EmptyState
+					title="No hay equipos con esos filtros"
+					description="Prueba con otro club o deporte en los filtros de arriba."
+				/>
 			)}
 		</div>
 	);

@@ -6,6 +6,7 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	Input,
 	Select,
 	Skeleton,
@@ -144,9 +145,10 @@ function TournamentsPage() {
 				))}
 			</div>
 			{tournaments.length === 0 && (
-				<div className="demo-card text-center text-sm text-(--sea-ink-soft)">
-					No hay torneos aún.
-				</div>
+				<EmptyState
+					title="No hay torneos aún"
+					description="Cuando se publique el primer torneo, aparece en esta lista."
+				/>
 			)}
 
 			<div className="flex items-center justify-between pt-2">

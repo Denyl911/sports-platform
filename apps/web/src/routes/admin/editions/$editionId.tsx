@@ -12,9 +12,13 @@ import {
 	CardHeader,
 	CardTitle,
 	EditDialog,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -35,9 +39,13 @@ function AdminEditionDetailPage() {
 	const { editionId } = Route.useParams();
 	const search = Route.useSearch() as { tournamentId?: string };
 	const tournamentId = search.tournamentId ?? null;
-	const { data: stagesData } = useStagesByEdition(api, editionId);
+	const { data: stagesData, isPending: stagesPending } = useStagesByEdition(
+		api,
+		editionId,
+	);
 	const createStage = useCreateStage(api);
 	const deleteStage = useDeleteStage(api);
+	const confirm = useConfirm();
 	const stages =
 		(
 			stagesData as
@@ -56,22 +64,21 @@ function AdminEditionDetailPage() {
 	const [name, setName] = React.useState("");
 	const [stageType, setStageType] = React.useState<StageType>("round_robin");
 	const [seq, setSeq] = React.useState(1);
-	const [error, setError] = React.useState<string | null>(null);
 	const [editingStage, setEditingStage] = React.useState<
 		(typeof stages)[number] | null
 	>(null);
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await createStage.mutateAsync({
 				editionId,
 				body: { name, stageType, sequenceOrder: seq },
 			});
 			setName("");
+			toast.success("Etapa creada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear la etapa", getApiErrorMessage(err));
 		}
 	};
 
@@ -110,52 +117,74 @@ function AdminEditionDetailPage() {
 						Crear etapa
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 				<div className="mt-4 grid gap-2 sm:grid-cols-2">
-					{stages.map((s) => (
-						<Card key={s.id} className="p-3 flex flex-col">
-							<Link
-								to="/admin/stages/$stageId"
-								params={{ stageId: s.id }}
-								search={{ editionId, tournamentId: tournamentId ?? undefined }}
-								className="no-underline"
-							>
-								<CardHeader className="p-0">
-									<CardTitle className="text-sm">{s.name}</CardTitle>
-								</CardHeader>
-								<div className="flex gap-2 mt-1">
-									<Badge>{s.stageType}</Badge>
-									<Badge variant="secondary">#{s.sequenceOrder}</Badge>
-								</div>
-							</Link>
-							<div className="mt-2 flex gap-2 self-start">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setEditingStage(s)}
-								>
-									Editar
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={async () => {
-										if (!confirm(`¿Eliminar etapa ${s.name}?`)) return;
-										try {
-											await deleteStage.mutateAsync(s.id);
-										} catch (err) {
-											setError(getApiErrorMessage(err));
-										}
+					{stagesPending ? (
+						<>
+							<Skeleton className="h-24 rounded-xl" />
+							<Skeleton className="h-24 rounded-xl" />
+						</>
+					) : (
+						stages.map((s) => (
+							<Card key={s.id} className="p-3 flex flex-col">
+								<Link
+									to="/admin/stages/$stageId"
+									params={{ stageId: s.id }}
+									search={{
+										editionId,
+										tournamentId: tournamentId ?? undefined,
 									}}
+									className="no-underline"
 								>
-									Eliminar
-								</Button>
-							</div>
-						</Card>
-					))}
+									<CardHeader className="p-0">
+										<CardTitle className="text-sm">{s.name}</CardTitle>
+									</CardHeader>
+									<div className="flex gap-2 mt-1">
+										<Badge>{s.stageType}</Badge>
+										<Badge variant="secondary">#{s.sequenceOrder}</Badge>
+									</div>
+								</Link>
+								<div className="mt-2 flex gap-2 self-start">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setEditingStage(s)}
+									>
+										Editar
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={async () => {
+											const ok = await confirm({
+												title: "Eliminar etapa",
+												description: `Se elimina «${s.name}» y sus grupos. No se puede deshacer.`,
+												confirmLabel: "Eliminar",
+											});
+											if (!ok) return;
+											try {
+												await deleteStage.mutateAsync(s.id);
+												toast.success("Etapa eliminada");
+											} catch (err) {
+												toast.error(
+													"No se pudo eliminar la etapa",
+													getApiErrorMessage(err),
+												);
+											}
+										}}
+									>
+										Eliminar
+									</Button>
+								</div>
+							</Card>
+						))
+					)}
 				</div>
 				{stages.length === 0 && (
-					<div className="text-sm text-(--sea-ink-soft) mt-2">Sin etapas</div>
+					<EmptyState
+						title="Sin etapas"
+						description="Crea la primera etapa de la edición con el formulario de arriba."
+						className="mt-4"
+					/>
 				)}
 			</Card>
 			{editingStage && (
@@ -186,19 +215,18 @@ function StageEditDialog({
 		stage.stageType as StageType,
 	);
 	const [seq, setSeq] = React.useState(stage.sequenceOrder);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateStage.mutateAsync({
 				stageId: stage.id,
 				body: { name, stageType, sequenceOrder: seq },
 			});
+			toast.success("Etapa guardada");
 			onClose();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar la etapa", getApiErrorMessage(err));
 		}
 	};
 
@@ -208,7 +236,6 @@ function StageEditDialog({
 			onClose={onClose}
 			title={`Editar etapa ${stage.name}`}
 			description="El backend valida que el orden no se duplique dentro de la edición."
-			error={error}
 			footer={
 				<>
 					<Button variant="ghost" size="sm" onClick={onClose}>

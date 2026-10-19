@@ -1,4 +1,4 @@
-import { Button, Input, Label, Select } from "@sports/ui";
+import { Button, Input, Label, Select, toast } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../../lib/auth";
@@ -19,7 +19,6 @@ function RegisterPage() {
 	const [role, setRole] = React.useState<"viewer_staff" | "organizer">(
 		"viewer_staff",
 	);
-	const [error, setError] = React.useState<string | null>(null);
 	const [pending, setPending] = React.useState(false);
 
 	React.useEffect(() => {
@@ -28,14 +27,17 @@ function RegisterPage() {
 
 	async function onSubmit(e: React.SyntheticEvent) {
 		e.preventDefault();
-		setError(null);
 		setPending(true);
 		try {
 			await register({ email, password, fullName, role });
 			// register ya hace auto-login
+			toast.success("Cuenta creada");
 			navigate({ to: "/" });
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : "Error al registrarse");
+			toast.error(
+				"No se pudo crear la cuenta",
+				err instanceof Error ? err.message : undefined,
+			);
 		} finally {
 			setPending(false);
 		}
@@ -53,7 +55,6 @@ function RegisterPage() {
 					<code>organizer</code> vía <code>POST /auth/register</code>; el resto
 					se normaliza a <code>viewer_staff</code>.
 				</p>
-				{error && <div className="demo-alert-danger text-sm">{error}</div>}
 				<div className="space-y-2">
 					<Label htmlFor="fullName">Nombre completo</Label>
 					<Input

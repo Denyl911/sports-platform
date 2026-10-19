@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle, Input } from "@sports/ui";
+import { Card, CardHeader, CardTitle, EmptyState, Input } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -81,7 +81,10 @@ function PlayersPage() {
 				))}
 			</div>
 			{players.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay jugadores.</div>
+				<EmptyState
+					title="No hay jugadores"
+					description="Aún no se publica ningún jugador."
+				/>
 			)}
 		</div>
 	);

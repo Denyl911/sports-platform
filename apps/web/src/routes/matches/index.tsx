@@ -1,5 +1,12 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle, Select } from "@sports/ui";
+import {
+	Badge,
+	Card,
+	CardHeader,
+	CardTitle,
+	EmptyState,
+	Select,
+} from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -82,9 +89,10 @@ function MatchesPage() {
 				))}
 			</div>
 			{matches.length === 0 && (
-				<div className="demo-card text-center text-sm">
-					No hay partidos con ese estado.
-				</div>
+				<EmptyState
+					title="No hay partidos con ese estado"
+					description="Prueba con otro filtro o revisa más tarde."
+				/>
 			)}
 		</div>
 	);

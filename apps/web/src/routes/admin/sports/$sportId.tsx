@@ -13,9 +13,13 @@ import {
 	CardHeader,
 	CardTitle,
 	EditDialog,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -36,6 +40,7 @@ function AdminSportDetailPage() {
 	const createEvent = useCreateSportEventType(api);
 	const deleteEvent = useDeleteSportEventType(api);
 	const updateSport = useUpdateSport(api);
+	const confirm = useConfirm();
 
 	const sport = sportData as
 		| { id: string; name: string; hasDraws?: boolean | null }
@@ -59,17 +64,21 @@ function AdminSportDetailPage() {
 	const [code, setCode] = React.useState("");
 	const [name, setName] = React.useState("");
 	const [affectsScore, setAffectsScore] = React.useState(false);
-	const [error, setError] = React.useState<string | null>(null);
 	const [editingEvent, setEditingEvent] = React.useState<
 		(typeof eventTypes)[number] | null
 	>(null);
 
 	if (!sport)
-		return <div className="demo-center text-sm">Cargando deporte…</div>;
+		return (
+			<div className="space-y-3">
+				<Skeleton className="h-10 w-64 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+			</div>
+		);
 
 	const onCreateEvent = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await createEvent.mutateAsync({
 				sportId,
@@ -77,8 +86,12 @@ function AdminSportDetailPage() {
 			});
 			setCode("");
 			setName("");
+			toast.success("Tipo de evento creado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error(
+				"No se pudo crear el tipo de evento",
+				getApiErrorMessage(err),
+			);
 		}
 	};
 
@@ -105,8 +118,14 @@ function AdminSportDetailPage() {
 									id: sportId,
 									body: { hasDraws: !sport.hasDraws },
 								});
+								toast.success(
+									sport.hasDraws ? "Empates desactivados" : "Empates activados",
+								);
 							} catch (err) {
-								setError(getApiErrorMessage(err));
+								toast.error(
+									"No se pudo actualizar el deporte",
+									getApiErrorMessage(err),
+								);
 							}
 						}}
 					>
@@ -144,7 +163,6 @@ function AdminSportDetailPage() {
 						Crear
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 				<div className="mt-3 flex flex-wrap gap-2">
 					{eventTypes.map((et) => (
 						<div
@@ -173,11 +191,20 @@ function AdminSportDetailPage() {
 								size="sm"
 								className="h-5 px-1 text-xs"
 								onClick={async () => {
-									if (!confirm(`¿Eliminar ${et.code}?`)) return;
+									const ok = await confirm({
+										title: "Eliminar tipo de evento",
+										description: `Se elimina «${et.code}». No se puede deshacer.`,
+										confirmLabel: "Eliminar",
+									});
+									if (!ok) return;
 									try {
 										await deleteEvent.mutateAsync(et.id);
+										toast.success("Tipo de evento eliminado");
 									} catch (err) {
-										setError(getApiErrorMessage(err));
+										toast.error(
+											"No se pudo eliminar el tipo de evento",
+											getApiErrorMessage(err),
+										);
 									}
 								}}
 							>
@@ -187,9 +214,11 @@ function AdminSportDetailPage() {
 					))}
 				</div>
 				{eventTypes.length === 0 && (
-					<div className="text-sm text-(--sea-ink-soft) mt-2">
-						Sin tipos de evento
-					</div>
+					<EmptyState
+						title="Sin tipos de evento"
+						description="Define los códigos (gol, tarjeta…) con los que se registrarán las incidencias."
+						className="mt-3"
+					/>
 				)}
 			</Card>
 			{editingEvent && (
@@ -224,11 +253,9 @@ function EventTypeEditDialog({
 	const [defaultValue, setDefaultValue] = React.useState(
 		eventType.defaultValue != null ? String(eventType.defaultValue) : "1",
 	);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateEvent.mutateAsync({
 				eventTypeId: eventType.id,
@@ -239,9 +266,13 @@ function EventTypeEditDialog({
 					defaultValue: Number(defaultValue),
 				},
 			});
+			toast.success("Tipo de evento actualizado");
 			onClose();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error(
+				"No se pudo actualizar el tipo de evento",
+				getApiErrorMessage(err),
+			);
 		}
 	};
 
@@ -251,7 +282,6 @@ function EventTypeEditDialog({
 			onClose={onClose}
 			title={`Editar ${eventType.code}`}
 			description="El código debe ser único dentro del deporte."
-			error={error}
 			footer={
 				<>
 					<Button variant="ghost" size="sm" onClick={onClose}>

@@ -13,9 +13,13 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -64,7 +68,6 @@ function AdminUserDetailPage() {
 	const [role, setRole] = React.useState<GlobalRole>("viewer_staff");
 	const [tournamentId, setTournamentId] = React.useState("");
 	const [memberRole, setMemberRole] = React.useState<MemberRole>("organizer");
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (user) {
@@ -78,28 +81,34 @@ function AdminUserDetailPage() {
 	}, [tournaments, tournamentId]);
 
 	if (!user)
-		return <div className="demo-center text-sm">Cargando usuario…</div>;
+		return (
+			<div className="space-y-3">
+				<Skeleton className="h-10 w-64 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+			</div>
+		);
 
 	const onUpdate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({ userId, body: { fullName, role } });
+			toast.success("Usuario guardado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el usuario", getApiErrorMessage(err));
 		}
 	};
 
 	const onAddMembership = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await addMember.mutateAsync({
 				userId,
 				body: { tournamentId, userId, role: memberRole },
 			});
+			toast.success("Membresía asignada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo asignar la membresía", getApiErrorMessage(err));
 		}
 	};
 
@@ -141,10 +150,6 @@ function AdminUserDetailPage() {
 					<Button type="submit" disabled={update.isPending}>
 						Guardar
 					</Button>
-					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && (
-						<div className="demo-alert text-sm">Guardado</div>
-					)}
 				</form>
 			</Card>
 
@@ -181,14 +186,6 @@ function AdminUserDetailPage() {
 						Asignar
 					</Button>
 				</form>
-				{addMember.isError && (
-					<div className="demo-alert-danger mt-2 text-sm">
-						{getApiErrorMessage(addMember.error)}
-					</div>
-				)}
-				{addMember.isSuccess && (
-					<div className="demo-alert mt-2 text-sm">Membresía asignada</div>
-				)}
 			</Card>
 
 			<Card className="p-4">
@@ -216,7 +213,11 @@ function UserMemberships({ userId }: { userId: string }) {
 
 	if (memberships.length === 0) {
 		return (
-			<div className="mt-2 text-sm text-(--sea-ink-soft)">Sin membresías</div>
+			<EmptyState
+				title="Sin membresías"
+				description="Asigna al usuario a un torneo con el formulario de arriba."
+				className="mt-2"
+			/>
 		);
 	}
 
@@ -242,30 +243,35 @@ function MembershipRow({
 }) {
 	const updateRole = useUpdateMembershipRole(api);
 	const remove = useRemoveMembership(api);
+	const confirm = useConfirm();
 	const [role, setRole] = React.useState<MemberRole>(
 		membership.role as MemberRole,
 	);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSave = async () => {
-		setError(null);
 		try {
 			await updateRole.mutateAsync({
 				memberId: membership.id,
 				body: { role },
 			});
+			toast.success("Rol del miembro actualizado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo actualizar el rol", getApiErrorMessage(err));
 		}
 	};
 
 	const onRemove = async () => {
-		if (!confirm(`¿Quitar membresía en ${tournamentName}?`)) return;
-		setError(null);
+		const ok = await confirm({
+			title: "Quitar membresía",
+			description: `Se quita la membresía en «${tournamentName}». No se puede deshacer.`,
+			confirmLabel: "Quitar",
+		});
+		if (!ok) return;
 		try {
 			await remove.mutateAsync(membership.id);
+			toast.success("Membresía quitada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo quitar la membresía", getApiErrorMessage(err));
 		}
 	};
 
@@ -293,7 +299,6 @@ function MembershipRow({
 					Quitar
 				</Button>
 			</div>
-			{error && <div className="demo-alert-danger w-full text-xs">{error}</div>}
 		</div>
 	);
 }

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Feedback completo en el panel de administración y en las listas públicas.** Nuevas primitivas en `@sports/ui`: `EmptyState` (lista vacía con título y descripción, en español), `toast` + `Toaster` (feedback de mutaciones: toda falla muestra "No se pudo <acción>" con el mensaje del contrato, todo éxito un aviso breve) y `ConfirmProvider` / `useConfirm` (confirmación accesible con promesa, reemplaza `window.confirm` en todas las eliminaciones). Las páginas admin muestran skeletons mientras cargan y `EmptyState` cuando no hay datos; las listas públicas reemplazan los mensajes planos por `EmptyState`.
+
 - **Cada página pública del sitio declara su `title` y `description`.** `__root` provee el título por defecto ("Sports Platform — Torneos multideporte") y las rutas lo reemplazan con el suyo: las listas llevan títulos fijos (Torneos, Partidos, Equipos, …) y los detalles títulos dinámica desde el loader (`Titulares FC vs Suplentes FC — Sports Platform` en un partido, el nombre del torneo, del equipo, club, jugador, sede y deporte). Los títulos llegan en el HTML del servidor, no se ajustan client-side después.
 
 ### Changed

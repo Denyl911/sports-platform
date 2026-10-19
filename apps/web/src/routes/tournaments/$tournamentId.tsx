@@ -5,6 +5,7 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	TournamentHeader,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -113,7 +114,10 @@ function TournamentDetailPage() {
 					))}
 				</div>
 				{editions.length === 0 && (
-					<div className="demo-card text-center text-sm">No hay ediciones.</div>
+					<EmptyState
+						title="Sin ediciones"
+						description="Esta edición del torneo todavía no tiene ediciones publicadas."
+					/>
 				)}
 			</div>
 		</div>

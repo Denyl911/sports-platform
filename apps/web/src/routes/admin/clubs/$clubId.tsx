@@ -1,6 +1,15 @@
 import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
 import { useUpdateClub } from "@sports/api-client/hooks";
-import { Button, Card, CardHeader, CardTitle, Input, Label } from "@sports/ui";
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	Input,
+	Label,
+	Skeleton,
+	toast,
+} from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -19,20 +28,19 @@ function AdminClubDetailPage() {
 	const club = data as { id: string; name: string } | undefined;
 	const update = useUpdateClub(api);
 	const [name, setName] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (club) setName(club.name);
 	}, [club]);
-	if (!club) return <div className="demo-center text-sm">Cargando club…</div>;
+	if (!club) return <Skeleton className="h-64 rounded-xl" />;
 
 	const onUpdate = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({ id: clubId, body: { name } as never });
+			toast.success("Club guardado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el club", getApiErrorMessage(err));
 		}
 	};
 
@@ -57,10 +65,6 @@ function AdminClubDetailPage() {
 					<Button type="submit" disabled={update.isPending}>
 						Guardar
 					</Button>
-					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && (
-						<div className="demo-alert text-sm">Guardado</div>
-					)}
 				</form>
 			</Card>
 		</div>

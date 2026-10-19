@@ -4,7 +4,17 @@ import {
 	useCreateClub,
 	useDeleteClub,
 } from "@sports/api-client/hooks";
-import { Button, Card, CardHeader, CardTitle, Input } from "@sports/ui";
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	EmptyState,
+	Input,
+	Skeleton,
+	toast,
+	useConfirm,
+} from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../../../lib/api";
@@ -14,9 +24,10 @@ export const Route = createFileRoute("/admin/clubs/")({
 });
 
 function AdminClubsPage() {
-	const { data: clubsData } = useClubs(api);
+	const { data: clubsData, isPending } = useClubs(api);
 	const create = useCreateClub(api);
 	const del = useDeleteClub(api);
+	const confirm = useConfirm();
 	const clubs =
 		(
 			clubsData as
@@ -24,16 +35,30 @@ function AdminClubsPage() {
 				| undefined
 		)?.items ?? [];
 	const [name, setName] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onCreate = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await create.mutateAsync({ name } as never);
 			setName("");
+			toast.success("Club creado", `«${name.trim()}» está listo en la lista.`);
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el club", getApiErrorMessage(err));
+		}
+	};
+
+	const onDelete = async (id: string, name: string) => {
+		const ok = await confirm({
+			title: "Eliminar club",
+			description: `Se elimina «${name}» y se pierden sus equipos inscritos. No se puede deshacer.`,
+			confirmLabel: "Eliminar",
+		});
+		if (!ok) return;
+		try {
+			await del.mutateAsync(id);
+			toast.success("Club eliminado");
+		} catch (err) {
+			toast.error("No se pudo eliminar el club", getApiErrorMessage(err));
 		}
 	};
 
@@ -54,40 +79,43 @@ function AdminClubsPage() {
 						Crear
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 			</Card>
-			<div className="grid gap-3 sm:grid-cols-2">
-				{clubs.map((c) => (
-					<Card key={c.id} className="p-4 flex flex-col">
-						<Link
-							to="/admin/clubs/$clubId"
-							params={{ clubId: c.id }}
-							className="no-underline"
-						>
-							<CardHeader className="p-0">
-								<CardTitle className="text-base">{c.name}</CardTitle>
-							</CardHeader>
-						</Link>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="mt-2 self-start"
-							onClick={async () => {
-								if (!confirm(`¿Eliminar club ${c.name}?`)) return;
-								try {
-									await del.mutateAsync(c.id);
-								} catch (err) {
-									setError(getApiErrorMessage(err));
-								}
-							}}
-						>
-							Eliminar
-						</Button>
-					</Card>
-				))}
-			</div>
-			{clubs.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay clubes</div>
+			{isPending ? (
+				<div className="grid gap-3 sm:grid-cols-2">
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+				</div>
+			) : clubs.length === 0 ? (
+				<EmptyState
+					title="No hay clubes"
+					description="Crea el primer club con el formulario de arriba."
+				/>
+			) : (
+				<div className="grid gap-3 sm:grid-cols-2">
+					{clubs.map((c) => (
+						<Card key={c.id} className="p-4 flex flex-col">
+							<Link
+								to="/admin/clubs/$clubId"
+								params={{ clubId: c.id }}
+								className="no-underline"
+							>
+								<CardHeader className="p-0">
+									<CardTitle className="text-base">{c.name}</CardTitle>
+								</CardHeader>
+							</Link>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="mt-2 self-start"
+								onClick={() => onDelete(c.id, c.name)}
+							>
+								Eliminar
+							</Button>
+						</Card>
+					))}
+				</div>
 			)}
 		</div>
 	);

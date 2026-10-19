@@ -8,10 +8,13 @@ import {
 	Badge,
 	Button,
 	Card,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
 	StandingsTable,
+	toast,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -75,7 +78,6 @@ function AdminStandingsPage() {
 	const [selectedId, setSelectedId] = React.useState<string>("");
 	const [points, setPoints] = React.useState(0);
 	const [bonus, setBonus] = React.useState(0);
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (rows.length && !selectedId) {
@@ -86,24 +88,24 @@ function AdminStandingsPage() {
 	}, [rows, selectedId]);
 
 	const onRecalc = async () => {
-		setError(null);
 		try {
 			await recalc.mutateAsync(groupId);
+			toast.success("Posiciones recalculadas");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo recalcular la tabla", getApiErrorMessage(err));
 		}
 	};
 
 	const onUpdateRow = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateRow.mutateAsync({
 				id: selectedId,
 				body: { points, bonusPoints: bonus },
 			});
+			toast.success("Fila actualizada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo actualizar la fila", getApiErrorMessage(err));
 		}
 	};
 
@@ -124,9 +126,17 @@ function AdminStandingsPage() {
 					{JSON.stringify(live.lastStanding).slice(0, 120)}
 				</div>
 			)}
-			<StandingsTable rows={rows} />
-			{rows.length === 0 && (
-				<div className="demo-card text-center text-sm">Sin filas</div>
+			{standings ? (
+				rows.length === 0 ? (
+					<EmptyState
+						title="Sin filas en la tabla"
+						description="Recalcula la tabla o registra resultados para poblarla."
+					/>
+				) : (
+					<StandingsTable rows={rows} />
+				)
+			) : (
+				<Skeleton className="h-64 rounded-xl" />
 			)}
 
 			<Card className="p-4">
@@ -178,10 +188,6 @@ function AdminStandingsPage() {
 						Guardar fila
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
-				{updateRow.isSuccess && (
-					<div className="demo-alert mt-2 text-sm">Fila actualizada</div>
-				)}
 			</Card>
 		</div>
 	);

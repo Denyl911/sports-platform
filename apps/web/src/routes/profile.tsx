@@ -1,6 +1,6 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import { useChangePassword } from "@sports/api-client/hooks";
-import { Badge, Button, Card, Input, Label } from "@sports/ui";
+import { Badge, Button, Card, Input, Label, Skeleton, toast } from "@sports/ui";
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../lib/api";
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/profile")({
 function ProfilePage() {
 	const { user, isAuthenticated, isLoading } = useAuth();
 
-	if (isLoading) return <div className="demo-center text-sm">Cargando…</div>;
+	if (isLoading) return <Skeleton className="h-40 rounded-xl" />;
 	if (!isAuthenticated || !user) return <Navigate to="/auth/login" />;
 
 	return (
@@ -40,12 +40,10 @@ function ChangePasswordForm() {
 	const [newPassword, setNewPassword] = React.useState("");
 	const [confirm, setConfirm] = React.useState("");
 	const [error, setError] = React.useState<string | null>(null);
-	const [done, setDone] = React.useState(false);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
 		setError(null);
-		setDone(false);
 		if (newPassword !== confirm) {
 			setError("La nueva contraseña y su confirmación no coinciden.");
 			return;
@@ -59,9 +57,9 @@ function ChangePasswordForm() {
 			setCurrentPassword("");
 			setNewPassword("");
 			setConfirm("");
-			setDone(true);
+			toast.success("Contraseña actualizada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo cambiar la contraseña", getApiErrorMessage(err));
 		}
 	};
 
@@ -104,11 +102,6 @@ function ChangePasswordForm() {
 					Guardar
 				</Button>
 				{error && <div className="demo-alert-danger text-sm">{error}</div>}
-				{done && (
-					<div className="demo-alert text-sm">
-						Contraseña actualizada correctamente.
-					</div>
-				)}
 			</form>
 		</Card>
 	);

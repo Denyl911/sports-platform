@@ -5,9 +5,12 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -20,7 +23,7 @@ export const Route = createFileRoute("/admin/teams/$teamId")({
 
 function AdminTeamDetailPage() {
 	const { teamId } = Route.useParams();
-	const { data } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: queryKeys.teams.detail(teamId),
 		queryFn: () => unwrap(api.teams({ id: teamId }).get()),
 	});
@@ -30,24 +33,30 @@ function AdminTeamDetailPage() {
 	const update = useUpdateTeam(api);
 	const [name, setName] = React.useState("");
 	const [category, setCategory] = React.useState("open");
-	const [error, setError] = React.useState<string | null>(null);
 	React.useEffect(() => {
 		if (team) {
 			setName(team.name);
 			setCategory(team.category ?? "open");
 		}
 	}, [team]);
-	if (!team) return <div className="demo-center text-sm">Cargando equipo…</div>;
+	if (isPending) return <Skeleton className="h-64 rounded-xl" />;
+	if (!team)
+		return (
+			<EmptyState
+				title="Equipo no encontrado"
+				description="El equipo no existe o la consulta falló. Vuelve a la lista para intentarlo."
+			/>
+		);
 	const onUpdate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({
 				id: teamId,
 				body: { name, category } as never,
 			});
+			toast.success("Equipo guardado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el equipo", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -82,10 +91,6 @@ function AdminTeamDetailPage() {
 					<Button type="submit" disabled={update.isPending}>
 						Guardar
 					</Button>
-					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && (
-						<div className="demo-alert text-sm">Guardado</div>
-					)}
 				</form>
 			</Card>
 		</div>

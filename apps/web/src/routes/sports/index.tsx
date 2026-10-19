@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle } from "@sports/ui";
+import { Badge, Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -62,7 +62,10 @@ function SportsPage() {
 				))}
 			</div>
 			{sports.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay deportes.</div>
+				<EmptyState
+					title="No hay deportes"
+					description="Aún no se publica ningún deporte."
+				/>
 			)}
 		</div>
 	);

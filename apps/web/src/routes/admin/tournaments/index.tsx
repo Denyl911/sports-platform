@@ -14,6 +14,9 @@ import {
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -32,10 +35,10 @@ function AdminTournamentsPage() {
 	const { data: sportsData } = useSports(api);
 	const create = useCreateTournament(api);
 	const del = useDeleteTournament(api);
+	const confirm = useConfirm();
 
 	const [name, setName] = React.useState("");
 	const [sportId, setSportId] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 
 	const tournaments =
 		(
@@ -59,12 +62,30 @@ function AdminTournamentsPage() {
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await create.mutateAsync({ name, sportId } as never);
 			setName("");
+			toast.success(
+				"Torneo creado",
+				`«${name.trim()}» está listo en la lista.`,
+			);
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el torneo", getApiErrorMessage(err));
+		}
+	};
+
+	const onDelete = async (id: string, name: string) => {
+		const ok = await confirm({
+			title: "Eliminar torneo",
+			description: `Se elimina «${name}» y se pierden sus ediciones. No se puede deshacer.`,
+			confirmLabel: "Eliminar",
+		});
+		if (!ok) return;
+		try {
+			await del.mutateAsync(id);
+			toast.success("Torneo eliminado");
+		} catch (err) {
+			toast.error("No se pudo eliminar el torneo", getApiErrorMessage(err));
 		}
 	};
 
@@ -111,14 +132,15 @@ function AdminTournamentsPage() {
 						</Button>
 					</div>
 				</form>
-				{error && <div className="demo-alert-danger mt-3 text-sm">{error}</div>}
-				{create.isSuccess && (
-					<div className="demo-alert mt-3 text-sm">Torneo creado</div>
-				)}
 			</Card>
 
 			{isPending ? (
-				<div className="demo-card text-center text-sm">Cargando…</div>
+				<div className="grid gap-3 sm:grid-cols-2">
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+				</div>
 			) : (
 				<div className="grid gap-3 sm:grid-cols-2">
 					{tournaments.map((t) => (
@@ -139,14 +161,7 @@ function AdminTournamentsPage() {
 								<Button
 									variant="ghost"
 									size="sm"
-									onClick={async () => {
-										if (!confirm(`¿Eliminar torneo ${t.name}?`)) return;
-										try {
-											await del.mutateAsync(t.id);
-										} catch (err) {
-											setError(getApiErrorMessage(err));
-										}
-									}}
+									onClick={() => onDelete(t.id, t.name)}
 								>
 									Eliminar
 								</Button>

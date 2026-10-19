@@ -1,4 +1,4 @@
-import { Button, Input, Label } from "@sports/ui";
+import { Button, Input, Label, toast } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import * as React from "react";
 import { useAuth } from "../../lib/auth";
@@ -15,7 +15,6 @@ function LoginPage() {
 	const navigate = useNavigate();
 	const [email, setEmail] = React.useState("");
 	const [password, setPassword] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 	const [pending, setPending] = React.useState(false);
 
 	React.useEffect(() => {
@@ -24,13 +23,16 @@ function LoginPage() {
 
 	async function onSubmit(e: React.SyntheticEvent) {
 		e.preventDefault();
-		setError(null);
 		setPending(true);
 		try {
 			await login(email, password);
+			toast.success("Sesión iniciada");
 			navigate({ to: "/admin" });
 		} catch (err: unknown) {
-			setError(err instanceof Error ? err.message : "Error al iniciar sesión");
+			toast.error(
+				"No se pudo iniciar sesión",
+				err instanceof Error ? err.message : undefined,
+			);
 		} finally {
 			setPending(false);
 		}
@@ -47,7 +49,6 @@ function LoginPage() {
 					Usa tu email y contraseña. Los tokens se guardan en{" "}
 					<code>localStorage</code> vía <code>src/lib/api.ts</code>.
 				</p>
-				{error && <div className="demo-alert-danger text-sm">{error}</div>}
 				<div className="space-y-2">
 					<Label htmlFor="email">Email</Label>
 					<Input

@@ -11,8 +11,12 @@ import {
 	Card,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	Input,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -23,10 +27,11 @@ export const Route = createFileRoute("/admin/teams/")({
 });
 
 function AdminTeamsPage() {
-	const { data: teamsData } = useTeams(api);
+	const { data: teamsData, isPending } = useTeams(api);
 	const { data: clubsData } = useClubs(api);
 	const create = useCreateTeam(api);
 	const del = useDeleteTeam(api);
+	const confirm = useConfirm();
 	const teams =
 		(
 			teamsData as
@@ -50,7 +55,6 @@ function AdminTeamsPage() {
 	const [name, setName] = React.useState("");
 	const [clubId, setClubId] = React.useState("");
 	const [category, setCategory] = React.useState("open");
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (clubs.length && !clubId) setClubId(clubs[0]!.id);
@@ -58,12 +62,12 @@ function AdminTeamsPage() {
 
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await create.mutateAsync({ name, clubId, category } as never);
 			setName("");
+			toast.success("Equipo creado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
 		}
 	};
 
@@ -104,41 +108,60 @@ function AdminTeamsPage() {
 						Crear
 					</Button>
 				</form>
-				{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 			</Card>
-			<div className="grid gap-3 sm:grid-cols-2">
-				{teams.map((t) => (
-					<Card key={t.id} className="p-4 flex flex-col">
-						<Link
-							to="/admin/teams/$teamId"
-							params={{ teamId: t.id }}
-							className="no-underline"
-						>
-							<CardHeader className="p-0">
-								<CardTitle className="text-base">{t.name}</CardTitle>
-							</CardHeader>
-							<Badge variant="outline">{t.category ?? "open"}</Badge>
-						</Link>
-						<Button
-							variant="ghost"
-							size="sm"
-							className="mt-2 self-start"
-							onClick={async () => {
-								if (!confirm(`¿Eliminar equipo ${t.name}?`)) return;
-								try {
-									await del.mutateAsync(t.id);
-								} catch (err) {
-									setError(getApiErrorMessage(err));
-								}
-							}}
-						>
-							Eliminar
-						</Button>
-					</Card>
-				))}
-			</div>
-			{teams.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay equipos</div>
+			{isPending ? (
+				<div className="grid gap-3 sm:grid-cols-2">
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+					<Skeleton className="h-28 rounded-xl" />
+				</div>
+			) : teams.length === 0 ? (
+				<EmptyState
+					title="No hay equipos"
+					description="Crea el primer equipo con el formulario de arriba."
+				/>
+			) : (
+				<div className="grid gap-3 sm:grid-cols-2">
+					{teams.map((t) => (
+						<Card key={t.id} className="p-4 flex flex-col">
+							<Link
+								to="/admin/teams/$teamId"
+								params={{ teamId: t.id }}
+								className="no-underline"
+							>
+								<CardHeader className="p-0">
+									<CardTitle className="text-base">{t.name}</CardTitle>
+								</CardHeader>
+								<Badge variant="outline">{t.category ?? "open"}</Badge>
+							</Link>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="mt-2 self-start"
+								onClick={async () => {
+									const ok = await confirm({
+										title: "Eliminar equipo",
+										description: `Se elimina «${t.name}» y se pierden sus jugadores inscritos. No se puede deshacer.`,
+										confirmLabel: "Eliminar",
+									});
+									if (!ok) return;
+									try {
+										await del.mutateAsync(t.id);
+										toast.success("Equipo eliminado");
+									} catch (err) {
+										toast.error(
+											"No se pudo eliminar el equipo",
+											getApiErrorMessage(err),
+										);
+									}
+								}}
+							>
+								Eliminar
+							</Button>
+						</Card>
+					))}
+				</div>
 			)}
 		</div>
 	);

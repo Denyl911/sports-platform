@@ -1,5 +1,5 @@
 import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
-import { Badge, Card, CardHeader, CardTitle } from "@sports/ui";
+import { Badge, Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../lib/api";
@@ -129,9 +129,10 @@ function HomePage() {
 					))}
 				</div>
 				{tournaments.length === 0 && (
-					<div className="demo-card text-center text-sm">
-						Aún no hay torneos publicados.
-					</div>
+					<EmptyState
+						title="Aún no hay torneos publicados"
+						description="Vuelve más pronto: los torneos aparecen cuando se abren."
+					/>
 				)}
 			</section>
 
@@ -148,9 +149,10 @@ function HomePage() {
 					))}
 				</div>
 				{liveMatches.length === 0 && (
-					<div className="demo-card text-center text-sm">
-						Sin partidos en vivo ahora.
-					</div>
+					<EmptyState
+						title="Sin partidos en vivo ahora"
+						description="Cuando un partido esté en marcha, aparece aquí con su marcador en directo."
+					/>
 				)}
 			</section>
 
@@ -162,9 +164,10 @@ function HomePage() {
 					))}
 				</div>
 				{recentMatches.length === 0 && (
-					<div className="demo-card text-center text-sm">
-						Aún no hay resultados.
-					</div>
+					<EmptyState
+						title="Aún no hay resultados"
+						description="Cuando los partidos se jueguen, sus marcadores se listan aquí."
+					/>
 				)}
 			</section>
 		</main>

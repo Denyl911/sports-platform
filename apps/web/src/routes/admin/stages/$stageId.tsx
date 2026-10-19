@@ -21,9 +21,13 @@ import {
 	Button,
 	Card,
 	EditDialog,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -44,7 +48,10 @@ function AdminStageDetailPage() {
 	const editionId = search.editionId ?? null;
 	const tournamentId = search.tournamentId ?? null;
 
-	const { data: groupsData } = useGroupsByStage(api, stageId);
+	const { data: groupsData, isPending: groupsPending } = useGroupsByStage(
+		api,
+		stageId,
+	);
 	const { data: regsData } = useRegistrationsByStage(api, stageId);
 	const { data: teamsData } = useTeams(api);
 	const { data: playersData } = usePlayers(api);
@@ -52,6 +59,7 @@ function AdminStageDetailPage() {
 	const createGroup = useCreateGroup(api);
 	const deleteGroup = useDeleteGroup(api);
 	const registerTeam = useRegisterTeam(api);
+	const confirm = useConfirm();
 
 	const groups =
 		(
@@ -93,7 +101,6 @@ function AdminStageDetailPage() {
 
 	const [groupName, setGroupName] = React.useState("");
 	const [teamId, setTeamId] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 	const [editingGroup, setEditingGroup] = React.useState<
 		(typeof groups)[number] | null
 	>(null);
@@ -104,34 +111,40 @@ function AdminStageDetailPage() {
 
 	const onCreateGroup = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await createGroup.mutateAsync({
 				stageId,
 				body: { name: groupName },
 			});
 			setGroupName("");
+			toast.success("Grupo creado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el grupo", getApiErrorMessage(err));
 		}
 	};
 
-	const onDeleteGroup = async (groupId: string) => {
-		if (!confirm("¿Eliminar grupo?")) return;
+	const onDeleteGroup = async (groupId: string, name: string) => {
+		const ok = await confirm({
+			title: "Eliminar grupo",
+			description: `Se elimina «${name}» y se sueltan sus inscripciones. No se puede deshacer.`,
+			confirmLabel: "Eliminar",
+		});
+		if (!ok) return;
 		try {
 			await deleteGroup.mutateAsync(groupId);
+			toast.success("Grupo eliminado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo eliminar el grupo", getApiErrorMessage(err));
 		}
 	};
 
 	const onRegister = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await registerTeam.mutateAsync({ stageId, body: { teamId } });
+			toast.success("Equipo inscrito");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo inscribir el equipo", getApiErrorMessage(err));
 		}
 	};
 
@@ -160,40 +173,51 @@ function AdminStageDetailPage() {
 							Crear
 						</Button>
 					</form>
-					<div className="mt-3 flex flex-col gap-2">
-						{groups.map((g) => (
-							<div
-								key={g.id}
-								className="flex items-center justify-between rounded-xl border border-(--line) bg-(--chip-bg) px-3 py-2"
-							>
-								<Link
-									to="/standings/$groupId"
-									params={{ groupId: g.id }}
-									className="no-underline"
+					{groupsPending ? (
+						<div className="mt-3 flex flex-col gap-2">
+							<Skeleton className="h-10 rounded-xl" />
+							<Skeleton className="h-10 rounded-xl" />
+						</div>
+					) : (
+						<div className="mt-3 flex flex-col gap-2">
+							{groups.map((g) => (
+								<div
+									key={g.id}
+									className="flex items-center justify-between rounded-xl border border-(--line) bg-(--chip-bg) px-3 py-2"
 								>
-									<Badge variant="secondary">{g.name}</Badge>
-								</Link>
-								<div className="flex gap-1">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setEditingGroup(g)}
+									<Link
+										to="/standings/$groupId"
+										params={{ groupId: g.id }}
+										className="no-underline"
 									>
-										Editar
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => onDeleteGroup(g.id)}
-									>
-										Eliminar
-									</Button>
+										<Badge variant="secondary">{g.name}</Badge>
+									</Link>
+									<div className="flex gap-1">
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => setEditingGroup(g)}
+										>
+											Editar
+										</Button>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => onDeleteGroup(g.id, g.name)}
+										>
+											Eliminar
+										</Button>
+									</div>
 								</div>
-							</div>
-						))}
-					</div>
-					{error && (
-						<div className="demo-alert-danger mt-2 text-sm">{error}</div>
+							))}
+						</div>
+					)}
+					{groups.length === 0 && (
+						<EmptyState
+							title="Sin grupos"
+							description="Crea el primer grupo de la etapa con el formulario de arriba."
+							className="mt-3"
+						/>
 					)}
 				</Card>
 
@@ -225,9 +249,10 @@ function AdminStageDetailPage() {
 							/>
 						))}
 						{registrations.length === 0 && (
-							<div className="text-sm text-(--sea-ink-soft)">
-								Sin inscripciones
-							</div>
+							<EmptyState
+								title="Sin inscripciones"
+								description="Inscribe el primer equipo de la etapa con el formulario de arriba."
+							/>
 						)}
 					</div>
 				</Card>
@@ -243,7 +268,10 @@ function AdminStageDetailPage() {
 						teams={teams}
 					/>
 				) : (
-					<div className="text-sm text-(--sea-ink-soft)">Cargando torneo…</div>
+					<div className="text-sm text-(--sea-ink-soft)">
+						No llega el torneo por search params: vuelve a la edición para
+						inscribir partidos.
+					</div>
 				)}
 			</Card>
 
@@ -279,16 +307,15 @@ function GroupEditDialog({
 }) {
 	const updateGroup = useUpdateGroup(api);
 	const [name, setName] = React.useState(group.name);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateGroup.mutateAsync({ groupId: group.id, body: { name } });
+			toast.success("Grupo actualizado");
 			onClose();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el grupo", getApiErrorMessage(err));
 		}
 	};
 
@@ -298,7 +325,6 @@ function GroupEditDialog({
 			onClose={onClose}
 			title={`Editar grupo ${group.name}`}
 			description="El nombre debe ser único dentro de la etapa."
-			error={error}
 			footer={
 				<>
 					<Button variant="ghost" size="sm" onClick={onClose}>
@@ -333,6 +359,7 @@ function RegistrationRow({
 }) {
 	const updateGroup = useUpdateRegistrationGroup(api);
 	const unregister = useUnregisterTeam(api);
+	const confirm = useConfirm();
 	const [groupId, setGroupId] = React.useState(registration.groupId ?? "");
 	const onMove = async () => {
 		try {
@@ -340,13 +367,24 @@ function RegistrationRow({
 				id: registration.id,
 				body: { groupId: groupId || null },
 			});
-		} catch {}
+			toast.success("Inscripción movida de grupo");
+		} catch {
+			toast.error("No se pudo mover la inscripción");
+		}
 	};
 	const onRemove = async () => {
-		if (!confirm("¿Quitar inscripción?")) return;
+		const ok = await confirm({
+			title: "Quitar inscripción",
+			description: `Se quita a «${team.name}» de la etapa. No se puede deshacer.`,
+			confirmLabel: "Quitar",
+		});
+		if (!ok) return;
 		try {
 			await unregister.mutateAsync(registration.id);
-		} catch {}
+			toast.success("Inscripción quitada");
+		} catch {
+			toast.error("No se pudo quitar la inscripción");
+		}
 	};
 	return (
 		<div className="demo-list-item flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -390,8 +428,6 @@ function CreateMatchInline({
 	const [homeTeamId, setHomeTeamId] = React.useState("");
 	const [awayTeamId, setAwayTeamId] = React.useState("");
 	const [groupId, setGroupId] = React.useState<string>("");
-	const [error, setError] = React.useState<string | null>(null);
-	const [success, setSuccess] = React.useState<string | null>(null);
 	React.useEffect(() => {
 		if (teams.length >= 2) {
 			setHomeTeamId(teams[0]!.id);
@@ -400,8 +436,6 @@ function CreateMatchInline({
 	}, [teams]);
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
-		setSuccess(null);
 		try {
 			await createMatch.mutateAsync({
 				stageId,
@@ -410,9 +444,9 @@ function CreateMatchInline({
 				awayTeamId,
 				tournamentId,
 			});
-			setSuccess("Partido creado");
+			toast.success("Partido creado");
 		} catch (err: unknown) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear el partido", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -456,8 +490,6 @@ function CreateMatchInline({
 			<Button type="submit" disabled={createMatch.isPending}>
 				Crear partido
 			</Button>
-			{error && <span className="demo-alert-danger text-xs">{error}</span>}
-			{success && <span className="demo-alert text-xs">{success}</span>}
 		</form>
 	);
 }
@@ -478,6 +510,7 @@ function RosterSection({
 	const { data: rosterData } = useRoster(api, editionId, selectedTeamId);
 	const addPlayer = useAddPlayerToRoster(api);
 	const removePlayer = useRemovePlayerFromRoster(api);
+	const confirm = useConfirm();
 	const [playerId, setPlayerId] = React.useState("");
 	React.useEffect(() => {
 		if (players.length) setPlayerId(players[0]!.id);
@@ -490,7 +523,24 @@ function RosterSection({
 				teamId: selectedTeamId,
 				body: { playerId },
 			});
-		} catch {}
+			toast.success("Jugador añadido al plantel");
+		} catch {
+			toast.error("No se pudo añadir el jugador");
+		}
+	};
+	const onRemovePlayer = async (rosterId: string, playerName: string) => {
+		const ok = await confirm({
+			title: "Quitar jugador",
+			description: `Se quita a «${playerName}» del plantel. No se puede deshacer.`,
+			confirmLabel: "Quitar",
+		});
+		if (!ok) return;
+		try {
+			await removePlayer.mutateAsync(rosterId);
+			toast.success("Jugador quitado del plantel");
+		} catch {
+			toast.error("No se pudo quitar al jugador del plantel");
+		}
 	};
 	const roster =
 		(
@@ -543,7 +593,11 @@ function RosterSection({
 			</form>
 			<div className="space-y-1">
 				{roster.length === 0 ? (
-					<div className="text-sm text-(--sea-ink-soft)">Plantel vacío</div>
+					<EmptyState
+						title="Plantel vacío"
+						description="Añade jugadores al plantel con el formulario de arriba."
+						className="mt-2"
+					/>
 				) : (
 					<div className="space-y-1">
 						{roster.map(({ roster: r, player }) => (
@@ -574,7 +628,12 @@ function RosterSection({
 									<Button
 										variant="ghost"
 										size="sm"
-										onClick={() => removePlayer.mutateAsync(r.id)}
+										onClick={() =>
+											onRemovePlayer(
+												r.id,
+												`${player.firstName} ${player.lastName}`,
+											)
+										}
 									>
 										Quitar
 									</Button>
@@ -615,11 +674,9 @@ function RosterEditDialog({
 	);
 	const [position, setPosition] = React.useState(entry.position ?? "");
 	const [isCaptain, setIsCaptain] = React.useState(entry.isCaptain ?? false);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateEntry.mutateAsync({
 				id: entry.id,
@@ -629,9 +686,10 @@ function RosterEditDialog({
 					isCaptain,
 				},
 			});
+			toast.success("Ficha del jugador actualizada");
 			onClose();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo actualizar la ficha", getApiErrorMessage(err));
 		}
 	};
 
@@ -641,7 +699,6 @@ function RosterEditDialog({
 			onClose={onClose}
 			title={`Editar ${playerName}`}
 			description="El backend valida dorsal 0–99 libre y capitán único por equipo."
-			error={error}
 			footer={
 				<>
 					<Button variant="ghost" size="sm" onClick={onClose}>

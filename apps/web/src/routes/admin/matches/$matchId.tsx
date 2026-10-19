@@ -22,6 +22,9 @@ import {
 	Label,
 	MatchCard,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -53,7 +56,6 @@ function AdminMatchLivePage() {
 	const [homeScore, setHomeScore] = React.useState(0);
 	const [awayScore, setAwayScore] = React.useState(0);
 	const [status, setStatus] = React.useState("in_progress");
-	const [error, setError] = React.useState<string | null>(null);
 	const [tab, setTab] = React.useState<
 		"score" | "events" | "venue" | "schedule" | "info"
 	>("score");
@@ -67,28 +69,38 @@ function AdminMatchLivePage() {
 	}, [match]);
 
 	const onSendLive = () => {
-		setError(null);
 		try {
 			live.sendScore({ homeScore, awayScore, status });
 		} catch (err) {
-			setError(err instanceof Error ? err.message : String(err));
+			toast.error(
+				"No se pudo enviar el marcador en vivo",
+				getApiErrorMessage(err),
+			);
 		}
 	};
 
 	const onPatchScore = async () => {
-		setError(null);
 		try {
 			await updateScore.mutateAsync({
 				id: matchId,
 				body: { homeScore, awayScore, status } as never,
 			});
+			toast.success("Marcador guardado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el marcador", getApiErrorMessage(err));
 		}
 	};
 
 	if (!match)
-		return <div className="demo-center text-sm">Cargando partido…</div>;
+		return (
+			<div className="demo-center space-y-3 w-full">
+				<Skeleton className="mx-auto h-24 w-full max-w-2xl rounded-xl" />
+				<div className="mx-auto grid w-full max-w-2xl grid-cols-2 gap-3">
+					<Skeleton className="h-16 rounded-xl" />
+					<Skeleton className="h-16 rounded-xl" />
+				</div>
+			</div>
+		);
 
 	return (
 		<div className="space-y-6">
@@ -151,8 +163,6 @@ function AdminMatchLivePage() {
 							updateScore={updateScore}
 							onSendLive={onSendLive}
 							onPatchScore={onPatchScore}
-							error={error}
-							setError={setError}
 						/>
 					)}
 					{tab === "events" && (
@@ -198,8 +208,6 @@ function ScoreTab({
 	updateScore,
 	onSendLive,
 	onPatchScore,
-	error,
-	setError: _setError,
 }: {
 	matchId: string;
 	homeScore: number;
@@ -212,8 +220,6 @@ function ScoreTab({
 	updateScore: ReturnType<typeof useUpdateMatchScore>;
 	onSendLive: () => void;
 	onPatchScore: () => Promise<void>;
-	error: string | null;
-	setError: (s: string | null) => void;
 }) {
 	return (
 		<div className="space-y-3">
@@ -263,7 +269,6 @@ function ScoreTab({
 					{updateScore.isPending ? "Guardando…" : "PATCH /score (REST)"}
 				</Button>
 			</div>
-			{error && <div className="demo-alert-danger text-sm">{error}</div>}
 			{live.lastError && (
 				<div className="demo-alert-danger text-sm">
 					WS error: {live.lastError.message}
@@ -292,14 +297,12 @@ function EventsTab({
 	const [eventType, setEventType] = React.useState("goal");
 	const [periodNumber, setPeriodNumber] = React.useState(1);
 	const [minuteOrSecond, setMinuteOrSecond] = React.useState(0);
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (participants[0]) setTeamId(participants[0].id);
 	}, [matchId, participants]);
 
 	const onSend = async (viaWs: boolean) => {
-		setError(null);
 		const payload = {
 			teamId,
 			eventType,
@@ -311,9 +314,10 @@ function EventsTab({
 				live.sendEvent(payload as never);
 			} else {
 				await recordEvent.mutateAsync({ id: matchId, body: payload });
+				toast.success("Evento registrado");
 			}
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo registrar el evento", getApiErrorMessage(err));
 		}
 	};
 
@@ -378,14 +382,10 @@ function EventsTab({
 					{recordEvent.isPending ? "Enviando…" : "POST /events"}
 				</Button>
 			</div>
-			{error && <div className="demo-alert-danger text-sm">{error}</div>}
 			{live.lastEvent && (
 				<div className="demo-alert text-sm">
 					Último evento WS: {JSON.stringify(live.lastEvent).slice(0, 200)}
 				</div>
-			)}
-			{recordEvent.isSuccess && (
-				<div className="demo-alert text-sm">Evento registrado</div>
 			)}
 		</div>
 	);
@@ -407,19 +407,18 @@ function VenueTab({
 		)?.items ?? [];
 	const assignVenue = useAssignVenue(api);
 	const [selectedVenueId, setSelectedVenueId] = React.useState(venueId ?? "");
-	const [error, setError] = React.useState<string | null>(null);
 	React.useEffect(() => {
 		setSelectedVenueId(venueId ?? "");
 	}, [venueId]);
 	const onAssign = async () => {
-		setError(null);
 		try {
 			await assignVenue.mutateAsync({
 				id: matchId,
 				venueId: selectedVenueId,
 			} as never);
+			toast.success("Sede asignada");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo asignar la sede", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -444,10 +443,6 @@ function VenueTab({
 			>
 				{assignVenue.isPending ? "Asignando…" : "Asignar sede"}
 			</Button>
-			{error && <div className="demo-alert-danger text-sm">{error}</div>}
-			{assignVenue.isSuccess && (
-				<div className="demo-alert text-sm">Sede asignada</div>
-			)}
 		</div>
 	);
 }
@@ -463,17 +458,16 @@ function ScheduleTab({
 	const [dt, setDt] = React.useState(
 		scheduledAt ? new Date(scheduledAt).toISOString().slice(0, 16) : "",
 	);
-	const [error, setError] = React.useState<string | null>(null);
 	const onSchedule = async () => {
-		setError(null);
 		try {
 			const iso = new Date(dt).toISOString();
 			await scheduleMatch.mutateAsync({
 				id: matchId,
 				scheduledAt: iso,
 			} as never);
+			toast.success("Partido programado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo programar el partido", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -489,10 +483,6 @@ function ScheduleTab({
 			<Button onClick={onSchedule} disabled={scheduleMatch.isPending || !dt}>
 				{scheduleMatch.isPending ? "Programando…" : "Programar"}
 			</Button>
-			{error && <div className="demo-alert-danger text-sm">{error}</div>}
-			{scheduleMatch.isSuccess && (
-				<div className="demo-alert text-sm">Programado</div>
-			)}
 			<div className="text-xs text-(--sea-ink-soft)">
 				Actual: {scheduledAt ? new Date(scheduledAt).toLocaleString() : "—"}
 			</div>
@@ -511,26 +501,31 @@ function InfoTab({
 }) {
 	const updateMatch = useUpdateMatch(api);
 	const deleteMatch = useDeleteMatch(api);
-	const [error, setError] = React.useState<string | null>(null);
+	const confirm = useConfirm();
 	const onCancel = async () => {
-		setError(null);
 		try {
 			await updateMatch.mutateAsync({
 				id: matchId,
 				body: { status: "cancelled" } as never,
 			});
+			toast.success("Partido cancelado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo cancelar el partido", getApiErrorMessage(err));
 		}
 	};
 	const onDelete = async () => {
-		if (!confirm("¿Eliminar partido?")) return;
-		setError(null);
+		const ok = await confirm({
+			title: "Eliminar partido",
+			description:
+				"Se elimina el partido con su marcador y eventos. No se puede deshacer.",
+			confirmLabel: "Eliminar",
+		});
+		if (!ok) return;
 		try {
 			await deleteMatch.mutateAsync(matchId);
 			onDeleted();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo eliminar el partido", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -563,10 +558,6 @@ function InfoTab({
 					{deleteMatch.isPending ? "Eliminando…" : "Eliminar partido"}
 				</Button>
 			</Card>
-			{error && <div className="demo-alert-danger text-sm">{error}</div>}
-			{(updateMatch.isSuccess || deleteMatch.isSuccess) && (
-				<div className="demo-alert text-sm">Operación exitosa</div>
-			)}
 		</div>
 	);
 }

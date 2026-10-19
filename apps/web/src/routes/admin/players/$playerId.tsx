@@ -1,6 +1,15 @@
 import { getApiErrorMessage, queryKeys, unwrap } from "@sports/api-client";
 import { useUpdatePlayer } from "@sports/api-client/hooks";
-import { Button, Card, CardHeader, CardTitle, Input, Label } from "@sports/ui";
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardTitle,
+	Input,
+	Label,
+	Skeleton,
+	toast,
+} from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -12,7 +21,7 @@ export const Route = createFileRoute("/admin/players/$playerId")({
 
 function AdminPlayerDetailPage() {
 	const { playerId } = Route.useParams();
-	const { data } = useQuery({
+	const { data, isPending } = useQuery({
 		queryKey: queryKeys.players.detail(playerId),
 		queryFn: () => unwrap(api.players({ id: playerId }).get()),
 	});
@@ -29,7 +38,6 @@ function AdminPlayerDetailPage() {
 	const [firstName, setFirstName] = React.useState("");
 	const [lastName, setLastName] = React.useState("");
 	const [idCardNumber, setIdCardNumber] = React.useState("");
-	const [error, setError] = React.useState<string | null>(null);
 	React.useEffect(() => {
 		if (player) {
 			setFirstName(player.firstName);
@@ -37,11 +45,15 @@ function AdminPlayerDetailPage() {
 			setIdCardNumber(player.idCardNumber ?? "");
 		}
 	}, [player]);
-	if (!player)
-		return <div className="demo-center text-sm">Cargando jugador…</div>;
+	if (isPending)
+		return (
+			<div className="space-y-6">
+				<Skeleton className="h-48 rounded-xl" />
+			</div>
+		);
+	if (!player) return <Skeleton className="h-64 rounded-xl" />;
 	const onUpdate = async (e: React.FormEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({
 				id: playerId,
@@ -51,8 +63,9 @@ function AdminPlayerDetailPage() {
 					idCardNumber: idCardNumber || null,
 				} as never,
 			});
+			toast.success("Cambios guardados");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el jugador", getApiErrorMessage(err));
 		}
 	};
 	return (
@@ -91,10 +104,6 @@ function AdminPlayerDetailPage() {
 					<Button type="submit" disabled={update.isPending}>
 						Guardar
 					</Button>
-					{error && <div className="demo-alert-danger text-sm">{error}</div>}
-					{update.isSuccess && (
-						<div className="demo-alert text-sm">Guardado</div>
-					)}
 				</form>
 			</Card>
 		</div>

@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle } from "@sports/ui";
+import { Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -70,7 +70,10 @@ function ClubsPage() {
 				))}
 			</div>
 			{clubs.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay clubes.</div>
+				<EmptyState
+					title="No hay clubes"
+					description="Aún no se publica ningún club."
+				/>
 			)}
 		</div>
 	);

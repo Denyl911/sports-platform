@@ -5,6 +5,7 @@ import {
 	CardContent,
 	CardHeader,
 	CardTitle,
+	EmptyState,
 	Select,
 } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -90,7 +91,10 @@ function EditionDetailPage() {
 				))}
 			</div>
 			{stages.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay etapas.</div>
+				<EmptyState
+					title="Sin etapas"
+					description="La edición todavía no define etapas."
+				/>
 			)}
 
 			<RosterSection editionId={editionId} />
@@ -121,7 +125,10 @@ function RosterSection({ editionId }: { editionId: string }) {
 		<div>
 			<h2 className="demo-section-title mb-2">Plantel</h2>
 			{teams.length === 0 ? (
-				<div className="demo-card text-center text-sm">No hay equipos.</div>
+				<EmptyState
+					title="Sin equipos"
+					description="Aún no hay equipos inscritos en esta edición."
+				/>
 			) : (
 				<>
 					<Select

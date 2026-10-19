@@ -19,9 +19,13 @@ import {
 	CardHeader,
 	CardTitle,
 	EditDialog,
+	EmptyState,
 	Input,
 	Label,
 	Select,
+	Skeleton,
+	toast,
+	useConfirm,
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -38,10 +42,12 @@ function AdminTournamentDetailPage() {
 		queryKey: queryKeys.tournaments.detail(tournamentId),
 		queryFn: () => unwrap(api.tournaments({ tournamentId }).get()),
 	});
-	const { data: editionsData } = useTournamentEditions(api, tournamentId);
+	const { data: editionsData, isPending: editionsPending } =
+		useTournamentEditions(api, tournamentId);
 	const update = useUpdateTournament(api);
 	const createEdition = useCreateEdition(api);
 	const deleteEdition = useDeleteEdition(api);
+	const confirm = useConfirm();
 
 	const t = tournamentData as
 		| { id: string; name: string; sportId: string; description?: string | null }
@@ -66,7 +72,6 @@ function AdminTournamentDetailPage() {
 	const [name, setName] = React.useState("");
 	const [eName, setEName] = React.useState("");
 	const [eCategory, setECategory] = React.useState("open");
-	const [error, setError] = React.useState<string | null>(null);
 	const [editingEdition, setEditingEdition] = React.useState<
 		(typeof editions)[number] | null
 	>(null);
@@ -75,15 +80,22 @@ function AdminTournamentDetailPage() {
 		if (t) setName(t.name);
 	}, [t]);
 
-	if (!t) return <div className="demo-center text-sm">Cargando torneo…</div>;
+	if (!t)
+		return (
+			<div className="space-y-3">
+				<Skeleton className="h-10 w-64 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+				<Skeleton className="h-40 rounded-xl" />
+			</div>
+		);
 
 	const onUpdate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await update.mutateAsync({ tournamentId, body: { name } });
+			toast.success("Torneo guardado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar el torneo", getApiErrorMessage(err));
 		}
 	};
 
@@ -95,8 +107,9 @@ function AdminTournamentDetailPage() {
 				body: { name: eName, category: eCategory },
 			});
 			setEName("");
+			toast.success("Edición creada", `«${eName.trim()}» está lista.`);
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo crear la edición", getApiErrorMessage(err));
 		}
 	};
 
@@ -120,9 +133,6 @@ function AdminTournamentDetailPage() {
 							Guardar
 						</Button>
 					</form>
-					{error && (
-						<div className="demo-alert-danger mt-2 text-sm">{error}</div>
-					)}
 				</CardContent>
 			</Card>
 
@@ -149,49 +159,67 @@ function AdminTournamentDetailPage() {
 					</Button>
 				</form>
 				<div className="mt-4 grid gap-2 sm:grid-cols-2">
-					{editions.map((ed) => (
-						<Card key={ed.id} className="p-3 flex flex-col">
-							<Link
-								to="/admin/editions/$editionId"
-								params={{ editionId: ed.id }}
-								search={{ tournamentId }}
-								className="no-underline"
-							>
-								<div className="font-bold text-sm">{ed.name}</div>
-								<Badge variant="secondary">{ed.status}</Badge>{" "}
-								<Badge variant="outline">{ed.category}</Badge>
-							</Link>
-							<div className="mt-2 flex gap-2 self-start">
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={() => setEditingEdition(ed)}
+					{editionsPending ? (
+						<>
+							<Skeleton className="h-28 rounded-xl" />
+							<Skeleton className="h-28 rounded-xl" />
+							<Skeleton className="h-28 rounded-xl" />
+							<Skeleton className="h-28 rounded-xl" />
+						</>
+					) : editions.length === 0 ? (
+						<EmptyState
+							title="Sin ediciones"
+							description="Crea la primera edición del torneo con el formulario de arriba."
+						/>
+					) : (
+						editions.map((ed) => (
+							<Card key={ed.id} className="p-3 flex flex-col">
+								<Link
+									to="/admin/editions/$editionId"
+									params={{ editionId: ed.id }}
+									search={{ tournamentId }}
+									className="no-underline"
 								>
-									Editar
-								</Button>
-								<Button
-									variant="ghost"
-									size="sm"
-									onClick={async () => {
-										if (!confirm(`¿Eliminar edición ${ed.name}?`)) return;
-										try {
-											await deleteEdition.mutateAsync(ed.id);
-										} catch (err) {
-											setError(getApiErrorMessage(err));
-										}
-									}}
-								>
-									Eliminar
-								</Button>
-							</div>
-						</Card>
-					))}
+									<div className="font-bold text-sm">{ed.name}</div>
+									<Badge variant="secondary">{ed.status}</Badge>{" "}
+									<Badge variant="outline">{ed.category}</Badge>
+								</Link>
+								<div className="mt-2 flex gap-2 self-start">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setEditingEdition(ed)}
+									>
+										Editar
+									</Button>
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={async () => {
+											const ok = await confirm({
+												title: "Eliminar edición",
+												description: `Se elimina «${ed.name}» y sus etapas. No se puede deshacer.`,
+												confirmLabel: "Eliminar",
+											});
+											if (!ok) return;
+											try {
+												await deleteEdition.mutateAsync(ed.id);
+												toast.success("Edición eliminada");
+											} catch (err) {
+												toast.error(
+													"No se pudo eliminar la edición",
+													getApiErrorMessage(err),
+												);
+											}
+										}}
+									>
+										Eliminar
+									</Button>
+								</div>
+							</Card>
+						))
+					)}
 				</div>
-				{editions.length === 0 && (
-					<div className="text-sm text-(--sea-ink-soft) mt-2">
-						Sin ediciones
-					</div>
-				)}
 			</Card>
 			{editingEdition && (
 				<EditionEditDialog
@@ -241,7 +269,6 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 
 	const [userId, setUserId] = React.useState("");
 	const [role, setRole] = React.useState<MemberRole>("referee");
-	const [error, setError] = React.useState<string | null>(null);
 
 	React.useEffect(() => {
 		if (candidates.length && !candidates.some((c) => c.id === userId)) {
@@ -251,14 +278,14 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 
 	const onAdd = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await addMember.mutateAsync({
 				userId,
 				body: { tournamentId, userId, role },
 			});
+			toast.success("Miembro asignado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo asignar el miembro", getApiErrorMessage(err));
 		}
 	};
 
@@ -294,7 +321,6 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 					Asignar
 				</Button>
 			</form>
-			{error && <div className="demo-alert-danger mt-2 text-sm">{error}</div>}
 			<div className="mt-3 space-y-1">
 				{members.map(({ membership, user }) => (
 					<TournamentMemberRow
@@ -305,7 +331,11 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 					/>
 				))}
 				{members.length === 0 && (
-					<div className="text-sm text-(--sea-ink-soft)">Sin miembros</div>
+					<EmptyState
+						title="Sin miembros"
+						description="Asigna referees, estadísticos u organizadores con el formulario de arriba."
+						className="mt-3"
+					/>
 				)}
 			</div>
 		</div>
@@ -323,30 +353,35 @@ function TournamentMemberRow({
 }) {
 	const updateRole = useUpdateMembershipRole(api);
 	const remove = useRemoveMembership(api);
+	const confirm = useConfirm();
 	const [role, setRole] = React.useState<MemberRole>(
 		membership.role as MemberRole,
 	);
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSave = async () => {
-		setError(null);
 		try {
 			await updateRole.mutateAsync({
 				memberId: membership.id,
 				body: { role },
 			});
+			toast.success("Rol del miembro actualizado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo actualizar el rol", getApiErrorMessage(err));
 		}
 	};
 
 	const onRemove = async () => {
-		if (!confirm(`¿Quitar a ${userName} del torneo?`)) return;
-		setError(null);
+		const ok = await confirm({
+			title: "Quitar miembro",
+			description: `Se quita a «${userName}» del torneo. No se puede deshacer.`,
+			confirmLabel: "Quitar",
+		});
+		if (!ok) return;
 		try {
 			await remove.mutateAsync(membership.id);
+			toast.success("Miembro quitado");
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo quitar el miembro", getApiErrorMessage(err));
 		}
 	};
 
@@ -377,7 +412,6 @@ function TournamentMemberRow({
 					Quitar
 				</Button>
 			</div>
-			{error && <div className="demo-alert-danger w-full text-xs">{error}</div>}
 		</div>
 	);
 }
@@ -412,11 +446,9 @@ function EditionEditDialog({
 	);
 	const [startDate, setStartDate] = React.useState(edition.startDate ?? "");
 	const [endDate, setEndDate] = React.useState(edition.endDate ?? "");
-	const [error, setError] = React.useState<string | null>(null);
 
 	const onSubmit = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
-		setError(null);
 		try {
 			await updateEdition.mutateAsync({
 				editionId: edition.id,
@@ -428,9 +460,10 @@ function EditionEditDialog({
 					...(endDate ? { endDate } : {}),
 				},
 			});
+			toast.success("Edición guardada");
 			onClose();
 		} catch (err) {
-			setError(getApiErrorMessage(err));
+			toast.error("No se pudo guardar la edición", getApiErrorMessage(err));
 		}
 	};
 
@@ -440,7 +473,6 @@ function EditionEditDialog({
 			onClose={onClose}
 			title={`Editar edición ${edition.name}`}
 			description="El backend valida la transición de estado y el rango de fechas."
-			error={error}
 			footer={
 				<>
 					<Button variant="ghost" size="sm" onClick={onClose}>

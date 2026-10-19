@@ -1,5 +1,5 @@
 import { queryKeys, unwrap } from "@sports/api-client";
-import { Card, CardHeader, CardTitle } from "@sports/ui";
+import { Card, CardHeader, CardTitle, EmptyState } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { api } from "../../lib/api";
@@ -56,7 +56,10 @@ function VenuesPage() {
 				))}
 			</div>
 			{venues.length === 0 && (
-				<div className="demo-card text-center text-sm">No hay sedes.</div>
+				<EmptyState
+					title="No hay sedes"
+					description="Aún no se publica ninguna sede."
+				/>
 			)}
 		</div>
 	);
