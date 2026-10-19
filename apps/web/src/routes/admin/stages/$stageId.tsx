@@ -1,8 +1,10 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useAddPlayerToRoster,
+	useClubs,
 	useCreateGroup,
 	useCreateMatch,
+	useCreateTeam,
 	useDeleteGroup,
 	useGroupsByStage,
 	usePlayers,
@@ -35,6 +37,7 @@ import {
 	toast,
 	Users,
 	useConfirm,
+	X,
 } from "@sports/ui";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import * as React from "react";
@@ -76,6 +79,8 @@ function AdminStageDetailPage() {
 	const createGroup = useCreateGroup(api);
 	const deleteGroup = useDeleteGroup(api);
 	const registerTeam = useRegisterTeam(api);
+	const createTeam = useCreateTeam(api);
+	const { data: clubsData } = useClubs(api);
 	const confirm = useConfirm();
 
 	const groups =
@@ -121,6 +126,9 @@ function AdminStageDetailPage() {
 	const [editingGroup, setEditingGroup] = React.useState<
 		(typeof groups)[number] | null
 	>(null);
+	const [showCreateTeam, setShowCreateTeam] = React.useState(false);
+	const [newTeamName, setNewTeamName] = React.useState("");
+	const [newTeamClubId, setNewTeamClubId] = React.useState("");
 
 	React.useEffect(() => {
 		if (teams.length && !teamId) setTeamId(teams[0]!.id);
@@ -162,6 +170,24 @@ function AdminStageDetailPage() {
 			toast.success("Equipo inscrito");
 		} catch (err) {
 			toast.error("No se pudo inscribir el equipo", getApiErrorMessage(err));
+		}
+	};
+
+	const onCreateTeam = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		try {
+			const team = await createTeam.mutateAsync({
+				name: newTeamName,
+				clubId: newTeamClubId || undefined,
+			});
+			// Inscribir automáticamente el equipo recién creado
+			await registerTeam.mutateAsync({ stageId, body: { teamId: team.id } });
+			toast.success("Equipo creado e inscrito");
+			setShowCreateTeam(false);
+			setNewTeamName("");
+			setNewTeamClubId("");
+		} catch (err) {
+			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
 		}
 	};
 
@@ -292,6 +318,16 @@ function AdminStageDetailPage() {
 							Inscribir
 						</Button>
 					</form>
+					<div className="mt-2">
+						<Button
+							variant="ghost"
+							size="sm"
+							icon={Plus}
+							onClick={() => setShowCreateTeam(true)}
+						>
+							Crear equipo nuevo
+						</Button>
+					</div>
 					<div className="mt-3 space-y-1">
 						{registrations.map(({ registration, team }) => (
 							<RegistrationRow
@@ -315,10 +351,16 @@ function AdminStageDetailPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
-					Elige dos equipos inscritos y crea el partido; el grupo es opcional.
-					El fixture completo y las jornadas se arman después desde cada grupo.
+					Crea un partido entre dos equipos ya inscritos en la etapa. El
+					grupo es opcional. Para el fixture completo (todas las jornadas),
+					usa la vista de cada grupo.
 				</p>
-				{tournamentId ? (
+				{registrations.length < 2 ? (
+					<div className="mt-3 rounded-xl border border-(--line) bg-(--chip-bg) p-3 text-sm text-(--sea-ink-soft)">
+						Necesitas al menos 2 equipos inscritos para crear un partido.
+						Inscribe equipos desde la sección de arriba.
+					</div>
+				) : tournamentId ? (
 					<CreateMatchInline
 						stageId={stageId}
 						tournamentId={tournamentId}
@@ -350,6 +392,21 @@ function AdminStageDetailPage() {
 				<GroupEditDialog
 					group={editingGroup}
 					onClose={() => setEditingGroup(null)}
+				/>
+			)}
+			{showCreateTeam && (
+				<CreateTeamDialog
+					clubs={
+						(clubsData as { items: Array<{ id: string; name: string }> })
+							?.items ?? []
+					}
+					newTeamName={newTeamName}
+					setNewTeamName={setNewTeamName}
+					newTeamClubId={newTeamClubId}
+					setNewTeamClubId={setNewTeamClubId}
+					onClose={() => setShowCreateTeam(false)}
+					onSubmit={onCreateTeam}
+					isPending={createTeam.isPending}
 				/>
 			)}
 		</div>
@@ -406,6 +463,76 @@ function GroupEditDialog({
 					onChange={(e) => setName(e.target.value)}
 					required
 				/>
+			</form>
+		</EditDialog>
+	);
+}
+
+function CreateTeamDialog({
+	clubs,
+	newTeamName,
+	setNewTeamName,
+	newTeamClubId,
+	setNewTeamClubId,
+	onClose,
+	onSubmit,
+	isPending,
+}: {
+	clubs: Array<{ id: string; name: string }>;
+	newTeamName: string;
+	setNewTeamName: (v: string) => void;
+	newTeamClubId: string;
+	setNewTeamClubId: (v: string) => void;
+	onClose: () => void;
+	onSubmit: (e: React.SyntheticEvent) => void;
+	isPending: boolean;
+}) {
+	return (
+		<EditDialog
+			open
+			onClose={onClose}
+			title="Crear equipo"
+			description="El equipo se inscribirá automáticamente en esta etapa."
+			footer={
+				<>
+					<Button variant="ghost" size="sm" onClick={onClose}>
+						Cancelar
+					</Button>
+					<Button
+						size="sm"
+						icon={Save}
+						onClick={onSubmit}
+						disabled={isPending}
+					>
+						Crear e inscribir
+					</Button>
+				</>
+			}
+		>
+			<form onSubmit={onSubmit} className="space-y-3">
+				<Field label="Nombre del equipo" htmlFor="new-team-name">
+					<Input
+						id="new-team-name"
+						value={newTeamName}
+						onChange={(e) => setNewTeamName(e.target.value)}
+						placeholder="Ej: Tigres UANL"
+						required
+					/>
+				</Field>
+				<Field label="Club (opcional)" htmlFor="new-team-club">
+					<Select
+						id="new-team-club"
+						value={newTeamClubId}
+						onChange={(e) => setNewTeamClubId(e.target.value)}
+					>
+						<option value="">Sin club</option>
+						{clubs.map((c) => (
+							<option key={c.id} value={c.id}>
+								{c.name}
+							</option>
+						))}
+					</Select>
+				</Field>
 			</form>
 		</EditDialog>
 	);
