@@ -22,6 +22,7 @@ import {
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { resolveSportIcon } from "../../../lib/sport-icon";
 import * as React from "react";
 import { AdminListPager } from "../../../components/AdminListPager";
 import {
@@ -55,6 +56,7 @@ function AdminSportsPage() {
 				items: Array<{
 					id: string;
 					name: string;
+					icon?: string | null;
 					hasDraws?: boolean | null;
 					periodName?: string | null;
 					regularPeriods?: number | null;
@@ -184,7 +186,11 @@ function AdminSportsPage() {
 								className="no-underline"
 							>
 								<CardHeader className="p-0">
-									<CardTitle className="flex items-center gap-2 text-base">
+										<CardTitle className="flex items-center gap-2 text-base">
+										{(() => {
+											const Icon = resolveSportIcon(s.name, s.icon);
+											return <Icon className="h-5 w-5 text-(--sea-ink-soft)" />;
+										})()}
 										<Dumbbell
 											{...DECORATIVE}
 											className="size-4 shrink-0 text-(--sea-ink-soft)"
