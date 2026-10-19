@@ -6,6 +6,21 @@ import { pgTable } from "drizzle-orm/pg-core/table";
 import { stageTypeEnum } from "./enums";
 import { tournamentEditions } from "./tournament-editions";
 
+/**
+ * Reglas de avance de la etapa: cuántos equipos bajan de ESTA etapa a la
+ * siguiente (la de menor `sequenceOrder` mayor dentro de la edición — el
+ * orden ya está en la tabla, la regla no repite el destino).
+ *
+ * Vive en jsonb porque su forma depende de la forma del destino; v1 solo
+ * conoce "N por grupo" hacia una etapa de eliminación directa.
+ */
+export interface AdvancementRules {
+	/** Cuántos equipos por grupo pasan. Ausente o 0: la etapa no alimenta a nadie. */
+	qualifyPerGroup?: number;
+	/** Cómo se cruzan en la llave: `cross` = A1 vs B2 · `linear` = A1 vs B1. */
+	seeding?: "cross" | "linear";
+}
+
 export const tournamentStages = pgTable(
 	"tournament_stages",
 	{

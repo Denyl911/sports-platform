@@ -10,6 +10,7 @@ import {
 	createUpdateSchema,
 } from "drizzle-orm/typebox-legacy";
 import { type Static, t } from "elysia";
+import { selectTeamSchema } from "./teams";
 
 export const selectTournamentSchema = createSelectSchema(tournaments);
 export const insertTournamentSchema = createInsertSchema(tournaments);
@@ -23,12 +24,48 @@ export const updateTournamentEditionSchema =
 	createUpdateSchema(tournamentEditions);
 
 export const selectTournamentStageSchema = createSelectSchema(tournamentStages);
-export const insertTournamentStageSchema = createInsertSchema(tournamentStages);
-export const updateTournamentStageSchema = createUpdateSchema(tournamentStages);
+// `insertTournamentStageSchema` y `updateTournamentStageSchema` se declaran en
+// la sección "Avance" (override del campo jsonb `advancementRules`).
 
 export const selectStageGroupSchema = createSelectSchema(stageGroups);
 export const insertStageGroupSchema = createInsertSchema(stageGroups);
 export const updateStageGroupSchema = createUpdateSchema(stageGroups);
+
+// ==========================================
+// ==========================================
+// Avance entre etapas
+// ==========================================
+
+export const advancementRulesSchema = t.Object({
+	qualifyPerGroup: t.Optional(t.Integer({ minimum: 1, maximum: 32 })),
+	seeding: t.Optional(t.Union([t.Literal("cross"), t.Literal("linear")])),
+});
+
+export const insertTournamentStageSchema = createInsertSchema(
+	tournamentStages,
+	{
+		advancementRules: t.Optional(advancementRulesSchema),
+	},
+);
+export const updateTournamentStageSchema = createUpdateSchema(
+	tournamentStages,
+	{
+		advancementRules: t.Optional(advancementRulesSchema),
+	},
+);
+
+export const stageQualifierSchema = t.Object({
+	groupId: t.String({ format: "uuid" }),
+	groupName: t.String(),
+	position: t.Integer({ minimum: 1 }),
+	qualified: t.Boolean(),
+	team: t.Pick(selectTeamSchema, ["id", "name"]),
+});
+
+export const stageQualifiersSchema = t.Object({
+	rule: t.Union([advancementRulesSchema, t.Null()]),
+	items: t.Array(stageQualifierSchema),
+});
 
 // ==========================================
 // DTOs PARA ENDPOINTS Y FORMULARIOS
@@ -90,3 +127,6 @@ export type UpdateTournamentStage = Static<typeof updateTournamentStageSchema>;
 export type StageGroup = Static<typeof selectStageGroupSchema>;
 export type InsertStageGroup = Static<typeof insertStageGroupSchema>;
 export type UpdateStageGroup = Static<typeof updateStageGroupSchema>;
+export type AdvancementRulesInput = Static<typeof advancementRulesSchema>;
+export type StageQualifier = Static<typeof stageQualifierSchema>;
+export type StageQualifiers = Static<typeof stageQualifiersSchema>;

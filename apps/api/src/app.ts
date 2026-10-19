@@ -3,12 +3,13 @@ import openapi from "@elysia/openapi";
 import { Elysia } from "elysia";
 import { resolveCorsOrigins } from "./lib/config";
 import { errorMiddleware } from "./middlewares/error.middleware";
+import { advancementRoutes } from "./routes/advancement";
 import { authRoutes } from "./routes/auth";
 import { clubsRoutes } from "./routes/clubs";
 import { invitationRoutes } from "./routes/invitations";
 import { liveRoutes } from "./routes/live";
-import { mediaRoutes } from "./routes/media";
 import { matchesRoutes } from "./routes/matches";
+import { mediaRoutes } from "./routes/media";
 import { playersRoutes } from "./routes/players";
 import {
 	registrationItemRoutes,
@@ -66,6 +67,7 @@ export const app = new Elysia({
 	.use(teamsRoutes)
 	.use(playersRoutes)
 	.use(tournamentsRoutes)
+	.use(advancementRoutes)
 	.use(stageRegistrationsRoutes)
 	.use(registrationItemRoutes)
 	.use(rostersRoutes)
