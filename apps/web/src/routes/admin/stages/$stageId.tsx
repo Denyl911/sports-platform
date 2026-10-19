@@ -2,6 +2,7 @@ import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useAddPlayerToRoster,
 	useClubs,
+	useCreateClub,
 	useCreateGroup,
 	useCreateInvitation,
 	useCreateMatch,
@@ -186,10 +187,10 @@ function AdminStageDetailPage() {
 			})) as { id: string };
 			// Inscribir automáticamente el equipo recién creado
 			await registerTeam.mutateAsync({ stageId, body: { teamId: team.id } });
-			toast.success("Equipo creado e inscrito");
-			setShowCreateTeam(false);
-			setNewTeamName("");
-			setNewTeamClubId("");
+			toast.success("Equipo creado e inscribe equipos para crear el fixture");
+					setShowCreateTeam(false);
+					setNewTeamName("");
+					setNewTeamClubId("");
 		} catch (err) {
 			toast.error("No se pudo crear el equipo", getApiErrorMessage(err));
 		}
@@ -235,6 +236,26 @@ function AdminStageDetailPage() {
 				]}
 			/>
 			<AdminFlowSteps current="group" />
+			<Card className="p-4">
+				<h3 className="font-bold">Invitar equipos</h3>
+				<p className="mt-1 text-sm text-(--sea-ink-soft)">
+					Genera un link para que los capitanes inscriban sus equipos
+					directamente. Puedes compartirlo o generar un código QR.
+				</p>
+				<div className="mt-3 flex gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => {
+							setInviteLink(null);
+							setShowInviteDialog(true);
+						}}
+					>
+						Crear link de invitación
+					</Button>
+				</div>
+			</Card>
+
 			<div className="grid gap-6 lg:grid-cols-2">
 				<Card className="p-4">
 					<h3 className="font-bold">Grupos</h3>
@@ -271,11 +292,11 @@ function AdminStageDetailPage() {
 						</div>
 					) : groups.length === 0 ? (
 						<EmptyState
-							icon={Table2}
-							title="Sin grupos todavía"
-							description="Crea el primer grupo con el formulario de arriba: es el paso 4 y es donde inscribes los equipos."
-							className="mt-3"
-						/>
+												icon={Table2}
+												title="Sin grupos todavía"
+												description="Los grupos son opcionales. Crea uno solo si tu etapa necesita fase de grupos o tablas separadas."
+												className="mt-3"
+											/>
 					) : (
 						<div className="mt-3 flex flex-col gap-2">
 							{groups.map((g) => (
@@ -315,11 +336,11 @@ function AdminStageDetailPage() {
 				</Card>
 
 				<Card className="p-4">
-					<h3 className="font-bold">Inscripciones</h3>
-					<p className="mt-1 text-sm text-(--sea-ink-soft)">
-						Inscribe los equipos de la etapa y asígnalos a un grupo para que
-						entren en la tabla.
-					</p>
+					<h3 className="font-bold">Equipos</h3>
+									<p className="mt-1 text-sm text-(--sea-ink-soft)">
+										Inscribe los equipos de la etapa. Asignarlos a un grupo es opcional
+										solo si la etapa usa grupos.
+									</p>
 					<form onSubmit={onRegister} className="mt-2 flex gap-2">
 						<Select
 							value={teamId}
@@ -360,7 +381,7 @@ function AdminStageDetailPage() {
 							<EmptyState
 								icon={Users}
 								title="Sin inscripciones"
-								description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos."
+								description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos. El grupo es opcional."
 							/>
 						)}
 					</div>
@@ -370,9 +391,8 @@ function AdminStageDetailPage() {
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
-					Crea un partido entre dos equipos ya inscritos en la etapa. El grupo
-					es opcional. Para el fixture completo (todas las jornadas), usa la
-					vista de cada grupo.
+					Crea un partido entre dos equipos ya inscritos en la etapa. Si la
+					etapa tiene grupos, los equipos deben pertenecer al mismo grupo.
 				</p>
 				{registrations.length < 2 ? (
 					<div className="mt-3 rounded-xl border border-(--line) bg-(--chip-bg) p-3 text-sm text-(--sea-ink-soft)">
@@ -408,25 +428,6 @@ function AdminStageDetailPage() {
 				)}
 			</Card>
 
-			<Card className="p-4">
-				<h3 className="font-bold">Invitar equipos</h3>
-				<p className="mt-1 text-sm text-(--sea-ink-soft)">
-					Genera un link para que los capitanes inscriban sus equipos
-					directamente. Puedes compartirlo o generar un código QR.
-				</p>
-				<div className="mt-3">
-					<Button
-						variant="outline"
-						size="sm"
-						onClick={() => {
-							setInviteLink(null);
-						 setShowInviteDialog(true);
-						}}
-					>
-						Crear link de invitación
-					</Button>
-				</div>
-			</Card>
 			{editingGroup && (
 				<GroupEditDialog
 					group={editingGroup}
@@ -534,6 +535,25 @@ function CreateTeamDialog({
 	onSubmit: (e: React.SyntheticEvent) => void;
 	isPending: boolean;
 }) {
+	const [showCreateClub, setShowCreateClub] = React.useState(false);
+	const [newClubName, setNewClubName] = React.useState("");
+	const createClubHook = useCreateClub(api);
+
+	const onCreateClub = async () => {
+		if (!newClubName.trim()) return;
+		try {
+			const club = (await createClubHook.mutateAsync({ name: newClubName.trim() })) as {
+				id: string;
+			};
+			setNewTeamClubId(club.id);
+			setShowCreateClub(false);
+			setNewClubName("");
+			toast.success("Club creado");
+		} catch (err) {
+			toast.error("No se pudo crear el club", getApiErrorMessage(err));
+		}
+	};
+
 	return (
 		<EditDialog
 			open
@@ -561,20 +581,68 @@ function CreateTeamDialog({
 						required
 					/>
 				</Field>
-				<Field label="Club (opcional)" htmlFor="new-team-club">
-					<Select
-						id="new-team-club"
-						value={newTeamClubId}
-						onChange={(e) => setNewTeamClubId(e.target.value)}
-					>
-						<option value="">Sin club</option>
-						{clubs.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</Select>
-				</Field>
+				{showCreateClub ? (
+					<div className="space-y-2 rounded-xl border border-(--line) p-3">
+						<p className="text-sm font-semibold">Crear club nuevo</p>
+						<Field label="Nombre del club" htmlFor="new-club-name">
+							<Input
+								id="new-club-name"
+								value={newClubName}
+								onChange={(e) => setNewClubName(e.target.value)}
+								placeholder="Ej: Club Deportivo Tigres"
+								required
+							/>
+						</Field>
+						<div className="flex gap-2">
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								onClick={() => {
+									setShowCreateClub(false);
+									setNewClubName("");
+								}}
+							>
+								Cancelar
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								disabled={!newClubName.trim() || createClubHook.isPending}
+								onClick={onCreateClub}
+							>
+								Crear club
+							</Button>
+						</div>
+					</div>
+				) : (
+					<Field label="Club (opcional)" htmlFor="new-team-club">
+						<div className="flex gap-2">
+							<Select
+								id="new-team-club"
+								value={newTeamClubId}
+								onChange={(e) => setNewTeamClubId(e.target.value)}
+								className="flex-1"
+							>
+								<option value="">Sin club</option>
+								{clubs.map((c) => (
+									<option key={c.id} value={c.id}>
+										{c.name}
+									</option>
+								))}
+							</Select>
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								onClick={() => setShowCreateClub(true)}
+								className="shrink-0"
+							>
+								Crear club
+							</Button>
+						</div>
+					</Field>
+				)}
 			</form>
 		</EditDialog>
 	);
