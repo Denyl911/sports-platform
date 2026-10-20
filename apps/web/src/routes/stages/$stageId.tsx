@@ -1,19 +1,12 @@
-import { type MatchWithTeams, queryKeys, unwrap } from "@sports/api-client";
 import {
-	Badge,
-	Bracket,
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	DECORATIVE,
-	Radio,
-	Swords,
-	Table2,
-	Users,
-} from "@sports/ui";
+	queryKeys,
+	type StageFixture as StageFixtureResponse,
+	unwrap,
+} from "@sports/api-client";
+import { Badge, Bracket, DECORATIVE, Table2, Users } from "@sports/ui";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PublicFixture } from "../../components/PublicFixture";
 import { api } from "../../lib/api";
 
 export const Route = createFileRoute("/stages/$stageId")({
@@ -31,11 +24,9 @@ export const Route = createFileRoute("/stages/$stageId")({
 		});
 		await qc.query({
 			staleTime: "static",
-			queryKey: queryKeys.matches.list({ stageId: params.stageId }),
+			queryKey: queryKeys.matches.fixture(params.stageId),
 			queryFn: () =>
-				unwrap(
-					api.matches.get({ query: { stageId: params.stageId } as never }),
-				),
+				unwrap(api.stages({ stageId: params.stageId }).fixture.get()),
 		});
 		await qc.query({
 			staleTime: "static",
@@ -49,7 +40,7 @@ export const Route = createFileRoute("/stages/$stageId")({
 			{ title: "Etapa y partidos — Sports Platform" },
 			{
 				name: "description",
-				content: "Grupos, equipos inscritos y cruces de la etapa.",
+				content: "Fixture por jornada, grupos y equipos inscritos de la etapa.",
 			},
 		],
 	}),
@@ -63,8 +54,8 @@ function StageDetailPage() {
 		queryFn: () => unwrap(api.tournaments.stages({ stageId }).groups.get()),
 	});
 	const { data: matchesData } = useSuspenseQuery({
-		queryKey: queryKeys.matches.list({ stageId }),
-		queryFn: () => unwrap(api.matches.get({ query: { stageId } as never })),
+		queryKey: queryKeys.matches.fixture(stageId),
+		queryFn: () => unwrap(api.stages({ stageId }).fixture.get()),
 	});
 	const { data: regsData } = useSuspenseQuery({
 		queryKey: queryKeys.registrations.byStage(stageId),
@@ -74,8 +65,7 @@ function StageDetailPage() {
 	const groups = (
 		groupsData as { items: Array<{ id: string; name: string }>; total: number }
 	).items;
-	const matches = (matchesData as { items: MatchWithTeams[]; total: number })
-		.items;
+	const matches = (matchesData as StageFixtureResponse).items;
 	const registrations = (
 		regsData as {
 			items: Array<{
@@ -86,6 +76,11 @@ function StageDetailPage() {
 		}
 	).items;
 	const groupNames = new Map(groups.map((g) => [g.id, g.name]));
+	const hasBracket = matches.some((match) => match.nextMatchId);
+	const maxRound = Math.max(
+		0,
+		...matches.map((match) => match.roundNumber ?? 1),
+	);
 
 	return (
 		<div className="demo-page space-y-6">
@@ -152,51 +147,23 @@ function StageDetailPage() {
 				</div>
 			</div>
 			<div>
-				<h2 className="demo-section-title mb-2">Partidos</h2>
-				<div className="grid gap-3 sm:grid-cols-2">
-					{matches.map((m) => (
-						<Link
-							key={m.id}
-							to="/matches/$matchId"
-							params={{ matchId: m.id }}
-							className="no-underline"
-						>
-							<Card className="p-4">
-								<CardHeader className="p-0">
-									<CardTitle className="text-sm">
-										{m.homeTeam?.name ?? "Por definir"} vs{" "}
-										{m.awayTeam?.name ?? "Por definir"}
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="p-0">
-									<Badge className="gap-1.5">
-										{m.status === "in_progress" && (
-											<Radio {...DECORATIVE} className="size-3.5" />
-										)}
-										{m.status}
-									</Badge>
-								</CardContent>
-							</Card>
-						</Link>
-					))}
+				<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+					<h2 className="demo-section-title">Fixture</h2>
+					<Badge variant="secondary">{matches.length} partidos</Badge>
 				</div>
-				{matches.length === 0 && (
-					<div className="demo-card flex items-center justify-center gap-2 text-center text-sm">
-						<Swords {...DECORATIVE} className="size-4 text-(--sea-ink-soft)" />
-						Sin partidos.
-					</div>
-				)}
+				<PublicFixture
+					items={matches}
+					groups={groups}
+					roundLabel={hasBracket ? "Ronda" : "Jornada"}
+				/>
 			</div>
-			{matches.some((m) => m.nextMatchId) && (
+			{hasBracket && (
 				<div>
 					<h2 className="demo-section-title mb-2">Llave</h2>
 					<Bracket
 						matches={matches.map((m) => {
-							const maxRound = Math.max(
-								...matches.map((x) => x.roundNumber ?? 1),
-							);
-							const r = m.roundNumber ?? 1;
-							const distance = maxRound - r;
+							const round = m.roundNumber ?? 1;
+							const distance = maxRound - round;
 							const label =
 								distance === 0
 									? "Final"
@@ -206,7 +173,7 @@ function StageDetailPage() {
 											? "Cuartos de final"
 											: distance === 3
 												? "Octavos de final"
-												: `Ronda ${r}`;
+												: `Ronda ${round}`;
 							return {
 								id: m.id,
 								roundLabel: label,

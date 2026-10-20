@@ -156,6 +156,12 @@ export async function generateRoundRobinFixture(
 	const warnings = new Set<string>();
 	const rows: Array<typeof matches.$inferInsert> = [];
 	let matchNumber = 1;
+	const fields = options.fields.length > 0 ? options.fields : [null];
+	// Un equipo y una cancha no pueden repetirse en el mismo instante. El set
+	// cruza jornadas: con `intervalDays: 0` todas caen el mismo día y la
+	// segunda no puede volver a usar las 09:00 de la primera.
+	const usedCourtSlots = new Set<string>();
+	const usedTeamSlots = new Set<string>();
 
 	for (let matchday = 0; matchday < totalMatchdays; matchday++) {
 		const date = addDays(options.startDate, matchday * options.intervalDays);
@@ -166,30 +172,37 @@ export async function generateRoundRobinFixture(
 			})),
 		);
 
-		const fields = options.fields.length > 0 ? options.fields : [null];
-		const slotsPerWave = options.times.length * fields.length;
+		for (const pair of dayPairs) {
+			const slot = findScheduleSlot({
+				date,
+				times: options.times,
+				durationMinutes: options.matchDurationMinutes,
+				timeZone: options.timeZone,
+				fields,
+				homeTeamId: pair.homeTeamId,
+				awayTeamId: pair.awayTeamId,
+				usedCourtSlots,
+				usedTeamSlots,
+				maxWave: rows.length + dayPairs.length + 1,
+			});
 
-		dayPairs.forEach((pair, index) => {
-			const wave = Math.floor(index / slotsPerWave);
-			const slot = index % slotsPerWave;
-			const baseTime =
-				options.times[slot % options.times.length] ?? DEFAULT_KICKOFF;
-			const field = fields[Math.floor(slot / options.times.length)] ?? null;
-			const { time, dayOffset } = addMinutes(
-				baseTime,
-				wave * options.matchDurationMinutes,
-			);
-
-			if (wave > 0) {
+			if (slot.extended) {
 				warnings.add(
 					`La jornada ${matchday + 1} no entra en las franjas elegidas; se extendió con turnos cada ${options.matchDurationMinutes} minutos`,
 				);
 			}
-			if (dayOffset > 0) {
+			if (slot.dayOffset > 0) {
 				warnings.add(
 					`La jornada ${matchday + 1} termina después de medianoche; revisa las horas de inicio`,
 				);
 			}
+
+			const timestamp = slot.scheduledAt.getTime();
+			if (slot.field !== null) {
+				usedCourtSlots.add(`${timestamp}|${slot.field}`);
+			}
+			usedTeamSlots.add(`${timestamp}|${pair.homeTeamId}`);
+			usedTeamSlots.add(`${timestamp}|${pair.awayTeamId}`);
 
 			rows.push({
 				stageId,
@@ -199,18 +212,14 @@ export async function generateRoundRobinFixture(
 				homeTeamId: pair.homeTeamId,
 				awayTeamId: pair.awayTeamId,
 				venueId: venue?.id ?? null,
-				fieldNumber: field,
-				scheduledAt: zonedDateTimeToUtc(
-					addDays(date, dayOffset),
-					time,
-					options.timeZone,
-				),
+				fieldNumber: slot.field,
+				scheduledAt: slot.scheduledAt,
 				status: "scheduled",
 				homeScore: 0,
 				awayScore: 0,
 				metadata: {},
 			});
-		});
+		}
 	}
 
 	await db.transaction(async (tx) => {
@@ -476,6 +485,68 @@ function addMinutes(time: string, minutes: number) {
 		time: `${pad(Math.floor(withinDay / 60))}:${pad(withinDay % 60)}`,
 		dayOffset,
 	};
+}
+
+type ScheduleSlot = {
+	scheduledAt: Date;
+	dayOffset: number;
+	field: number | null;
+	extended: boolean;
+};
+
+/**
+ * Primer hueco libre para un partido. Primero prueba las horas de inicio
+ * elegidas, en orden, con cada cancha; si todas están ocupadas, agrega turnos
+ * cada `durationMinutes`. La ocupación se mide contra los partidos ya
+ * colocados, incluso los de otra jornada que cayó en la misma fecha.
+ */
+function findScheduleSlot(input: {
+	date: string;
+	times: string[];
+	durationMinutes: number;
+	timeZone: string;
+	fields: Array<number | null>;
+	homeTeamId: string;
+	awayTeamId: string;
+	usedCourtSlots: Set<string>;
+	usedTeamSlots: Set<string>;
+	maxWave: number;
+}): ScheduleSlot {
+	for (let wave = 0; wave <= input.maxWave; wave++) {
+		for (const baseTime of input.times) {
+			const { time, dayOffset } = addMinutes(
+				baseTime,
+				wave * input.durationMinutes,
+			);
+			const scheduledAt = zonedDateTimeToUtc(
+				addDays(input.date, dayOffset),
+				time,
+				input.timeZone,
+			);
+			const timestamp = scheduledAt.getTime();
+
+			for (const field of input.fields) {
+				const courtKey = field === null ? null : `${timestamp}|${field}`;
+				if (courtKey && input.usedCourtSlots.has(courtKey)) continue;
+				if (
+					input.usedTeamSlots.has(`${timestamp}|${input.homeTeamId}`) ||
+					input.usedTeamSlots.has(`${timestamp}|${input.awayTeamId}`)
+				) {
+					continue;
+				}
+				return {
+					scheduledAt,
+					dayOffset,
+					field,
+					extended: wave > 0,
+				};
+			}
+		}
+	}
+
+	throw DomainError.badRequest(
+		"No hay una franja libre para esta jornada. Revisa las horas de inicio, la duración y las canchas",
+	);
 }
 
 /**

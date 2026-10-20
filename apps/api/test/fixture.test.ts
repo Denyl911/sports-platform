@@ -229,6 +229,44 @@ describe("fixture - generación de liguilla", () => {
 		}
 	});
 
+	it("varias jornadas el mismo día no repiten equipo ni cancha en el instante", async () => {
+		const { organizer, stage } = await setupStage();
+		await registerTeams(stage.id, 4);
+		const venue = await seedVenue({ name: "Cancha única", fieldCount: 1 });
+
+		const res = await api.stages({ stageId: stage.id }).fixture.post(
+			fixtureBody({
+				intervalDays: 0,
+				kickoffTimes: ["09:00", "11:00"],
+				matchDurationMinutes: 60,
+				venueId: venue.id,
+				fieldNumbers: [1],
+			}),
+			{ headers: await h(organizer) },
+		);
+		expect(res.status).toBe(200);
+
+		const fixture = await api.stages({ stageId: stage.id }).fixture.get();
+		if (!fixture.data) throw new Error("sin fixture");
+		expect(fixture.data.items).toHaveLength(6);
+
+		const courtSlots = new Set(
+			fixture.data.items.map(
+				(item) => `${item.scheduledAt?.toISOString()}|${item.fieldNumber}`,
+			),
+		);
+		expect(courtSlots.size).toBe(6);
+
+		const teamSlots = new Set(
+			fixture.data.items.flatMap((item) =>
+				[item.homeTeamId, item.awayTeamId]
+					.filter((teamId): teamId is string => teamId !== null)
+					.map((teamId) => `${item.scheduledAt?.toISOString()}|${teamId}`),
+			),
+		);
+		expect(teamSlots.size).toBe(12);
+	});
+
 	it("reparte fecha, hora y cancha dentro de la sede", async () => {
 		const { organizer, stage } = await setupStage();
 		await registerTeams(stage.id, 8);

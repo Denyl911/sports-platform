@@ -34,6 +34,8 @@ La tentación era crear dos tablas nuevas: `matchdays` (una fila por jornada, co
 
 **Los filtros de fecha entran en la lista existente.** `GET /matches` gana `from`/`to` (ISO, ambos inclusive sobre `scheduledAt`) y cada fila gana `venue: { id, name } | null`. Es aditivo: la lista sigue costando 2 round trips.
 
+**Una escritura manual no puede volver imposible el fixture.** `POST /matches`, `PATCH /matches/:id`, `PATCH /matches/:id/schedule` y `PATCH /matches/:id/venue` rechazan con 409 cuando otro partido no cancelado coincide en el instante y comparte un equipo o la misma sede + cancha. El mensaje nombra el partido que ocupa el lugar. Un partido cancelado libera el horario; el chequeo es global, no por etapa, porque un equipo no juega dos partidos a la vez y la cancha es un recurso físico. Sin columna de duración la comparación es el instante exacto de `scheduledAt`; si el partido gana duración, pasa a comparar intervalos.
+
 ## What was rejected
 
 - **Una tabla `matchdays` con su propia fecha.** Duplica la fecha que ya vive en cada partido y crea dos verdades: mover un partido a otro día deja la jornada mintiendo, o exige mantener dos escrituras. La jornada como `roundNumber` no puede desincronizarse del partido porque es el partido.
@@ -48,5 +50,5 @@ La tentación era crear dos tablas nuevas: `matchdays` (una fila por jornada, co
 - `matches.fieldNumber` es una columna nueva (nullable, con check `> 0`), aplicada con `db:push`; no hay migración generada (el ledger sigue vacío, `docs/todo.md` P2).
 - `PATCH /matches/:id`, `PATCH /matches/:id/venue` y `POST /matches` validan la cancha contra la sede y rechazan una cancha sin sede. Quitar la sede limpia la cancha.
 - `roundNumber` deja de ser un campo decorativo: el generador lo escribe, el fixture ordena por él y la UI agrupa por él. Un partido manual puede seguir sin jornada.
-- El admin gana una tabla de fixture por jornada (fase 2) y el sitio público una vista por jornada (fase 3); los choques de equipo/cancha en todas las escrituras quedan como fase 3 (`docs/todo.md`).
+- El admin gana una tabla de fixture por jornada y el sitio público una vista por jornada; las escrituras manuales de fecha, equipos, sede y cancha comparten el chequeo de choques descrito arriba.
 - Los hooks `useStageFixture` y `useGenerateFixture` viven en `@sports/api-client`; la invalidación de `matches.all()` cubre la lectura del fixture, que cuelga de la misma raíz.

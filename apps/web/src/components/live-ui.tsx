@@ -49,6 +49,24 @@ export const MATCH_STATUS_LABELS: Record<MatchStatusLike, string> = {
 	walkover: "Walkover",
 };
 
+/** La variante de `Badge` que corresponde a cada estado del partido. */
+export function matchStatusBadgeVariant(
+	status: MatchStatusLike,
+): "default" | "secondary" | "outline" | "destructive" | "success" {
+	switch (status) {
+		case "finished":
+		case "walkover":
+			return "success";
+		case "cancelled":
+			return "destructive";
+		case "in_progress":
+		case "paused":
+			return "default";
+		default:
+			return "secondary";
+	}
+}
+
 /**
  * Insignia honesta de conexión: visible solo si el partido está en juego,
  * o si la conexión activa dice otra cosa (reconectando, error).

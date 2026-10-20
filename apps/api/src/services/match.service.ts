@@ -26,7 +26,11 @@ import {
 	eq,
 	getTableColumns,
 	gte,
+	inArray,
 	lte,
+	ne,
+	or,
+	type SQL,
 	sql,
 } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -48,6 +52,19 @@ type MatchListItem = typeof matches.$inferSelect & {
 	homeTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
 	awayTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
 	venue: Pick<typeof venues.$inferSelect, "id" | "name"> | null;
+};
+
+// Fila mínima para explicar un choque: el nombre del equipo y de la sede son
+// lo que el organizador necesita para reconocer el partido que ocupa el lugar.
+type ConflictRow = {
+	id: string;
+	homeTeamId: string | null;
+	awayTeamId: string | null;
+	homeTeamName: string | null;
+	awayTeamName: string | null;
+	venueId: string | null;
+	venueName: string | null;
+	fieldNumber: number | null;
 };
 
 // Transiciones válidas de estado de un partido
@@ -225,6 +242,18 @@ export async function createMatch(data: CreateMatch) {
 
 	if (data.winnerTeamId) assertWinnerIsParticipant(data, data.winnerTeamId);
 
+	if (data.status !== "cancelled") {
+		await assertNoMatchConflict({
+			scheduledAt: data.scheduledAt ? new Date(data.scheduledAt) : null,
+			homeTeamId: data.homeTeamId ?? null,
+			awayTeamId: data.awayTeamId ?? null,
+			venueId: data.venueId ?? null,
+			fieldNumber: data.fieldNumber ?? null,
+			checkTeams: true,
+			checkCourt: true,
+		});
+	}
+
 	const [created] = await db
 		.insert(matches)
 		.values(toMatchRow(data))
@@ -282,6 +311,49 @@ export async function updateMatch(id: string, data: UpdateMatchInfo) {
 				? null
 				: match.fieldNumber;
 	await assertFieldNumber(finalVenueId, finalFieldNumber);
+
+	// El partido que se edita no se compara consigo mismo. Solo se revisan las
+	// dimensiones que cambian: mover la sede no debe volver a fallar por un
+	// choque de equipos que ya existía y que esta edición no toca.
+	const conflictHome =
+		data.homeTeamId === undefined ? match.homeTeamId : data.homeTeamId;
+	const conflictAway =
+		data.awayTeamId === undefined ? match.awayTeamId : data.awayTeamId;
+	const conflictScheduledAt =
+		data.scheduledAt === undefined
+			? match.scheduledAt
+			: data.scheduledAt === null
+				? null
+				: new Date(data.scheduledAt);
+	const scheduledAtChanged = !sameInstant(
+		conflictScheduledAt,
+		match.scheduledAt,
+	);
+	const checkTeams =
+		scheduledAtChanged ||
+		conflictHome !== match.homeTeamId ||
+		conflictAway !== match.awayTeamId;
+	const checkCourt =
+		scheduledAtChanged ||
+		finalVenueId !== match.venueId ||
+		finalFieldNumber !== match.fieldNumber;
+
+	if (
+		data.status !== "cancelled" &&
+		match.status !== "cancelled" &&
+		(checkTeams || checkCourt)
+	) {
+		await assertNoMatchConflict({
+			scheduledAt: conflictScheduledAt,
+			homeTeamId: conflictHome,
+			awayTeamId: conflictAway,
+			venueId: finalVenueId,
+			fieldNumber: finalFieldNumber,
+			excludeMatchId: id,
+			checkTeams,
+			checkCourt,
+		});
+	}
 
 	// El ganador que ya no sea participante (post-cambio de equipos) se limpia
 	const winnerInvalid =
@@ -477,7 +549,13 @@ export async function assignVenue(
 ) {
 	const venue = await findVenueById(venueId);
 	const [match] = await db
-		.select({ fieldNumber: matches.fieldNumber })
+		.select({
+			fieldNumber: matches.fieldNumber,
+			scheduledAt: matches.scheduledAt,
+			homeTeamId: matches.homeTeamId,
+			awayTeamId: matches.awayTeamId,
+			status: matches.status,
+		})
 		.from(matches)
 		.where(eq(matches.id, matchId))
 		.limit(1);
@@ -486,6 +564,19 @@ export async function assignVenue(
 	const nextFieldNumber =
 		fieldNumber === undefined ? match.fieldNumber : fieldNumber;
 	assertFieldNumberInVenue(venue, nextFieldNumber);
+
+	if (match.status !== "cancelled") {
+		await assertNoMatchConflict({
+			scheduledAt: match.scheduledAt,
+			homeTeamId: match.homeTeamId,
+			awayTeamId: match.awayTeamId,
+			venueId,
+			fieldNumber: nextFieldNumber,
+			excludeMatchId: matchId,
+			checkTeams: false,
+			checkCourt: true,
+		});
+	}
 
 	const [updated] = await db
 		.update(matches)
@@ -497,11 +588,38 @@ export async function assignVenue(
 }
 
 export async function scheduleMatch(matchId: string, scheduledAt: string) {
-	await assertMatchExists(matchId);
+	const [match] = await db
+		.select({
+			scheduledAt: matches.scheduledAt,
+			homeTeamId: matches.homeTeamId,
+			awayTeamId: matches.awayTeamId,
+			venueId: matches.venueId,
+			fieldNumber: matches.fieldNumber,
+			status: matches.status,
+		})
+		.from(matches)
+		.where(eq(matches.id, matchId))
+		.limit(1);
+	if (!match) throw DomainError.notFound(`Match '${matchId}' not found`);
+
+	const nextScheduledAt = new Date(scheduledAt);
+
+	if (match.status !== "cancelled") {
+		await assertNoMatchConflict({
+			scheduledAt: nextScheduledAt,
+			homeTeamId: match.homeTeamId,
+			awayTeamId: match.awayTeamId,
+			venueId: match.venueId,
+			fieldNumber: match.fieldNumber,
+			excludeMatchId: matchId,
+			checkTeams: true,
+			checkCourt: true,
+		});
+	}
 
 	const [updated] = await db
 		.update(matches)
-		.set({ scheduledAt: new Date(scheduledAt) })
+		.set({ scheduledAt: nextScheduledAt })
 		.where(eq(matches.id, matchId))
 		.returning();
 
@@ -555,6 +673,136 @@ function assertFieldNumberInVenue(
 			`La cancha ${fieldNumber} no existe en "${venue.name}" (tiene ${venue.fieldCount} canchas)`,
 		);
 	}
+}
+
+/**
+ * Un equipo no puede estar en dos partidos al mismo instante y una cancha no
+ * puede alojar dos. El chequeo es global (no por etapa): la misma persona no
+ * juega dos torneos a la vez y la cancha es un recurso físico. Un partido
+ * cancelado libera el horario; el resto de los estados lo ocupa.
+ *
+ * Sin columna de duración, la comparación es el instante exacto de
+ * `scheduledAt`; si algún día el partido declara duración, esta consulta pasa
+ * a comparar intervalos.
+ */
+async function assertNoMatchConflict(input: {
+	scheduledAt: Date | null;
+	homeTeamId: string | null;
+	awayTeamId: string | null;
+	venueId: string | null;
+	fieldNumber: number | null;
+	excludeMatchId?: string;
+	checkTeams: boolean;
+	checkCourt: boolean;
+}) {
+	const teamIds = Array.from(
+		new Set(
+			[input.homeTeamId, input.awayTeamId].filter(
+				(teamId): teamId is string => teamId !== null,
+			),
+		),
+	);
+	const court =
+		input.venueId !== null && input.fieldNumber !== null
+			? { venueId: input.venueId, fieldNumber: input.fieldNumber }
+			: null;
+	const wantsTeams = input.checkTeams && teamIds.length > 0;
+	const wantsCourt = input.checkCourt && court !== null;
+
+	if (!input.scheduledAt || (!wantsTeams && !wantsCourt)) return;
+
+	const conflictHomeTeams = alias(teams, "conflict_home_team");
+	const conflictAwayTeams = alias(teams, "conflict_away_team");
+
+	const conflictConditions: SQL[] = [];
+	if (wantsTeams) {
+		conflictConditions.push(inArray(matches.homeTeamId, teamIds));
+		conflictConditions.push(inArray(matches.awayTeamId, teamIds));
+	}
+	if (wantsCourt && court) {
+		const courtCondition = and(
+			eq(matches.venueId, court.venueId),
+			eq(matches.fieldNumber, court.fieldNumber),
+		);
+		if (courtCondition) conflictConditions.push(courtCondition);
+	}
+	const conflictWhere = or(...conflictConditions);
+	if (!conflictWhere) return;
+
+	const conditions: SQL[] = [
+		eq(matches.scheduledAt, input.scheduledAt),
+		ne(matches.status, "cancelled"),
+		conflictWhere,
+	];
+	if (input.excludeMatchId) {
+		conditions.push(ne(matches.id, input.excludeMatchId));
+	}
+
+	const rows: ConflictRow[] = await db
+		.select({
+			id: matches.id,
+			homeTeamId: matches.homeTeamId,
+			awayTeamId: matches.awayTeamId,
+			homeTeamName: conflictHomeTeams.name,
+			awayTeamName: conflictAwayTeams.name,
+			venueId: matches.venueId,
+			venueName: venues.name,
+			fieldNumber: matches.fieldNumber,
+		})
+		.from(matches)
+		.leftJoin(conflictHomeTeams, eq(matches.homeTeamId, conflictHomeTeams.id))
+		.leftJoin(conflictAwayTeams, eq(matches.awayTeamId, conflictAwayTeams.id))
+		.leftJoin(venues, eq(matches.venueId, venues.id))
+		.where(and(...conditions));
+
+	const teamConflict = wantsTeams
+		? rows.find(
+				(row) =>
+					(row.homeTeamId !== null && teamIds.includes(row.homeTeamId)) ||
+					(row.awayTeamId !== null && teamIds.includes(row.awayTeamId)),
+			)
+		: undefined;
+	if (teamConflict) {
+		const collidingTeamId = teamIds.find(
+			(teamId) =>
+				teamId === teamConflict.homeTeamId ||
+				teamId === teamConflict.awayTeamId,
+		);
+		const collidingTeamName =
+			collidingTeamId === teamConflict.homeTeamId
+				? teamConflict.homeTeamName
+				: teamConflict.awayTeamName;
+		throw DomainError.conflict(
+			`El equipo "${collidingTeamName ?? "sin nombre"}" ya tiene un partido a esa hora: ${describeConflictMatch(teamConflict)}. Elegí otro horario`,
+		);
+	}
+
+	if (wantsCourt && court) {
+		const courtConflict = rows.find(
+			(row) =>
+				row.venueId === court.venueId && row.fieldNumber === court.fieldNumber,
+		);
+		if (courtConflict) {
+			throw DomainError.conflict(
+				`La cancha ${court.fieldNumber} de "${courtConflict.venueName ?? "la sede"}" ya está ocupada a esa hora por ${describeConflictMatch(courtConflict)}. Elegí otra cancha u horario`,
+			);
+		}
+	}
+}
+
+function describeConflictMatch(row: {
+	homeTeamName: string | null;
+	awayTeamName: string | null;
+}): string {
+	if (!row.homeTeamName && !row.awayTeamName) {
+		return "otro partido de la etapa";
+	}
+	return `"${row.homeTeamName ?? "Por definir"} vs ${row.awayTeamName ?? "Por definir"}"`;
+}
+
+function sameInstant(a: Date | null, b: Date | null): boolean {
+	if (a === null || b === null) return a === b;
+	return a.getTime() === b.getTime();
 }
 
 async function getMatchOrThrow(tx: Tx, id: string) {

@@ -83,7 +83,7 @@ export const matchesRoutes = new Elysia({
 		detail: {
 			summary: "Crear partido",
 			description:
-				"Requiere rol `organizer` en el torneo (`tournamentId` del body). Valida que la etapa pertenezca al torneo y que el grupo pertenezca a la etapa. Equipos deben estar inscritos en la etapa.",
+				"Requiere rol `organizer` en el torneo (`tournamentId` del body). Valida que la etapa pertenezca al torneo y que el grupo pertenezca a la etapa. Equipos deben estar inscritos en la etapa. 409 si el equipo ya juega a esa hora o la cancha ya está ocupada; el mensaje nombra el partido que choca.",
 			tags: ["Matches"],
 		},
 	})
@@ -103,7 +103,7 @@ export const matchesRoutes = new Elysia({
 		detail: {
 			summary: "Actualizar partido",
 			description:
-				"Requiere `organizer` del torneo del partido. Solo permite campos administrativos; `status` solo admite `cancelled`. Cambios de equipos deben venir en par y estar inscritos. `fieldNumber` se valida contra `venues.fieldCount`; quitar la sede limpia la cancha.",
+				"Requiere `organizer` del torneo del partido. Solo permite campos administrativos; `status` solo admite `cancelled`. Cambios de equipos deben venir en par y estar inscritos. `fieldNumber` se valida contra `venues.fieldCount`; quitar la sede limpia la cancha. 409 si el cambio de fecha, equipos, sede o cancha choca con otro partido no cancelado; el mensaje nombra el partido que ocupa el lugar.",
 			tags: ["Matches"],
 		},
 	})
@@ -146,12 +146,13 @@ export const matchesRoutes = new Elysia({
 				401: errorMessageSchema,
 				403: errorMessageSchema,
 				404: errorMessageSchema,
+				409: errorMessageSchema,
 			},
 			beforeHandle: requireMatchRole("organizer"),
 			detail: {
 				summary: "Asignar sede al partido",
 				description:
-					"Requiere `organizer` del torneo. Valida que la sede exista y, si se manda `fieldNumber`, que la cancha exista dentro de la sede.",
+					"Requiere `organizer` del torneo. Valida que la sede exista y, si se manda `fieldNumber`, que la cancha exista dentro de la sede. 409 si otro partido no cancelado ya ocupa esa cancha a la misma hora.",
 				tags: ["Matches"],
 			},
 		},
@@ -169,12 +170,13 @@ export const matchesRoutes = new Elysia({
 				401: errorMessageSchema,
 				403: errorMessageSchema,
 				404: errorMessageSchema,
+				409: errorMessageSchema,
 			},
 			beforeHandle: requireMatchRole("organizer"),
 			detail: {
 				summary: "Programar fecha y hora del partido",
 				description:
-					"Requiere `organizer` del torneo. `scheduledAt` debe ser ISO date-time.",
+					"Requiere `organizer` del torneo. `scheduledAt` debe ser ISO date-time. 409 si otro partido no cancelado del mismo equipo o de la misma cancha coincide en el instante; el mensaje nombra el partido que choca.",
 				tags: ["Matches"],
 			},
 		},

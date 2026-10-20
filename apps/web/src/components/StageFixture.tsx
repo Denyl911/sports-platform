@@ -43,7 +43,25 @@ import {
 import { Link } from "@tanstack/react-router";
 import * as React from "react";
 import { api } from "../lib/api";
-import { MATCH_STATUS_LABELS, type MatchStatusLike } from "./live-ui";
+import {
+	compareFixtureItems,
+	formatDateKey,
+	formatDay,
+	formatTime,
+	groupByMatchday,
+	localDateKey,
+	localDateTimeInput,
+	localTimeKey,
+	type Matchday,
+	matchdayDateLabel,
+	toDate,
+	todayLocalDate,
+} from "../lib/fixture-date";
+import {
+	MATCH_STATUS_LABELS,
+	type MatchStatusLike,
+	matchStatusBadgeVariant,
+} from "./live-ui";
 
 type FixtureItem = StageFixtureResponse["items"][number];
 type VenueOption = { id: string; name: string; fieldCount: number };
@@ -54,111 +72,8 @@ type RegistrationOption = {
 };
 type TimeSlot = { id: string; value: string };
 
-const DAY_FORMAT = new Intl.DateTimeFormat("es-AR", {
-	weekday: "short",
-	day: "numeric",
-	month: "short",
-});
-const TIME_FORMAT = new Intl.DateTimeFormat("es-AR", {
-	hour: "2-digit",
-	minute: "2-digit",
-});
-
-function pad(value: number): string {
-	return String(value).padStart(2, "0");
-}
-
-function toDate(value: Date | string | null | undefined): Date | null {
-	if (!value) return null;
-	const date = value instanceof Date ? value : new Date(value);
-	return Number.isNaN(date.getTime()) ? null : date;
-}
-
-function localDateKey(value: Date | string | null | undefined): string | null {
-	const date = toDate(value);
-	if (!date) return null;
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function localTimeKey(value: Date | string | null | undefined): string | null {
-	const date = toDate(value);
-	if (!date) return null;
-	return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
-function localDateTimeInput(value: Date | string | null | undefined): string {
-	const day = localDateKey(value);
-	const time = localTimeKey(value);
-	return day && time ? `${day}T${time}` : "";
-}
-
-function todayLocalDate(): string {
-	return localDateKey(new Date()) ?? "";
-}
-
-function formatDay(value: Date | string | null | undefined): string {
-	const date = toDate(value);
-	return date ? DAY_FORMAT.format(date) : "Sin fecha";
-}
-
-function formatTime(value: Date | string | null | undefined): string {
-	const date = toDate(value);
-	return date ? TIME_FORMAT.format(date) : "";
-}
-
-function formatDateKey(key: string): string {
-	const date = new Date(`${key}T12:00:00`);
-	return Number.isNaN(date.getTime()) ? key : DAY_FORMAT.format(date);
-}
-
-function timestampOf(value: Date | string | null | undefined): number | null {
-	const date = toDate(value);
-	return date ? date.getTime() : null;
-}
-
-function compareFixtureItems(a: FixtureItem, b: FixtureItem): number {
-	const aTime = timestampOf(a.scheduledAt);
-	const bTime = timestampOf(b.scheduledAt);
-	if (aTime !== null && bTime !== null && aTime !== bTime) return aTime - bTime;
-	if (aTime === null && bTime !== null) return 1;
-	if (aTime !== null && bTime === null) return -1;
-	const aNumber = a.matchNumber ?? Number.POSITIVE_INFINITY;
-	const bNumber = b.matchNumber ?? Number.POSITIVE_INFINITY;
-	if (aNumber !== bNumber) return aNumber < bNumber ? -1 : 1;
-	return a.id.localeCompare(b.id);
-}
-
-function matchdayDateLabel(items: FixtureItem[]): string {
-	const keys = Array.from(
-		new Set(
-			items
-				.map((item) => localDateKey(item.scheduledAt))
-				.filter((key): key is string => key !== null),
-		),
-	).sort();
-	if (keys.length === 0) return "Sin fecha";
-	return keys.map((key) => formatDateKey(key)).join(" · ");
-}
-
 function matchStatus(match: FixtureItem): MatchStatusLike {
 	return match.status as MatchStatusLike;
-}
-
-function statusBadgeVariant(
-	status: MatchStatusLike,
-): "default" | "secondary" | "outline" | "destructive" | "success" {
-	switch (status) {
-		case "finished":
-		case "walkover":
-			return "success";
-		case "cancelled":
-			return "destructive";
-		case "in_progress":
-		case "paused":
-			return "default";
-		default:
-			return "secondary";
-	}
 }
 
 function hasStarted(match: FixtureItem): boolean {
@@ -173,27 +88,6 @@ function hasStarted(match: FixtureItem): boolean {
 
 function teamName(team: { name: string } | null): string {
 	return team?.name ?? "Por definir";
-}
-
-interface Matchday {
-	roundNumber: number;
-	items: FixtureItem[];
-}
-
-function groupByMatchday(items: FixtureItem[]): Matchday[] {
-	const byRound = new Map<number, FixtureItem[]>();
-	for (const item of items) {
-		const round = item.roundNumber ?? 1;
-		const list = byRound.get(round);
-		if (list) list.push(item);
-		else byRound.set(round, [item]);
-	}
-	return Array.from(byRound.entries())
-		.sort(([a], [b]) => a - b)
-		.map(([roundNumber, roundItems]) => ({
-			roundNumber,
-			items: [...roundItems].sort(compareFixtureItems),
-		}));
 }
 
 interface FixtureDefaults {
@@ -322,7 +216,9 @@ export function StageFixture({
 
 	const [generateOpen, setGenerateOpen] = React.useState(false);
 	const [editing, setEditing] = React.useState<FixtureItem | null>(null);
-	const [moving, setMoving] = React.useState<Matchday | null>(null);
+	const [moving, setMoving] = React.useState<Matchday<FixtureItem> | null>(
+		null,
+	);
 	const [adding, setAdding] = React.useState(false);
 
 	const scheduledCount = fixture.filter((item) => item.scheduledAt).length;
@@ -487,12 +383,12 @@ function MatchdayTable({
 	onEdit,
 	onMove,
 }: {
-	matchday: Matchday;
+	matchday: Matchday<FixtureItem>;
 	roundLabel: string;
 	hasGroupColumn: boolean;
 	groupNameById: Map<string, string>;
 	onEdit: (match: FixtureItem) => void;
-	onMove: (matchday: Matchday) => void;
+	onMove: (matchday: Matchday<FixtureItem>) => void;
 }) {
 	const scheduledCount = matchday.items.filter(
 		(item) => item.scheduledAt,
@@ -605,7 +501,7 @@ function MatchdayTable({
 									)}
 								</TableCell>
 								<TableCell>
-									<Badge variant={statusBadgeVariant(status)}>
+									<Badge variant={matchStatusBadgeVariant(status)}>
 										{MATCH_STATUS_LABELS[status] ?? status}
 									</Badge>
 								</TableCell>
@@ -1158,7 +1054,7 @@ function MoveMatchdayDialog({
 	roundLabel,
 	onClose,
 }: {
-	matchday: Matchday;
+	matchday: Matchday<FixtureItem>;
 	roundLabel: string;
 	onClose: () => void;
 }) {
