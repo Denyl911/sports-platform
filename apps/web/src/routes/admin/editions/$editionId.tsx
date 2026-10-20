@@ -2,33 +2,25 @@ import { getApiErrorMessage } from "@sports/api-client";
 import {
 	useCreateStage,
 	useDeleteStage,
+	useReorderStages,
 	useStagesByEdition,
 	useUpdateStage,
 } from "@sports/api-client/hooks";
 import {
-	ArrowRight,
-	Badge,
 	Button,
 	Card,
-	CardHeader,
-	CardTitle,
-	DECORATIVE,
 	EditDialog,
-	EmptyState,
 	Field,
 	Input,
 	Label,
-	Layers,
-	Pencil,
 	Plus,
 	Save,
 	Select,
 	Skeleton,
-	Trash2,
 	toast,
-	useConfirm,
 } from "@sports/ui";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { SortableStageList, StageTypeLabels } from "../../../components/SortableStageList";
 import * as React from "react";
 import {
 	AdminBreadcrumbs,
@@ -58,6 +50,18 @@ const STAGE_TYPES: Array<[StageType, string]> = [
 	["manual", "Manual"],
 ];
 
+const STAGE_TYPE_DESCRIPTIONS: Record<StageType, string> = {
+	round_robin:
+		"Cada equipo juega contra todos los demás una o más veces. Clasificación por puntos.",
+	single_elimination:
+		"Un solo partido elimina al perdedor. El ganador avanza a la siguiente ronda.",
+	double_elimination:
+		"Un equipo necesita perder dos veces para ser eliminado. Más justo pero más largo.",
+	swiss:
+		"Los emparejanientos se hacen según resultados previos. Todos juegan todas las rondas.",
+	manual: "El orden de los partidos lo define el organizador. Sin estructura automática.",
+};
+
 function AdminEditionDetailPage() {
 	const { editionId } = Route.useParams();
 	const search = Route.useSearch() as { tournamentId?: string };
@@ -68,7 +72,7 @@ function AdminEditionDetailPage() {
 	);
 	const createStage = useCreateStage(api);
 	const deleteStage = useDeleteStage(api);
-	const confirm = useConfirm();
+	const reorderStages = useReorderStages(api, editionId);
 	const stages =
 		(
 			stagesData as
@@ -177,90 +181,40 @@ function AdminEditionDetailPage() {
 						{createStage.isPending ? "Creando…" : "Crear etapa"}
 					</Button>
 				</form>
-				{stagesPending ? (
-					<div className="mt-4 grid gap-2 sm:grid-cols-2">
-						<Skeleton className="h-24 rounded-xl" />
-						<Skeleton className="h-24 rounded-xl" />
-					</div>
-				) : stages.length === 0 ? (
-					<EmptyState
-						className="mt-4"
-						icon={Layers}
-						title="Sin etapas todavía"
-						description="Crea la primera con el formulario de arriba: es el paso 3, y habilita los grupos y los partidos."
-					/>
-				) : (
-					<div className="mt-4 grid gap-2 sm:grid-cols-2">
-						{stages.map((s) => (
-							<Card
-								key={s.id}
-								className="group flex flex-col justify-between p-3"
-							>
-								<div className="flex items-start justify-between gap-2">
-									<div className="min-w-0">
-										<CardHeader className="p-0">
-											<CardTitle className="truncate text-sm">
-												{s.name}
-											</CardTitle>
-										</CardHeader>
-										<div className="mt-2 flex flex-wrap gap-1.5">
-											<Badge>{s.stageType}</Badge>
-											<Badge variant="secondary">#{s.sequenceOrder}</Badge>
-										</div>
-									</div>
-									<div className="flex shrink-0 gap-1">
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											icon={Pencil}
-											aria-label="Editar"
-											title="Editar"
-											onClick={() => setEditingStage(s)}
-										/>
-										<Button
-											variant="destructive"
-											size="icon-sm"
-											icon={Trash2}
-											aria-label="Eliminar"
-											title="Eliminar"
-											onClick={async () => {
-												const ok = await confirm({
-													title: "Eliminar etapa",
-													description: `Se elimina «${s.name}» y sus grupos. No se puede deshacer.`,
-													confirmLabel: "Eliminar",
-												});
-												if (!ok) return;
-												try {
-													await deleteStage.mutateAsync(s.id);
-													toast.success("Etapa eliminada");
-												} catch (err) {
-													toast.error(
-														"No se pudo eliminar la etapa",
-														getApiErrorMessage(err),
-													);
-												}
-											}}
-										/>
-									</div>
+				<div className="mt-4 rounded-xl border border-(--chip-line) bg-(--chip-bg) p-3">
+					<h4 className="text-sm font-bold text-(--sea-ink)">Tipos de fase</h4>
+					<div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+						{(Object.entries(StageTypeLabels) as Array<[keyof typeof StageTypeLabels, string]>).map(
+							([key, label]) => (
+								<div key={key} className="rounded-lg bg-(--card) p-2.5">
+									<span className="text-xs font-bold text-(--sea-ink)">{label}</span>
+									<p className="mt-0.5 text-xs text-(--sea-ink-soft)">
+										{STAGE_TYPE_DESCRIPTIONS[key]}
+									</p>
 								</div>
-								<Link
-									to="/admin/stages/$stageId"
-									params={{ stageId: s.id }}
-									search={{
-										editionId,
-										tournamentId: tournamentId ?? undefined,
-									}}
-									className="mt-3 inline-flex w-fit items-center gap-1 text-sm font-semibold text-(--sea-ink) no-underline"
-								>
-									Grupos y equipos
-									<ArrowRight
-										{...DECORATIVE}
-										className="size-4 transition-transform group-hover:translate-x-0.5"
-									/>
-								</Link>
-							</Card>
-						))}
+							),
+						)}
 					</div>
+				</div>
+				{stagesPending ? (
+					<div className="mt-4">
+						<Skeleton className="h-24 rounded-xl" />
+						<Skeleton className="h-24 rounded-xl" />
+					</div>
+				) : (
+					<SortableStageList
+						stages={stages.map((s) => ({
+							id: s.id,
+							name: s.name,
+							stageType: s.stageType as StageType,
+							sequenceOrder: s.sequenceOrder,
+						}))}
+						onReorder={(ids: string[]) => reorderStages.mutateAsync({ stageIds: ids }).then(() => undefined)}
+						onEdit={setEditingStage}
+						onDelete={(id: string) => deleteStage.mutateAsync(id).then(() => undefined)}
+						editionId={editionId}
+						tournamentId={tournamentId ?? undefined}
+					/>
 				)}
 			</Card>
 			{editingStage && (

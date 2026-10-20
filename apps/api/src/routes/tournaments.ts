@@ -45,6 +45,7 @@ import {
 	deleteStage,
 	listGroupsByStage,
 	listStagesByEdition,
+	reorderStages,
 	updateGroup,
 	updateStage,
 } from "../services/stage.service";
@@ -373,6 +374,30 @@ export const tournamentsRoutes = new Elysia({
 				summary: "Eliminar etapa",
 				description:
 					"Requiere `organizer` de la etapa. 409 si tiene grupos o partidos asociados.",
+				tags: ["Tournaments"],
+			},
+		},
+	)
+	.patch(
+		"/editions/:editionId/stages/reorder",
+		async ({ params, body }) => {
+			reorderStages(params.editionId, body.stageIds);
+			return { success: true };
+		},
+		{
+			auth: true,
+			body: t.Object({ stageIds: t.Array(t.String()) }),
+			response: {
+				200: successSchema,
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+			},
+			beforeHandle: requireEditionRole("organizer"),
+			detail: {
+				summary: "Reordenar etapas",
+				description:
+					"Requiere `organizer` de la edición. Recibe los IDs de las etapas en el orden deseado.",
 				tags: ["Tournaments"],
 			},
 		},

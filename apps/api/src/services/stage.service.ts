@@ -85,6 +85,31 @@ export async function deleteStage(id: string) {
 	await db.delete(tournamentStages).where(eq(tournamentStages.id, id));
 }
 
+export async function reorderStages(editionId: string, stageIds: string[]) {
+	await assertEditionExists(editionId);
+
+	const stages = await db
+		.select({ id: tournamentStages.id })
+		.from(tournamentStages)
+		.where(eq(tournamentStages.editionId, editionId));
+	const existingIds = new Set(stages.map((s) => s.id));
+
+	for (const id of stageIds) {
+		if (!existingIds.has(id)) {
+			throw DomainError.badRequest(`Stage '${id}' not in edition`);
+		}
+	}
+
+	await db.transaction(async (tx) => {
+		for (let i = 0; i < stageIds.length; i++) {
+			await tx
+				.update(tournamentStages)
+				.set({ sequenceOrder: i + 1 })
+				.where(eq(tournamentStages.id, stageIds[i]!));
+		}
+	});
+}
+
 // ==========================================
 // Grupos de una etapa
 // ==========================================

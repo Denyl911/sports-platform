@@ -412,6 +412,34 @@ export function useDeleteGroup(
 	});
 }
 
+export function useReorderStages(
+	api: ApiClient,
+	editionId: string,
+	options?: Omit<
+		UseMutationOptions<
+			unknown,
+			Error,
+			{ stageIds: string[] }
+		>,
+		"mutationFn"
+	>,
+) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({ stageIds }: { stageIds: string[] }) =>
+			unwrap(
+				api.tournaments.editions({ editionId }).stages.reorder.patch({
+					stageIds,
+				}),
+			),
+		...((options as unknown as object) ?? ({} as object)),
+		onSuccess: (data, variables, onMutateResult, context) => {
+			qc.invalidateQueries({ queryKey: queryKeys.stages.all() });
+			options?.onSuccess?.(data, variables, onMutateResult, context);
+		},
+	});
+}
+
 export function useMyTournamentMembership(
 	client: ApiClient,
 	tournamentId: string,
