@@ -9,7 +9,6 @@ import {
 	Input,
 	Label,
 	Save,
-	Select,
 	Skeleton,
 	toast,
 	Users,
@@ -19,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { api } from "../../../lib/api";
+import CategoryField from "../../../components/CategoryField";
 
 export const Route = createFileRoute("/admin/teams/$teamId")({
 	component: AdminTeamDetailPage,
@@ -92,14 +92,11 @@ function AdminTeamDetailPage() {
 					</div>
 					<div>
 						<Label>Categoría</Label>
-						<Select
+						<CategoryField
+							id="team-category"
 							value={category}
-							onChange={(e) => setCategory(e.target.value)}
-						>
-							<option value="open">open</option>
-							<option value="u18">u18</option>
-							<option value="senior">senior</option>
-						</Select>
+							onChange={setCategory}
+						/>
 					</div>
 					<Button type="submit" icon={Save} disabled={update.isPending}>
 						Guardar

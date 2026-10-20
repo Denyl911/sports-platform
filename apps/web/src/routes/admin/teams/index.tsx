@@ -31,6 +31,8 @@ import {
 	adminListFilters,
 } from "../../../lib/admin-list";
 import { api } from "../../../lib/api";
+import { CATEGORIES } from "../../../lib/categories";
+import CategoryField from "../../../components/CategoryField";
 
 export const Route = createFileRoute("/admin/teams/")({
 	component: AdminTeamsPage,
@@ -148,22 +150,18 @@ function AdminTeamsPage() {
 							))}
 						</Select>
 					</div>
-					<div className="w-32">
+					<div className="w-48">
 						<label
 							htmlFor="team-category"
-							className="text-sm font-semibold leading-none text-(--sea-ink)"
+							className="block text-sm font-semibold leading-none text-(--sea-ink)"
 						>
 							Categoría
 						</label>
-						<Select
+						<CategoryField
 							id="team-category"
 							value={category}
-							onChange={(e) => setCategory(e.target.value)}
-						>
-							<option value="open">open</option>
-							<option value="u18">u18</option>
-							<option value="senior">senior</option>
-						</Select>
+							onChange={setCategory}
+						/>
 					</div>
 					<Button
 						type="submit"
@@ -245,7 +243,10 @@ function AdminTeamsPage() {
 										{t.name}
 									</CardTitle>
 								</CardHeader>
-								<Badge variant="outline">{t.category ?? "open"}</Badge>
+								<Badge variant="outline">
+									{CATEGORIES[t.category as keyof typeof CATEGORIES]?.label ??
+										t.category}
+								</Badge>
 							</Link>
 							<Button
 								variant="destructive"

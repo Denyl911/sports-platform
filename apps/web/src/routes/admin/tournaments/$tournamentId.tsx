@@ -42,6 +42,13 @@ import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
 import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
 import { api } from "../../../lib/api";
+import {
+	CATEGORIES,
+	EDITION_STATUS,
+	type EditionStatus,
+} from "../../../lib/categories";
+import { ROLE_INFO } from "../../../lib/roles";
+import CategoryField from "../../../components/CategoryField";
 
 export const Route = createFileRoute("/admin/tournaments/$tournamentId")({
 	component: AdminTournamentDetailPage,
@@ -184,15 +191,11 @@ function AdminTournamentDetailPage() {
 						/>
 					</Field>
 					<Field label="Categoría" htmlFor="edition-category" className="w-48">
-						<Select
+						<CategoryField
 							id="edition-category"
 							value={eCategory}
-							onChange={(e) => setECategory(e.target.value)}
-						>
-							<option value="open">open</option>
-							<option value="u18">u18</option>
-							<option value="senior">senior</option>
-						</Select>
+							onChange={setECategory}
+						/>
 					</Field>
 					<Button
 						type="submit"
@@ -228,8 +231,14 @@ function AdminTournamentDetailPage() {
 									<div className="min-w-0">
 										<div className="truncate text-sm font-bold">{ed.name}</div>
 										<div className="mt-2 flex flex-wrap gap-1.5">
-											<Badge variant="secondary">{ed.status}</Badge>
-											<Badge variant="outline">{ed.category}</Badge>
+											<Badge variant="secondary">
+										{EDITION_STATUS[ed.status as keyof typeof EDITION_STATUS]?.label ??
+											ed.status}
+									</Badge>
+											<Badge variant="outline">
+										{CATEGORIES[ed.category as keyof typeof CATEGORIES]?.label ??
+											ed.category}
+									</Badge>
 										</div>
 									</div>
 									<div className="flex shrink-0 gap-1">
@@ -355,8 +364,8 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 	return (
 		<div className="mt-3">
 			<p className="text-sm text-(--sea-ink-soft)">
-				Asignar referee / statistician / organizer. Requiere organizer del
-				torneo.
+				Asignar árbitro, estadístico u organizador. Requiere rol de
+				organizador en el torneo.
 			</p>
 			<form onSubmit={onAdd} className="mt-2 flex flex-wrap gap-2">
 				<Select
@@ -375,10 +384,11 @@ function TournamentMembers({ tournamentId }: { tournamentId: string }) {
 					onChange={(e) => setRole(e.target.value as MemberRole)}
 					className="w-40"
 				>
-					<option value="organizer">organizer</option>
-					<option value="referee">referee</option>
-					<option value="statistician">statistician</option>
-					<option value="viewer_staff">viewer_staff</option>
+					{(Object.entries(ROLE_INFO) as [keyof typeof ROLE_INFO, (typeof ROLE_INFO)[keyof typeof ROLE_INFO]][]).map(([value, { label }]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
 				</Select>
 				<Button
 					type="submit"
@@ -460,7 +470,10 @@ function TournamentMemberRow({
 					{userName}{" "}
 					<span className="text-(--sea-ink-soft)">({userEmail})</span>
 				</span>
-				<Badge variant="secondary">{membership.role}</Badge>
+				<Badge variant="secondary">
+										{ROLE_INFO[membership.role as keyof typeof ROLE_INFO]?.label ??
+											membership.role}
+									</Badge>
 			</span>
 			<div className="flex items-center gap-2">
 				<Select
@@ -468,10 +481,11 @@ function TournamentMemberRow({
 					onChange={(e) => setRole(e.target.value as MemberRole)}
 					className="w-36"
 				>
-					<option value="organizer">organizer</option>
-					<option value="referee">referee</option>
-					<option value="statistician">statistician</option>
-					<option value="viewer_staff">viewer_staff</option>
+					{(Object.entries(ROLE_INFO) as [keyof typeof ROLE_INFO, (typeof ROLE_INFO)[keyof typeof ROLE_INFO]][]).map(([value, { label }]) => (
+							<option key={value} value={value}>
+								{label}
+							</option>
+						))}
 				</Select>
 				<Button variant="ghost" size="sm" icon={Save} onClick={onSave}>
 					Guardar
@@ -489,13 +503,6 @@ function TournamentMemberRow({
 	);
 }
 
-type EditionStatus =
-	| "draft"
-	| "registration"
-	| "in_progress"
-	| "finished"
-	| "archived"
-	| "cancelled";
 
 function EditionEditDialog({
 	edition,
@@ -572,29 +579,25 @@ function EditionEditDialog({
 					/>
 				</div>
 				<div className="grid gap-3 sm:grid-cols-2">
-					<div>
-						<Label>Categoría</Label>
-						<Select
-							value={category}
-							onChange={(e) => setCategory(e.target.value)}
-						>
-							<option value="open">open</option>
-							<option value="u18">u18</option>
-							<option value="senior">senior</option>
-						</Select>
-					</div>
+									<div>
+										<Label>Categoría</Label>
+										<CategoryField
+											id="edition-edit-category"
+											value={category}
+											onChange={setCategory}
+										/>
+									</div>
 					<div>
 						<Label>Estado</Label>
 						<Select
 							value={status}
 							onChange={(e) => setStatus(e.target.value as EditionStatus)}
 						>
-							<option value="draft">draft</option>
-							<option value="registration">registration</option>
-							<option value="in_progress">in_progress</option>
-							<option value="finished">finished</option>
-							<option value="archived">archived</option>
-							<option value="cancelled">cancelled</option>
+							{(Object.entries(EDITION_STATUS) as [keyof typeof EDITION_STATUS, (typeof EDITION_STATUS)[keyof typeof EDITION_STATUS]][]).map(([value, { label }]) => (
+														<option key={value} value={value}>
+															{label}
+														</option>
+													))}
 						</Select>
 					</div>
 				</div>
