@@ -184,4 +184,28 @@ describe("query budgets", () => {
 		);
 		await measure();
 	});
+
+	it("GET /stages/:stageId/fixture stays at its budget", async () => {
+		const tournament = await seedTournament();
+		const edition = await seedEdition(tournament.id);
+		const stage = await seedStage(edition.id);
+		const home = await seedTeam();
+		const away = await seedTeam();
+		await seedRegistration(stage.id, home.id);
+		await seedRegistration(stage.id, away.id);
+		await seedMatch(stage.id, {
+			homeTeamId: home.id,
+			awayTeamId: away.id,
+		});
+
+		const measure = countQueries(
+			"GET /stages/:stageId/fixture",
+			2,
+			async () => {
+				queryLedger.length = 0;
+				return api.stages({ stageId: stage.id }).fixture.get();
+			},
+		);
+		await measure();
+	});
 });

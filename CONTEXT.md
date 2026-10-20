@@ -88,6 +88,10 @@ _Avoid_: ranking, leaderboard, scoreboard, clasificación (término ambiguo fuer
 El calendario programado de partidos de una etapa o edición, y lo que se muestra público antes de que empiecen.
 _Avoid_: calendario, bracket (el bracket es la representación visual de una etapa de eliminación), schedule (como nombre de feature)
 
+**Jornada** (round):
+La ronda del fixture (`matches.roundNumber`, 1-based): el conjunto de partidos que se juegan en la misma vuelta del round robin. Su fecha no es una entidad: cada partido lleva la suya en `scheduledAt` y puede reprogramarse solo.
+_Avoid_: fecha (una jornada no es una fecha compartida), ronda (en español se confunde con la llave)
+
 **Sede** (venue):
 El lugar donde se juega un partido.
 _Avoid_: cancha para el venue (la cancha es el campo de juego dentro de la sede), estadio (es un tipo de sede), local (significa "local/visita")

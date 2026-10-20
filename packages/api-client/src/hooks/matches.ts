@@ -1,5 +1,6 @@
 import type {
 	CreateMatch,
+	GenerateFixture,
 	MatchFilterQuery,
 	MatchScheduleUpdate,
 	MatchVenueUpdate,
@@ -49,6 +50,27 @@ export function useMatch(
 		queryKey: queryKeys.matches.detail(id),
 		queryFn: () => unwrap(client.matches({ id }).get()),
 		enabled: !!id && options?.enabled !== false,
+		...((options as unknown as object) ?? ({} as object)),
+	});
+}
+
+/**
+ * Fixture completo de una etapa (sin paginar). Es la lectura que usa la
+ * pantalla de partidos por jornada; la escritura de cada fila sigue siendo
+ * `useUpdateMatch`/`useAssignVenue`/`useScheduleMatch`.
+ */
+export function useStageFixture(
+	client: ApiClient,
+	stageId: string,
+	options?: Omit<
+		UseQueryOptions<unknown, Error, unknown, readonly unknown[]>,
+		"queryKey" | "queryFn"
+	>,
+) {
+	return useQuery({
+		queryKey: queryKeys.matches.fixture(stageId),
+		queryFn: () => unwrap(client.stages({ stageId }).fixture.get()),
+		enabled: !!stageId && options?.enabled !== false,
 		...((options as unknown as object) ?? ({} as object)),
 	});
 }
@@ -126,10 +148,10 @@ export function useAssignVenue(
 			...body
 		}: {
 			id: string;
-			venueId: MatchVenueUpdate["venueId"];
-		}) => unwrap(client.matches({ id }).venue.patch(body)),
+		} & MatchVenueUpdate) => unwrap(client.matches({ id }).venue.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, onMutateResult, context) => {
+			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
 			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
@@ -154,7 +176,47 @@ export function useScheduleMatch(
 		}) => unwrap(client.matches({ id }).schedule.patch(body)),
 		...((options as unknown as object) ?? ({} as object)),
 		onSuccess: (data, vars, onMutateResult, context) => {
+			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			qc.invalidateQueries({ queryKey: queryKeys.matches.detail(vars.id) });
+			options?.onSuccess?.(data, vars, onMutateResult, context);
+		},
+	});
+}
+
+// ---------------------------------------------------------------------------
+// Mutations — fixture (organizer)
+// ---------------------------------------------------------------------------
+
+export function useGenerateFixture(
+	client: ApiClient,
+	options?: Omit<
+		UseMutationOptions<
+			unknown,
+			Error,
+			{ stageId: string; body: GenerateFixture; force?: boolean }
+		>,
+		"mutationFn"
+	>,
+) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			stageId,
+			body,
+			force,
+		}: {
+			stageId: string;
+			body: GenerateFixture;
+			force?: boolean;
+		}) =>
+			unwrap(
+				client
+					.stages({ stageId })
+					.fixture.post(body, force ? { query: { force: "true" } } : undefined),
+			),
+		...((options as unknown as object) ?? ({} as object)),
+		onSuccess: (data, vars, onMutateResult, context) => {
+			qc.invalidateQueries({ queryKey: queryKeys.matches.all() });
 			options?.onSuccess?.(data, vars, onMutateResult, context);
 		},
 	});

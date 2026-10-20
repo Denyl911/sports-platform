@@ -9,6 +9,7 @@ import {
 	tournamentEditions,
 	tournamentStages,
 	tournaments,
+	venues,
 } from "@sports/db/tables";
 import type {
 	CreateMatch,
@@ -18,7 +19,16 @@ import type {
 	UpdateMatchInfo,
 	UpdateMatchScore,
 } from "@sports/schemas";
-import { and, asc, count, eq, getTableColumns, sql } from "drizzle-orm";
+import {
+	and,
+	asc,
+	count,
+	eq,
+	getTableColumns,
+	gte,
+	lte,
+	sql,
+} from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { publishMatch } from "../lib/live";
 import { advanceBracketWinner, syncAdvancement } from "./advancement.service";
@@ -37,6 +47,7 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type MatchListItem = typeof matches.$inferSelect & {
 	homeTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
 	awayTeam: Pick<typeof teams.$inferSelect, "id" | "name"> | null;
+	venue: Pick<typeof venues.$inferSelect, "id" | "name"> | null;
 };
 
 // Transiciones válidas de estado de un partido
@@ -92,6 +103,9 @@ export async function listMatches(
 	if (filter.stageId) conditions.push(eq(matches.stageId, filter.stageId));
 	if (filter.groupId) conditions.push(eq(matches.groupId, filter.groupId));
 	if (filter.status) conditions.push(eq(matches.status, filter.status));
+	if (filter.from)
+		conditions.push(gte(matches.scheduledAt, new Date(filter.from)));
+	if (filter.to) conditions.push(lte(matches.scheduledAt, new Date(filter.to)));
 	// Scope por edición o torneo: join con la cadena de padres
 	if (filter.editionId)
 		conditions.push(eq(tournamentStages.editionId, filter.editionId));
@@ -108,6 +122,7 @@ export async function listMatches(
 		...getTableColumns(matches),
 		homeTeam: { id: homeTeams.id, name: homeTeams.name },
 		awayTeam: { id: awayTeams.id, name: awayTeams.name },
+		venue: { id: venues.id, name: venues.name },
 	};
 	const orderBy = [
 		asc(matches.roundNumber),
@@ -120,7 +135,8 @@ export async function listMatches(
 		.select(itemSelection)
 		.from(matches)
 		.leftJoin(homeTeams, eq(matches.homeTeamId, homeTeams.id))
-		.leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id));
+		.leftJoin(awayTeams, eq(matches.awayTeamId, awayTeams.id))
+		.leftJoin(venues, eq(matches.venueId, venues.id));
 
 	const itemsQuery = (
 		needsScopeJoin
@@ -194,6 +210,8 @@ export async function createMatch(data: CreateMatch) {
 		}
 	}
 
+	await assertFieldNumber(data.venueId ?? null, data.fieldNumber ?? null);
+
 	if (!data.homeTeamId || !data.awayTeamId) {
 		// En llaves los equipos pueden definirse después, pero si viene uno debe venir el otro
 		if (Boolean(data.homeTeamId) !== Boolean(data.awayTeamId)) {
@@ -252,6 +270,19 @@ export async function updateMatch(id: string, data: UpdateMatchInfo) {
 
 	if (data.venueId) await findVenueById(data.venueId);
 
+	// Quitar la sede deja el partido sin cancha; cambiarla conserva la cancha
+	// elegida solo si sigue existiendo en la sede nueva.
+	const clearingVenue = data.venueId === null;
+	const finalVenueId =
+		data.venueId === undefined ? match.venueId : data.venueId;
+	const finalFieldNumber =
+		data.fieldNumber !== undefined
+			? data.fieldNumber
+			: clearingVenue
+				? null
+				: match.fieldNumber;
+	await assertFieldNumber(finalVenueId, finalFieldNumber);
+
 	// El ganador que ya no sea participante (post-cambio de equipos) se limpia
 	const winnerInvalid =
 		match.winnerTeamId &&
@@ -264,6 +295,9 @@ export async function updateMatch(id: string, data: UpdateMatchInfo) {
 		.update(matches)
 		.set({
 			...toMatchRow(data),
+			...(clearingVenue && data.fieldNumber === undefined
+				? { fieldNumber: null }
+				: {}),
 			...(winnerInvalid ? { winnerTeamId: null } : {}),
 		})
 		.where(eq(matches.id, id))
@@ -436,13 +470,26 @@ export async function recordLiveEvent(
 // Programación y sede
 // ==========================================
 
-export async function assignVenue(matchId: string, venueId: string) {
-	await findVenueById(venueId);
-	await assertMatchExists(matchId);
+export async function assignVenue(
+	matchId: string,
+	venueId: string,
+	fieldNumber?: number | null,
+) {
+	const venue = await findVenueById(venueId);
+	const [match] = await db
+		.select({ fieldNumber: matches.fieldNumber })
+		.from(matches)
+		.where(eq(matches.id, matchId))
+		.limit(1);
+	if (!match) throw DomainError.notFound(`Match '${matchId}' not found`);
+
+	const nextFieldNumber =
+		fieldNumber === undefined ? match.fieldNumber : fieldNumber;
+	assertFieldNumberInVenue(venue, nextFieldNumber);
 
 	const [updated] = await db
 		.update(matches)
-		.set({ venueId })
+		.set({ venueId, fieldNumber: nextFieldNumber })
 		.where(eq(matches.id, matchId))
 		.returning();
 
@@ -465,15 +512,49 @@ export async function scheduleMatch(matchId: string, scheduledAt: string) {
 // Helpers internos
 // ==========================================
 
-// Convierte fechas ISO (TypeBox) a Date (Drizzle) para insert/update
+// Convierte fechas ISO (TypeBox) a Date (Drizzle) para insert/update. Un
+// `null` explícito limpia la programación; `undefined` no toca la columna.
 function toMatchRow<T extends { scheduledAt?: string | Date | null }>(
 	data: T,
-): Omit<T, "scheduledAt"> & { scheduledAt?: Date } {
+): Omit<T, "scheduledAt"> & { scheduledAt?: Date | null } {
 	const { scheduledAt, ...rest } = data;
 	return {
 		...(rest as Omit<T, "scheduledAt">),
-		...(scheduledAt ? { scheduledAt: new Date(scheduledAt) } : {}),
+		...(scheduledAt === undefined
+			? {}
+			: { scheduledAt: scheduledAt === null ? null : new Date(scheduledAt) }),
 	};
+}
+
+// La cancha es un número dentro de la sede: sin sede no hay cancha, y el
+// número no puede superar las canchas que la sede declara.
+async function assertFieldNumber(
+	venueId: string | null | undefined,
+	fieldNumber: number | null | undefined,
+) {
+	if (fieldNumber == null) return;
+	if (!venueId) {
+		throw DomainError.badRequest(
+			"Para asignar una cancha, primero elige la sede del partido",
+		);
+	}
+	const venue = await findVenueById(venueId);
+	assertFieldNumberInVenue(venue, fieldNumber);
+}
+
+function assertFieldNumberInVenue(
+	venue: { name: string; fieldCount: number },
+	fieldNumber: number | null | undefined,
+) {
+	if (fieldNumber == null) return;
+	if (!Number.isInteger(fieldNumber) || fieldNumber < 1) {
+		throw DomainError.badRequest("El número de cancha debe ser mayor que cero");
+	}
+	if (fieldNumber > venue.fieldCount) {
+		throw DomainError.badRequest(
+			`La cancha ${fieldNumber} no existe en "${venue.name}" (tiene ${venue.fieldCount} canchas)`,
+		);
+	}
 }
 
 async function getMatchOrThrow(tx: Tx, id: string) {

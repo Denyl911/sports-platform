@@ -317,6 +317,11 @@ export async function seedMatch(
 		homeScore: number;
 		awayScore: number;
 		winnerTeamId: string | null;
+		scheduledAt: Date | null;
+		venueId: string | null;
+		fieldNumber: number | null;
+		roundNumber: number;
+		matchNumber: number | null;
 	}> = {},
 ): Promise<MatchRow> {
 	const home = opts.homeTeamId ?? (await seedTeam()).id;
@@ -339,6 +344,19 @@ export async function seedMatch(
 					}
 				: {}),
 			winnerTeamId: opts.winnerTeamId ?? null,
+			...(opts.scheduledAt !== undefined
+				? { scheduledAt: opts.scheduledAt }
+				: {}),
+			...(opts.venueId !== undefined ? { venueId: opts.venueId } : {}),
+			...(opts.fieldNumber !== undefined
+				? { fieldNumber: opts.fieldNumber }
+				: {}),
+			...(opts.roundNumber !== undefined
+				? { roundNumber: opts.roundNumber }
+				: {}),
+			...(opts.matchNumber !== undefined
+				? { matchNumber: opts.matchNumber }
+				: {}),
 		})
 		.returning();
 	return match;

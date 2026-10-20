@@ -33,6 +33,9 @@ export const matches = pgTable(
 		winnerTeamId: uuid("winner_team_id").references(() => teams.id),
 
 		venueId: uuid("venue_id").references(() => venues.id),
+		// Cancha dentro de la sede (1..venues.field_count). La sede sola no
+		// alcanza cuando un torneo usa varias canchas a la misma hora.
+		fieldNumber: integer("field_number"),
 		scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
 		status: matchStatusEnum("status").default("scheduled").notNull(),
 
@@ -58,6 +61,10 @@ export const matches = pgTable(
 		),
 		check("home_score_non_negative", sql`${t.homeScore} >= 0`),
 		check("away_score_non_negative", sql`${t.awayScore} >= 0`),
+		check(
+			"field_number_positive",
+			sql`${t.fieldNumber} IS NULL OR ${t.fieldNumber} > 0`,
+		),
 		// Índices de consulta
 		index("matches_stage_id_idx").on(t.stageId),
 		index("matches_group_id_idx").on(t.groupId),

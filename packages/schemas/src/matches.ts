@@ -35,6 +35,7 @@ export const updateMatchInfoSchema = t.Object({
 		t.Union([t.String({ format: "date-time" }), t.Null()]),
 	),
 	venueId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	fieldNumber: t.Optional(t.Union([t.Integer({ minimum: 1 }), t.Null()])),
 	homeTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
 	awayTeamId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
 	metadata: t.Optional(t.Record(t.String(), t.Unknown())),
@@ -69,6 +70,9 @@ export const insertMatchEventSchema = createInsertSchema(matchEvents);
 // Referencia ligera para listados: la lista de partidos no necesita el cuerpo
 // completo del equipo, solo la identidad que muestra la tarjeta.
 export const matchTeamRefSchema = t.Pick(selectTeamSchema, ["id", "name"]);
+// Sede en una fila de fixture: identidad para mostrar, no el cuerpo entero
+// (la dirección y las coordenadas son del detalle).
+export const matchVenueRefSchema = t.Pick(selectVenueSchema, ["id", "name"]);
 
 // GET /matches (lista): partido con los dos participantes resueltos
 // (nullable: en llaves los equipos pueden definirse después).
@@ -79,6 +83,7 @@ export const matchWithTeamsSchema = t.Object({
 	...selectMatchSchema.properties,
 	homeTeam: t.Union([matchTeamRefSchema, t.Null()]),
 	awayTeam: t.Union([matchTeamRefSchema, t.Null()]),
+	venue: t.Union([matchVenueRefSchema, t.Null()]),
 });
 
 // GET /matches/:id (detalle): las relaciones que MATCH_RELATIONS ya trae de
@@ -122,6 +127,8 @@ export const matchFilterQuerySchema = t.Object({
 			t.Literal("walkover"),
 		]),
 	),
+	from: t.Optional(t.String({ format: "date-time" })),
+	to: t.Optional(t.String({ format: "date-time" })),
 	limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, default: 20 })),
 	offset: t.Optional(t.Numeric({ minimum: 0, default: 0 })),
 });
@@ -171,9 +178,50 @@ export const recordLiveEventSchema = t.Object({
 // Payloads para programación y sede
 export const matchVenueUpdateSchema = t.Object({
 	venueId: t.String({ format: "uuid" }),
+	fieldNumber: t.Optional(t.Union([t.Integer({ minimum: 1 }), t.Null()])),
 });
 export const matchScheduleUpdateSchema = t.Object({
 	scheduledAt: t.String({ format: "date-time" }),
+});
+
+// ==========================================
+// 2bis. FIXTURE
+// ==========================================
+
+// Fecha y hora locales del organizador. La API las convierte a un instante
+// UTC con la zona horaria que manda el navegador; nunca adivina la zona.
+const localDatePattern = "^\\d{4}-\\d{2}-\\d{2}$";
+const localTimePattern = "^(?:[01]\\d|2[0-3]):[0-5]\\d$";
+
+export const generateFixtureSchema = t.Object({
+	doubleRound: t.Optional(t.Boolean()),
+	startDate: t.String({ pattern: localDatePattern }),
+	intervalDays: t.Optional(t.Integer({ minimum: 0, maximum: 365 })),
+	kickoffTimes: t.Optional(
+		t.Array(t.String({ pattern: localTimePattern }), {
+			minItems: 1,
+			maxItems: 12,
+		}),
+	),
+	matchDurationMinutes: t.Optional(t.Integer({ minimum: 15, maximum: 240 })),
+	venueId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	fieldNumbers: t.Optional(
+		t.Array(t.Integer({ minimum: 1 }), { minItems: 1, maxItems: 50 }),
+	),
+	timeZone: t.Optional(t.String({ minLength: 1, maxLength: 64 })),
+});
+
+export const fixtureGenerationResultSchema = t.Object({
+	matches: t.Integer(),
+	matchdays: t.Integer(),
+	warnings: t.Array(t.String()),
+});
+
+// El fixture de una etapa no se pagina: la pantalla lo necesita completo y
+// el tamaño está acotado por los equipos de la etapa.
+export const stageFixtureSchema = t.Object({
+	items: t.Array(matchWithTeamsSchema),
+	total: t.Integer(),
 });
 
 // ==========================================
@@ -192,3 +240,8 @@ export type RecordLiveEvent = Static<typeof recordLiveEventSchema>;
 export type MatchVenueUpdate = Static<typeof matchVenueUpdateSchema>;
 export type MatchScheduleUpdate = Static<typeof matchScheduleUpdateSchema>;
 export type MatchFilterQuery = Static<typeof matchFilterQuerySchema>;
+export type GenerateFixture = Static<typeof generateFixtureSchema>;
+export type FixtureGenerationResult = Static<
+	typeof fixtureGenerationResultSchema
+>;
+export type StageFixture = Static<typeof stageFixtureSchema>;

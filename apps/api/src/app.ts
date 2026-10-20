@@ -6,6 +6,7 @@ import { errorMiddleware } from "./middlewares/error.middleware";
 import { advancementRoutes } from "./routes/advancement";
 import { authRoutes } from "./routes/auth";
 import { clubsRoutes } from "./routes/clubs";
+import { fixtureRoutes } from "./routes/fixture";
 import { invitationRoutes } from "./routes/invitations";
 import { liveRoutes } from "./routes/live";
 import { matchesRoutes } from "./routes/matches";
@@ -68,6 +69,7 @@ export const app = new Elysia({
 	.use(playersRoutes)
 	.use(tournamentsRoutes)
 	.use(advancementRoutes)
+	.use(fixtureRoutes)
 	.use(stageRegistrationsRoutes)
 	.use(registrationItemRoutes)
 	.use(rostersRoutes)

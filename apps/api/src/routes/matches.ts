@@ -50,7 +50,7 @@ export const matchesRoutes = new Elysia({
 		detail: {
 			summary: "Listar partidos",
 			description:
-				"Lectura pública. Filtros: `stageId`, `groupId`, `tournamentId`, `editionId`, `status`. Paginado con `limit`/`offset`. Retorna `{ items, total }` con `items[].homeTeam` y `items[].awayTeam` resueltos (`{ id, name }`, null si aún no se definen).",
+				"Lectura pública. Filtros: `stageId`, `groupId`, `tournamentId`, `editionId`, `status`, `from`/`to` (rango ISO sobre `scheduledAt`, ambos inclusive). Paginado con `limit`/`offset`. Retorna `{ items, total }` con `items[].homeTeam`, `items[].awayTeam` y `items[].venue` resueltos (`{ id, name }`, null si aún no se definen).",
 			tags: ["Matches"],
 		},
 	})
@@ -103,7 +103,7 @@ export const matchesRoutes = new Elysia({
 		detail: {
 			summary: "Actualizar partido",
 			description:
-				"Requiere `organizer` del torneo del partido. Solo permite campos administrativos; `status` solo admite `cancelled`. Cambios de equipos deben venir en par y estar inscritos.",
+				"Requiere `organizer` del torneo del partido. Solo permite campos administrativos; `status` solo admite `cancelled`. Cambios de equipos deben venir en par y estar inscritos. `fieldNumber` se valida contra `venues.fieldCount`; quitar la sede limpia la cancha.",
 			tags: ["Matches"],
 		},
 	})
@@ -134,7 +134,8 @@ export const matchesRoutes = new Elysia({
 	)
 	.patch(
 		"/:id/venue",
-		async ({ params, body }) => assignVenue(params.id, body.venueId),
+		async ({ params, body }) =>
+			assignVenue(params.id, body.venueId, body.fieldNumber),
 		{
 			auth: true,
 			params: matchIdParamsSchema,
@@ -150,7 +151,7 @@ export const matchesRoutes = new Elysia({
 			detail: {
 				summary: "Asignar sede al partido",
 				description:
-					"Requiere `organizer` del torneo. Valida que la sede exista.",
+					"Requiere `organizer` del torneo. Valida que la sede exista y, si se manda `fieldNumber`, que la cancha exista dentro de la sede.",
 				tags: ["Matches"],
 			},
 		},

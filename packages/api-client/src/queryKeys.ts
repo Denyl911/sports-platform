@@ -52,6 +52,8 @@ export const matchKeys = {
 	list: (filters?: Record<string, unknown>) =>
 		[...matchKeys.lists(), filters ?? {}] as const,
 	detail: (id: string) => [...matchKeys.all(), "detail", id] as const,
+	fixture: (stageId: string) =>
+		[...matchKeys.all(), "fixture", stageId] as const,
 } as const;
 
 export const standingKeys = {
