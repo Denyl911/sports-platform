@@ -34,8 +34,8 @@
 		"glyphs-check": "bun scripts/checks.ts glyphs",
 		"checks": "bun scripts/checks.ts gate",
 		"db:seed": "bun run db:seed:sports && bun run db:seed:admin",
-		"db:seed:admin": "bun apps/api/scripts/seed-admin.ts",
-		"db:seed:sports": "bun apps/api/scripts/seed-sports.ts",
+		"db:seed:admin": "bun --env-file=apps/api/.env apps/api/scripts/seed-admin.ts",
+		"db:seed:sports": "bun --env-file=apps/api/.env apps/api/scripts/seed-sports.ts",
 		"gate": "bun scripts/checks.ts gate && turbo run check typecheck test"
 	},
 	"workspaces": [
