@@ -110,7 +110,10 @@ export const registrationItemRoutes = new Elysia({
 	.patch(
 		"/:id/group",
 		async ({ params, body }) =>
-			updateRegistrationGroup(params.id, body.groupId ?? undefined),
+			updateRegistrationGroup(params.id, {
+				groupId: body.groupId,
+				position: body.position,
+			}),
 		{
 			auth: true,
 			params: registrationIdParamsSchema,
@@ -124,9 +127,9 @@ export const registrationItemRoutes = new Elysia({
 			},
 			beforeHandle: requireRegistrationRole("organizer"),
 			detail: {
-				summary: "Asignar/quitar grupo de la inscripción",
+				summary: "Asignar grupo y posición a la inscripción",
 				description:
-					"Requiere `organizer` de la inscripción. Si se asigna `groupId`, debe pertenecer a la misma etapa. `null` quita la asignación.",
+					"Requiere `organizer` de la inscripción. Si se asigna `groupId`, debe pertenecer a la misma etapa. `null` quita el grupo. `position` es el índice 0-based dentro del grupo: se inserta ahí y se renumeran las demás filas; sin `position` se agrega al final.",
 				tags: ["Registrations"],
 			},
 		},

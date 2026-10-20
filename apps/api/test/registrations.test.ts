@@ -366,7 +366,7 @@ describe("registrations - PATCH y DELETE", () => {
 		expect(badUuid.status).toBe(400);
 	});
 
-	it("PATCH asigna grupo válido, null limpia, undefined limpia, grupo otra etapa 400", async () => {
+	it("PATCH asigna grupo válido, null limpia, sin groupId conserva, grupo otra etapa 400", async () => {
 		const ok = await api
 			.registrations({ id: registrationId })
 			.group.patch({ groupId: ctx.groupId } as never, {
@@ -383,7 +383,7 @@ describe("registrations - PATCH y DELETE", () => {
 		expect(toNull.status).toBe(200);
 		expect(toNull.data?.groupId).toBeNull();
 
-		// re-asignar para probar undefined
+		// re-asignar para probar que un PATCH sin groupId conserva el actual
 		await api
 			.registrations({ id: registrationId })
 			.group.patch({ groupId: ctx.groupId } as never, {
@@ -393,7 +393,7 @@ describe("registrations - PATCH y DELETE", () => {
 			.registrations({ id: registrationId })
 			.group.patch({} as never, { headers: await h(ctx.organizer) });
 		expect(toUndefined.status).toBe(200);
-		expect(toUndefined.data?.groupId).toBeNull();
+		expect(toUndefined.data?.groupId).toBe(ctx.groupId);
 
 		const badGroup = await api
 			.registrations({ id: registrationId })

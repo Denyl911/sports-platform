@@ -39,6 +39,7 @@ import {
 } from "../services/edition.service";
 import { DomainError } from "../services/errors";
 import {
+	autoCreateGroups,
 	createGroup,
 	createStage,
 	deleteGroup,
@@ -443,6 +444,36 @@ export const tournamentsRoutes = new Elysia({
 				summary: "Crear grupo",
 				description:
 					"Requiere `organizer` de la etapa. 409 si el nombre ya existe en la etapa.",
+				tags: ["Tournaments"],
+			},
+		},
+	)
+	.post(
+		"/stages/:stageId/groups/auto",
+		async ({ params, body }) =>
+			autoCreateGroups(params.stageId, body.numGroups),
+		{
+			auth: true,
+			params: stageRefParamsSchema,
+			body: t.Object({
+				numGroups: t.Optional(t.Integer({ minimum: 2, maximum: 26 })),
+			}),
+			response: {
+				200: t.Object({
+					groups: t.Array(selectStageGroupSchema),
+					created: t.Integer(),
+					assigned: t.Integer(),
+				}),
+				400: errorMessageSchema,
+				401: errorMessageSchema,
+				403: errorMessageSchema,
+				404: errorMessageSchema,
+			},
+			beforeHandle: requireStageRole("organizer"),
+			detail: {
+				summary: "Crear o completar grupos automáticamente",
+				description:
+					"Requiere `organizer` de la etapa. Sin grupos, crea `numGroups` (A, B, C…) y reparte al azar a todos los inscritos. Con grupos, solo reparte a los equipos sin grupo: nunca mueve una asignación manual. Devuelve `{ groups, created, assigned }`.",
 				tags: ["Tournaments"],
 			},
 		},

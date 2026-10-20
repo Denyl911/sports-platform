@@ -412,15 +412,48 @@ export function useDeleteGroup(
 	});
 }
 
+export function useAutoCreateGroups(
+	client: ApiClient,
+	options?: Omit<
+		UseMutationOptions<unknown, Error, { stageId: string; numGroups?: number }>,
+		"mutationFn"
+	>,
+) {
+	const qc = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			stageId,
+			numGroups,
+		}: {
+			stageId: string;
+			numGroups?: number;
+		}) =>
+			unwrap(
+				client.tournaments
+					.stages({ stageId })
+					.groups.auto.post(numGroups == null ? {} : { numGroups }),
+			),
+		...((options as unknown as object) ?? ({} as object)),
+		onSuccess: (data, vars, onMutateResult, context) => {
+			qc.invalidateQueries({
+				queryKey: queryKeys.groups.listByStage(vars.stageId),
+			});
+			qc.invalidateQueries({
+				queryKey: queryKeys.registrations.byStage(vars.stageId),
+			});
+			qc.invalidateQueries({
+				queryKey: queryKeys.stages.qualifiers(vars.stageId),
+			});
+			options?.onSuccess?.(data, vars, onMutateResult, context);
+		},
+	});
+}
+
 export function useReorderStages(
 	api: ApiClient,
 	editionId: string,
 	options?: Omit<
-		UseMutationOptions<
-			unknown,
-			Error,
-			{ stageIds: string[] }
-		>,
+		UseMutationOptions<unknown, Error, { stageIds: string[] }>,
 		"mutationFn"
 	>,
 ) {

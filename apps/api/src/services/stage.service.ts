@@ -1,6 +1,7 @@
 import { db } from "@sports/db";
 import {
 	stageGroups,
+	stageTeamRegistrations,
 	tournamentEditions,
 	tournamentStages,
 } from "@sports/db/tables";
@@ -10,7 +11,7 @@ import type {
 	UpdateStageGroup,
 	UpdateTournamentStage,
 } from "@sports/schemas";
-import { and, asc, count, desc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, lt } from "drizzle-orm";
 import { DomainError } from "./errors";
 
 // ==========================================
@@ -208,6 +209,117 @@ export async function updateGroup(id: string, data: UpdateStageGroup) {
 export async function deleteGroup(id: string) {
 	await findGroupById(id);
 	await db.delete(stageGroups).where(eq(stageGroups.id, id));
+}
+
+/**
+ * Reparte al azar los equipos **sin grupo** entre los grupos de la etapa.
+ *
+ * Si la etapa no tiene grupos, crea `numGroups` con nombres A, B, C… y reparte
+ * a todos los inscritos. Si ya tiene grupos, no crea ni renombra nada: solo
+ * completa los huecos, para que una distribución manual nunca se pise por
+ * accidente. Devuelve los grupos resultantes y cuántos equipos se movieron.
+ */
+export async function autoCreateGroups(stageId: string, numGroups?: number) {
+	await findStageById(stageId);
+
+	const [existingGroups, registrations] = await Promise.all([
+		db
+			.select()
+			.from(stageGroups)
+			.where(eq(stageGroups.stageId, stageId))
+			.orderBy(asc(stageGroups.name)),
+		db
+			.select({
+				id: stageTeamRegistrations.id,
+				groupId: stageTeamRegistrations.groupId,
+			})
+			.from(stageTeamRegistrations)
+			.where(eq(stageTeamRegistrations.stageId, stageId)),
+	]);
+
+	let groups = existingGroups;
+	let created = 0;
+
+	if (groups.length === 0) {
+		if (numGroups == null) {
+			throw DomainError.badRequest("Indica cuántos grupos hay que crear");
+		}
+		if (!Number.isInteger(numGroups) || numGroups < 2 || numGroups > 26) {
+			throw DomainError.badRequest(
+				"La cantidad de grupos debe estar entre 2 y 26",
+			);
+		}
+		if (registrations.length < numGroups) {
+			throw DomainError.badRequest(
+				`Hay ${registrations.length} equipos inscritos y no alcanzan para ${numGroups} grupos`,
+			);
+		}
+
+		groups = await db.transaction(async (tx) => {
+			const rows = [];
+			for (let i = 0; i < numGroups; i++) {
+				const [group] = await tx
+					.insert(stageGroups)
+					.values({ stageId, name: String.fromCharCode(65 + i) })
+					.returning();
+				rows.push(group!);
+			}
+			return rows;
+		});
+		created = groups.length;
+	}
+
+	// Reparto equilibrado: cada equipo libre va al grupo con menos equipos.
+	// El desempate es el orden de nombre, así que A recibe el primero.
+	const counts = new Map<string, number>(groups.map((g) => [g.id, 0]));
+	for (const registration of registrations) {
+		if (registration.groupId && counts.has(registration.groupId)) {
+			const current = counts.get(registration.groupId) ?? 0;
+			counts.set(registration.groupId, current + 1);
+		}
+	}
+
+	const free = shuffle(
+		registrations.filter((registration) => registration.groupId === null),
+	);
+	const assignments = new Map<string, string[]>();
+	for (const registration of free) {
+		let target = groups[0]!;
+		for (const group of groups) {
+			if ((counts.get(group.id) ?? 0) < (counts.get(target.id) ?? 0)) {
+				target = group;
+			}
+		}
+		const ids = assignments.get(target.id) ?? [];
+		ids.push(registration.id);
+		assignments.set(target.id, ids);
+		counts.set(target.id, (counts.get(target.id) ?? 0) + 1);
+	}
+
+	if (assignments.size > 0) {
+		await db.transaction(async (tx) => {
+			for (const [groupId, ids] of assignments) {
+				await tx
+					.update(stageTeamRegistrations)
+					.set({ groupId })
+					.where(inArray(stageTeamRegistrations.id, ids));
+			}
+		});
+	}
+
+	return { groups, created, assigned: free.length };
+}
+
+/** Fisher–Yates: un `sort` con `Math.random` no es una mezcla uniforme. */
+function shuffle<T>(items: T[]): T[] {
+	const copy = [...items];
+	for (let i = copy.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		const current = copy[i]!;
+		copy[i] = copy[j]!;
+		copy[j] = current;
+	}
+	return copy;
 }
 
 // ==========================================

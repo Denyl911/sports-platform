@@ -83,6 +83,7 @@ export {
 	Eye,
 	Flag,
 	Gauge,
+	GripVertical,
 	House,
 	Info,
 	Layers,

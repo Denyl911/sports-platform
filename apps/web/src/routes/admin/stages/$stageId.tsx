@@ -1,7 +1,7 @@
 import { getApiErrorMessage } from "@sports/api-client";
 import {
-	useAddPlayerToRoster,
 	useAdvanceStage,
+	useAutoCreateGroups,
 	useClubs,
 	useCreateClub,
 	useCreateGroup,
@@ -11,18 +11,13 @@ import {
 	useDeleteGroup,
 	useGenerateBracket,
 	useGroupsByStage,
-	usePlayers,
 	useRegisterTeam,
 	useRegistrationsByStage,
-	useRemovePlayerFromRoster,
-	useRoster,
 	useStageQualifiers,
 	useStagesByEdition,
 	useTeams,
 	useUnregisterTeam,
 	useUpdateGroup,
-	useUpdateRegistrationGroup,
-	useUpdateRosterEntry,
 	useUpdateStage,
 } from "@sports/api-client/hooks";
 import {
@@ -34,11 +29,11 @@ import {
 	Field,
 	Input,
 	Label,
-	Pencil,
 	Plus,
 	Save,
 	Select,
 	Skeleton,
+	Sparkles,
 	Table2,
 	Trash2,
 	toast,
@@ -55,6 +50,11 @@ import {
 	useTournamentName,
 } from "../../../components/AdminBreadcrumbs";
 import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
+import {
+	type BoardGroup,
+	type BoardRegistration,
+	StageGroupsBoard,
+} from "../../../components/StageGroupsBoard";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/stages/$stageId")({
@@ -81,7 +81,6 @@ function AdminStageDetailPage() {
 	);
 	const { data: regsData } = useRegistrationsByStage(api, stageId);
 	const { data: teamsData } = useTeams(api);
-	const { data: playersData } = usePlayers(api);
 
 	const createGroup = useCreateGroup(api);
 	const deleteGroup = useDeleteGroup(api);
@@ -105,6 +104,7 @@ function AdminStageDetailPage() {
 								id: string;
 								teamId: string;
 								groupId: string | null;
+								position: number | null;
 							};
 							team: { id: string; name: string };
 						}>;
@@ -118,15 +118,14 @@ function AdminStageDetailPage() {
 				| { items: Array<{ id: string; name: string }>; total: number }
 				| undefined
 		)?.items ?? [];
-	const players =
-		(
-			playersData as
-				| {
-						items: Array<{ id: string; firstName: string; lastName: string }>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
+	const registeredTeamIds = new Set(registrations.map((item) => item.team.id));
+	const availableTeams = teams.filter(
+		(team) => !registeredTeamIds.has(team.id),
+	);
+	const groupNameById = new Map(groups.map((group) => [group.id, group.name]));
+	const unassignedCount = registrations.filter(
+		(item) => item.registration.groupId === null,
+	).length;
 
 	// Avance entre etapas: la regla vive en la etapa (advancementRules) y el
 	// destino es la etapa con el menor sequenceOrder mayor dentro de la edición.
@@ -153,8 +152,16 @@ function AdminStageDetailPage() {
 	const nextStage = editionStages
 		.filter((s) => s.sequenceOrder > (currentStage?.sequenceOrder ?? 0))
 		.sort((a, b) => a.sequenceOrder - b.sequenceOrder)[0];
-	const isSource = currentStage?.stageType === "round_robin";
-	const isTarget = currentStage?.stageType === "single_elimination";
+	// El avance solo existe cuando hay a dónde avanzar y equipos repartidos en
+	// grupos (los clasificados se calculan de la tabla de cada grupo).
+	const hasGroupedTeams = registrations.some(
+		(item) => item.registration.groupId !== null,
+	);
+	const canAdvance =
+		!!currentStage && !!nextStage && groups.length > 0 && hasGroupedTeams;
+	// La llave sí es de la propia etapa: no depende de la siguiente.
+	const canGenerateBracket = currentStage?.stageType === "single_elimination";
+	const showAdvanceSection = canAdvance || canGenerateBracket;
 
 	const { data: qualifiersData } = useStageQualifiers(api, stageId);
 	const qualifiers =
@@ -239,6 +246,8 @@ function AdminStageDetailPage() {
 
 	const [groupName, setGroupName] = React.useState("");
 	const [teamId, setTeamId] = React.useState("");
+	const [numGroups, setNumGroups] = React.useState(2);
+	const autoCreateGroups = useAutoCreateGroups(api);
 	const [editingGroup, setEditingGroup] = React.useState<
 		(typeof groups)[number] | null
 	>(null);
@@ -250,8 +259,19 @@ function AdminStageDetailPage() {
 	const createInvitation = useCreateInvitation(api);
 
 	React.useEffect(() => {
-		if (teams.length && !teamId) setTeamId(teams[0]!.id);
-	}, [teams, teamId]);
+		if (availableTeams.length && !availableTeams.some((t) => t.id === teamId)) {
+			setTeamId(availableTeams[0]!.id);
+		}
+	}, [availableTeams, teamId]);
+
+	// Sugerencia de reparto: grupos de ~4 equipos, sin bajar de 2 ni pasar de 26.
+	React.useEffect(() => {
+		if (registrations.length >= 2) {
+			setNumGroups(
+				Math.max(2, Math.min(26, Math.round(registrations.length / 4))),
+			);
+		}
+	}, [registrations.length]);
 
 	const onCreateGroup = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
@@ -282,8 +302,34 @@ function AdminStageDetailPage() {
 		}
 	};
 
+	const onAutoCreateGroups = async (e: React.SyntheticEvent) => {
+		e.preventDefault();
+		try {
+			await autoCreateGroups.mutateAsync({ stageId, numGroups });
+			toast.success("Grupos creados y equipos repartidos");
+		} catch (err) {
+			toast.error("No se pudieron crear los grupos", getApiErrorMessage(err));
+		}
+	};
+
+	const onDistributeUnassigned = async () => {
+		try {
+			await autoCreateGroups.mutateAsync({ stageId });
+			toast.success("Equipos repartidos entre los grupos");
+		} catch (err) {
+			toast.error(
+				"No se pudieron repartir los equipos",
+				getApiErrorMessage(err),
+			);
+		}
+	};
+
 	const onRegister = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		if (!teamId) {
+			toast.error("Elige un equipo para inscribir");
+			return;
+		}
 		try {
 			await registerTeam.mutateAsync({ stageId, body: { teamId } });
 			toast.success("Equipo inscrito");
@@ -370,17 +416,209 @@ function AdminStageDetailPage() {
 				</div>
 			</Card>
 
-			{editionId && currentStage && (
+			<Card className="p-4">
+				<h3 className="font-bold">Equipos</h3>
+				<p className="mt-1 text-sm text-(--sea-ink-soft)">
+					Inscribe los equipos de la etapa. El grupo se asigna en la sección
+					Grupos, arrastrando el equipo a su tabla.
+				</p>
+				<form onSubmit={onRegister} className="mt-2 flex gap-2">
+					<Select
+						value={teamId}
+						onChange={(e) => setTeamId(e.target.value)}
+						aria-label="Equipo"
+						className="flex-1"
+						disabled={availableTeams.length === 0}
+					>
+						{availableTeams.length === 0 ? (
+							<option value="">
+								Todos los equipos del catálogo ya están inscritos
+							</option>
+						) : (
+							availableTeams.map((t) => (
+								<option key={t.id} value={t.id}>
+									{t.name}
+								</option>
+							))
+						)}
+					</Select>
+					<Button
+						type="submit"
+						icon={Plus}
+						disabled={registerTeam.isPending || availableTeams.length === 0}
+					>
+						Inscribir
+					</Button>
+				</form>
+				<div className="mt-2">
+					<Button
+						variant="ghost"
+						size="sm"
+						icon={Plus}
+						onClick={() => setShowCreateTeam(true)}
+					>
+						Crear equipo nuevo
+					</Button>
+				</div>
+				<div className="mt-3 space-y-1">
+					{registrations.map(({ registration, team }) => (
+						<RegistrationRow
+							key={registration.id}
+							registration={registration}
+							team={team}
+							groupName={
+								registration.groupId
+									? (groupNameById.get(registration.groupId) ?? null)
+									: null
+							}
+							editionId={editionId}
+						/>
+					))}
+					{registrations.length === 0 && (
+						<EmptyState
+							icon={Users}
+							title="Sin inscripciones"
+							description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos."
+						/>
+					)}
+				</div>
+			</Card>
+
+			<Card className="p-4">
+				<h3 className="font-bold">Grupos</h3>
+				<p className="mt-1 text-sm text-(--sea-ink-soft)">
+					El grupo es la unidad de la tabla y los cruces (Grupo A, Grupo B…).
+					Crea los grupos a mano o deja que la app los arme al azar; después
+					arrastra los equipos para moverlos.
+				</p>
+				<div className="mt-3 grid gap-3 lg:grid-cols-2">
+					<form
+						onSubmit={onCreateGroup}
+						className="flex flex-wrap items-end gap-2"
+					>
+						<Field
+							label="Nombre del grupo"
+							htmlFor="group-name"
+							className="min-w-40 flex-1"
+						>
+							<Input
+								id="group-name"
+								value={groupName}
+								onChange={(e) => setGroupName(e.target.value)}
+								placeholder="Grupo A"
+								required
+							/>
+						</Field>
+						<Button type="submit" icon={Plus} disabled={createGroup.isPending}>
+							Crear
+						</Button>
+					</form>
+					<div className="rounded-xl border border-(--chip-line) bg-(--chip-bg) p-3">
+						{groups.length === 0 ? (
+							<>
+								<p className="text-xs text-(--sea-ink-soft)">
+									Crea los grupos y reparte al azar a los equipos inscritos.
+								</p>
+								<form
+									onSubmit={onAutoCreateGroups}
+									className="mt-2 flex flex-wrap items-end gap-2"
+								>
+									<Field
+										label="Número de grupos"
+										htmlFor="auto-groups"
+										className="w-36"
+									>
+										<Input
+											id="auto-groups"
+											type="number"
+											min={2}
+											max={Math.min(26, Math.max(2, registrations.length))}
+											value={numGroups}
+											onChange={(e) => setNumGroups(Number(e.target.value))}
+											required
+										/>
+									</Field>
+									<Button
+										type="submit"
+										variant="outline"
+										icon={Sparkles}
+										disabled={
+											autoCreateGroups.isPending || registrations.length < 2
+										}
+									>
+										{autoCreateGroups.isPending
+											? "Creando…"
+											: "Crear y repartir"}
+									</Button>
+								</form>
+								{registrations.length < 2 && (
+									<p className="mt-2 text-xs text-(--sea-ink-soft)">
+										Necesitas al menos 2 equipos inscritos para repartir.
+									</p>
+								)}
+							</>
+						) : (
+							<>
+								<p className="text-xs text-(--sea-ink-soft)">
+									La app solo reparte equipos sin grupo; nunca mueve lo que
+									asignaste a mano.
+								</p>
+								{unassignedCount > 0 ? (
+									<Button
+										type="button"
+										variant="outline"
+										size="sm"
+										icon={Sparkles}
+										className="mt-2"
+										onClick={onDistributeUnassigned}
+										disabled={autoCreateGroups.isPending}
+									>
+										{autoCreateGroups.isPending
+											? "Repartiendo…"
+											: `Repartir ${unassignedCount} sin grupo`}
+									</Button>
+								) : (
+									<p className="mt-2 text-xs text-(--sea-ink-soft)">
+										Todos los equipos tienen grupo.
+									</p>
+								)}
+							</>
+						)}
+					</div>
+				</div>
+				{groupsPending ? (
+					<div className="mt-3 flex flex-col gap-2">
+						<Skeleton className="h-10 rounded-xl" />
+						<Skeleton className="h-10 rounded-xl" />
+					</div>
+				) : groups.length === 0 ? (
+					<EmptyState
+						icon={Table2}
+						title="Sin grupos todavía"
+						description="Los grupos son opcionales. Crea uno solo si tu etapa necesita fase de grupos o tablas separadas."
+						className="mt-3"
+					/>
+				) : (
+					<div className="mt-3">
+						<StageGroupsBoard
+							groups={groups}
+							registrations={registrations}
+							onEditGroup={(group: BoardGroup) => setEditingGroup(group)}
+							onDeleteGroup={(group: BoardGroup) =>
+								onDeleteGroup(group.id, group.name)
+							}
+						/>
+					</div>
+				)}
+			</Card>
+
+			{showAdvanceSection && currentStage && (
 				<Card className="p-4">
 					<h3 className="font-bold">Avance a la etapa siguiente</h3>
-					{isSource && (
+					{canAdvance && nextStage && (
 						<>
 							<p className="mt-1 text-sm text-(--sea-ink-soft)">
-								Cuántos equipos por grupo pasan a la etapa siguiente
-								{nextStage
-									? ` («${nextStage.name}»)`
-									: " (sin etapa siguiente)"}
-								.
+								Cuántos equipos por grupo pasan a «{nextStage.name}».
 							</p>
 							<form
 								onSubmit={onSaveAdvancement}
@@ -453,7 +691,7 @@ function AdminStageDetailPage() {
 							)}
 						</>
 					)}
-					{isTarget && (
+					{canGenerateBracket && (
 						<div className="mt-3">
 							<p className="mb-2 text-sm text-(--sea-ink-soft)">
 								Genera la llave a partir de los clasificados de la etapa
@@ -472,138 +710,6 @@ function AdminStageDetailPage() {
 				</Card>
 			)}
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card className="p-4">
-					<h3 className="font-bold">Grupos</h3>
-					<p className="mt-1 text-sm text-(--sea-ink-soft)">
-						El grupo es la unidad de la tabla y los cruces (Grupo A, Grupo B…).
-					</p>
-					<form onSubmit={onCreateGroup} className="mt-2 flex flex-wrap gap-3">
-						<Field
-							label="Nombre del grupo"
-							htmlFor="group-name"
-							className="min-w-40 flex-1"
-						>
-							<Input
-								id="group-name"
-								value={groupName}
-								onChange={(e) => setGroupName(e.target.value)}
-								placeholder="Grupo A"
-								required
-							/>
-						</Field>
-						<Button
-							type="submit"
-							icon={Plus}
-							className="self-end"
-							disabled={createGroup.isPending}
-						>
-							Crear
-						</Button>
-					</form>
-					{groupsPending ? (
-						<div className="mt-3 flex flex-col gap-2">
-							<Skeleton className="h-10 rounded-xl" />
-							<Skeleton className="h-10 rounded-xl" />
-						</div>
-					) : groups.length === 0 ? (
-						<EmptyState
-							icon={Table2}
-							title="Sin grupos todavía"
-							description="Los grupos son opcionales. Crea uno solo si tu etapa necesita fase de grupos o tablas separadas."
-							className="mt-3"
-						/>
-					) : (
-						<div className="mt-3 flex flex-col gap-2">
-							{groups.map((g) => (
-								<div
-									key={g.id}
-									className="flex items-center justify-between rounded-xl border border-(--line) bg-(--chip-bg) px-3 py-2"
-								>
-									<Link
-										to="/standings/$groupId"
-										params={{ groupId: g.id }}
-										className="no-underline"
-									>
-										<Badge variant="secondary">{g.name}</Badge>
-									</Link>
-									<div className="flex gap-1">
-										<Button
-											variant="ghost"
-											size="icon-sm"
-											icon={Pencil}
-											aria-label="Editar"
-											title="Editar"
-											onClick={() => setEditingGroup(g)}
-										/>
-										<Button
-											variant="destructive"
-											size="icon-sm"
-											icon={Trash2}
-											aria-label="Eliminar"
-											title="Eliminar"
-											onClick={() => onDeleteGroup(g.id, g.name)}
-										/>
-									</div>
-								</div>
-							))}
-						</div>
-					)}
-				</Card>
-
-				<Card className="p-4">
-					<h3 className="font-bold">Equipos</h3>
-					<p className="mt-1 text-sm text-(--sea-ink-soft)">
-						Inscribe los equipos de la etapa. Asignarlos a un grupo es opcional
-						solo si la etapa usa grupos.
-					</p>
-					<form onSubmit={onRegister} className="mt-2 flex gap-2">
-						<Select
-							value={teamId}
-							onChange={(e) => setTeamId(e.target.value)}
-							aria-label="Equipo"
-							className="flex-1"
-						>
-							{teams.map((t) => (
-								<option key={t.id} value={t.id}>
-									{t.name}
-								</option>
-							))}
-						</Select>
-						<Button type="submit" icon={Plus} disabled={registerTeam.isPending}>
-							Inscribir
-						</Button>
-					</form>
-					<div className="mt-2">
-						<Button
-							variant="ghost"
-							size="sm"
-							icon={Plus}
-							onClick={() => setShowCreateTeam(true)}
-						>
-							Crear equipo nuevo
-						</Button>
-					</div>
-					<div className="mt-3 space-y-1">
-						{registrations.map(({ registration, team }) => (
-							<RegistrationRow
-								key={registration.id}
-								registration={registration}
-								team={team}
-								groups={groups}
-							/>
-						))}
-						{registrations.length === 0 && (
-							<EmptyState
-								icon={Users}
-								title="Sin inscripciones"
-								description="Inscribe el primer equipo con el formulario de arriba. Sin equipos inscritos no hay partidos. El grupo es opcional."
-							/>
-						)}
-					</div>
-				</Card>
-			</div>
-
 			<Card className="p-4">
 				<h3 className="font-bold">Fixture rápido</h3>
 				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
@@ -620,27 +726,13 @@ function AdminStageDetailPage() {
 						stageId={stageId}
 						tournamentId={tournamentId}
 						groups={groups}
-						teams={teams}
+						registrations={registrations}
 					/>
 				) : (
 					<div className="text-sm text-(--sea-ink-soft)">
 						No llega el torneo por search params: vuelve a la edición para
 						inscribir partidos.
 					</div>
-				)}
-			</Card>
-
-			<Card className="p-4">
-				<h3 className="font-bold">Roster</h3>
-				{editionId && teams[0] ? (
-					<RosterSection
-						editionId={editionId}
-						teamId={teams[0].id}
-						teams={teams}
-						players={players}
-					/>
-				) : (
-					<span className="text-sm">Sin equipos o edición</span>
 				)}
 			</Card>
 
@@ -957,27 +1049,16 @@ function InviteDialog({
 function RegistrationRow({
 	registration,
 	team,
-	groups,
+	groupName,
+	editionId,
 }: {
 	registration: { id: string; teamId: string; groupId: string | null };
 	team: { id: string; name: string };
-	groups: Array<{ id: string; name: string }>;
+	groupName: string | null;
+	editionId: string | null;
 }) {
-	const updateGroup = useUpdateRegistrationGroup(api);
 	const unregister = useUnregisterTeam(api);
 	const confirm = useConfirm();
-	const [groupId, setGroupId] = React.useState(registration.groupId ?? "");
-	const onMove = async () => {
-		try {
-			await updateGroup.mutateAsync({
-				id: registration.id,
-				body: { groupId: groupId || null },
-			});
-			toast.success("Inscripción movida de grupo");
-		} catch {
-			toast.error("No se pudo mover la inscripción");
-		}
-	};
 	const onRemove = async () => {
 		const ok = await confirm({
 			title: "Quitar inscripción",
@@ -994,23 +1075,25 @@ function RegistrationRow({
 	};
 	return (
 		<div className="demo-list-item flex flex-wrap items-center justify-between gap-2 text-sm">
-			<span>{team.name}</span>
+			<span className="flex flex-wrap items-center gap-2">
+				{team.name}
+				{groupName ? (
+					<Badge variant="secondary">{groupName}</Badge>
+				) : (
+					<Badge variant="outline">sin grupo</Badge>
+				)}
+			</span>
 			<div className="flex items-center gap-2">
-				<Select
-					value={groupId}
-					onChange={(e) => setGroupId(e.target.value)}
-					className="w-32"
+				<Link
+					to="/admin/teams/$teamId"
+					params={{ teamId: team.id }}
+					search={editionId ? { editionId } : {}}
+					className="no-underline"
 				>
-					<option value="">sin grupo</option>
-					{groups.map((g) => (
-						<option key={g.id} value={g.id}>
-							{g.name}
-						</option>
-					))}
-				</Select>
-				<Button variant="ghost" size="sm" onClick={onMove}>
-					Mover
-				</Button>
+					<Button variant="outline" size="sm">
+						Gestionar plantilla
+					</Button>
+				</Link>
 				<Button
 					variant="destructive"
 					size="sm"
@@ -1028,25 +1111,52 @@ function CreateMatchInline({
 	stageId,
 	tournamentId,
 	groups,
-	teams,
+	registrations,
 }: {
 	stageId: string;
 	tournamentId: string;
 	groups: Array<{ id: string; name: string }>;
-	teams: Array<{ id: string; name: string }>;
+	registrations: BoardRegistration[];
 }) {
 	const createMatch = useCreateMatch(api);
 	const [homeTeamId, setHomeTeamId] = React.useState("");
 	const [awayTeamId, setAwayTeamId] = React.useState("");
-	const [groupId, setGroupId] = React.useState<string>("");
+	const [groupId, setGroupId] = React.useState<string>(groups[0]?.id ?? "");
+
 	React.useEffect(() => {
-		if (teams.length >= 2) {
-			setHomeTeamId(teams[0]!.id);
-			setAwayTeamId(teams[1]!.id);
-		}
-	}, [teams]);
+		setGroupId((current) =>
+			groups.some((group) => group.id === current)
+				? current
+				: (groups[0]?.id ?? ""),
+		);
+	}, [groups]);
+
+	const availableTeams = groupId
+		? registrations
+				.filter((item) => item.registration.groupId === groupId)
+				.map((item) => item.team)
+		: registrations.map((item) => item.team);
+
+	React.useEffect(() => {
+		setHomeTeamId((current) =>
+			availableTeams.some((team) => team.id === current)
+				? current
+				: (availableTeams[0]?.id ?? ""),
+		);
+		setAwayTeamId((current) =>
+			availableTeams.some((team) => team.id === current) &&
+			current !== availableTeams[0]?.id
+				? current
+				: (availableTeams[1]?.id ?? ""),
+		);
+	}, [availableTeams]);
+
 	const onCreate = async (e: React.SyntheticEvent) => {
 		e.preventDefault();
+		if (!homeTeamId || !awayTeamId || homeTeamId === awayTeamId) {
+			toast.error("Elige dos equipos distintos para el partido");
+			return;
+		}
 		try {
 			await createMatch.mutateAsync({
 				stageId,
@@ -1062,13 +1172,27 @@ function CreateMatchInline({
 	};
 	return (
 		<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-3">
+			<Field label="Grupo" htmlFor="match-group" className="w-40">
+				<Select
+					id="match-group"
+					value={groupId}
+					onChange={(e) => setGroupId(e.target.value)}
+				>
+					<option value="">Sin grupo</option>
+					{groups.map((g) => (
+						<option key={g.id} value={g.id}>
+							{g.name}
+						</option>
+					))}
+				</Select>
+			</Field>
 			<Field label="Local" htmlFor="match-home" className="min-w-40 flex-1">
 				<Select
 					id="match-home"
 					value={homeTeamId}
 					onChange={(e) => setHomeTeamId(e.target.value)}
 				>
-					{teams.map((t) => (
+					{availableTeams.map((t) => (
 						<option key={t.id} value={t.id}>
 							{t.name}
 						</option>
@@ -1084,23 +1208,9 @@ function CreateMatchInline({
 					value={awayTeamId}
 					onChange={(e) => setAwayTeamId(e.target.value)}
 				>
-					{teams.map((t) => (
+					{availableTeams.map((t) => (
 						<option key={t.id} value={t.id}>
 							{t.name}
-						</option>
-					))}
-				</Select>
-			</Field>
-			<Field label="Grupo" htmlFor="match-group" className="w-40">
-				<Select
-					id="match-group"
-					value={groupId}
-					onChange={(e) => setGroupId(e.target.value)}
-				>
-					<option value="">Sin grupo</option>
-					{groups.map((g) => (
-						<option key={g.id} value={g.id}>
-							{g.name}
 						</option>
 					))}
 				</Select>
@@ -1109,299 +1219,19 @@ function CreateMatchInline({
 				type="submit"
 				icon={Plus}
 				className="self-end"
-				disabled={createMatch.isPending}
+				disabled={
+					createMatch.isPending ||
+					availableTeams.length < 2 ||
+					homeTeamId === awayTeamId
+				}
 			>
 				Crear partido
 			</Button>
-		</form>
-	);
-}
-
-function RosterSection({
-	editionId,
-	teamId,
-	teams,
-	players,
-}: {
-	editionId: string;
-	teamId: string;
-	teams: Array<{ id: string; name: string }>;
-	players: Array<{ id: string; firstName: string; lastName: string }>;
-}) {
-	const [selectedTeamId, setSelectedTeamId] = React.useState(teamId);
-	React.useEffect(() => setSelectedTeamId(teamId), [teamId]);
-	const { data: rosterData } = useRoster(api, editionId, selectedTeamId);
-	const addPlayer = useAddPlayerToRoster(api);
-	const removePlayer = useRemovePlayerFromRoster(api);
-	const confirm = useConfirm();
-	const [playerId, setPlayerId] = React.useState("");
-	React.useEffect(() => {
-		if (players.length) setPlayerId(players[0]!.id);
-	}, [players]);
-	const onAdd = async (e: React.SyntheticEvent) => {
-		e.preventDefault();
-		try {
-			await addPlayer.mutateAsync({
-				editionId,
-				teamId: selectedTeamId,
-				body: { playerId },
-			});
-			toast.success("Jugador añadido al plantel");
-		} catch {
-			toast.error("No se pudo añadir el jugador");
-		}
-	};
-	const onRemovePlayer = async (rosterId: string, playerName: string) => {
-		const ok = await confirm({
-			title: "Quitar jugador",
-			description: `Se quita a «${playerName}» del plantel. No se puede deshacer.`,
-			confirmLabel: "Quitar",
-		});
-		if (!ok) return;
-		try {
-			await removePlayer.mutateAsync(rosterId);
-			toast.success("Jugador quitado del plantel");
-		} catch {
-			toast.error("No se pudo quitar al jugador del plantel");
-		}
-	};
-	const roster =
-		(
-			rosterData as
-				| {
-						items: Array<{
-							roster: {
-								id: string;
-								jerseyNumber?: number | null;
-								position?: string | null;
-								isCaptain?: boolean | null;
-							};
-							player: { id: string; firstName: string; lastName: string };
-						}>;
-						total: number;
-				  }
-				| undefined
-		)?.items ?? [];
-	const [editingEntry, setEditingEntry] = React.useState<
-		(typeof roster)[number] | null
-	>(null);
-	return (
-		<div className="mt-2 space-y-3">
-			<Field label="Equipo" htmlFor="roster-team">
-				<Select
-					id="roster-team"
-					value={selectedTeamId}
-					onChange={(e) => setSelectedTeamId(e.target.value)}
-				>
-					{teams.map((t) => (
-						<option key={t.id} value={t.id}>
-							{t.name}
-						</option>
-					))}
-				</Select>
-			</Field>
-			{players.length === 0 ? (
-				<p className="text-sm text-(--sea-ink-soft)">
-					No hay jugadores en el catálogo todavía. Créalos en{" "}
-					<Link to="/admin/players" className="font-semibold">
-						Jugadores
-					</Link>{" "}
-					para armar el plantel.
+			{availableTeams.length < 2 && (
+				<p className="basis-full text-xs text-(--sea-ink-soft)">
+					El grupo elegido necesita al menos 2 equipos asignados.
 				</p>
-			) : (
-				<form onSubmit={onAdd} className="flex flex-wrap gap-3">
-					<Field
-						label="Jugador"
-						htmlFor="roster-player"
-						className="min-w-40 flex-1"
-					>
-						<Select
-							id="roster-player"
-							value={playerId}
-							onChange={(e) => setPlayerId(e.target.value)}
-						>
-							{players.map((p) => (
-								<option key={p.id} value={p.id}>
-									{p.firstName} {p.lastName}
-								</option>
-							))}
-						</Select>
-					</Field>
-					<Button
-						type="submit"
-						icon={Plus}
-						className="self-end"
-						disabled={addPlayer.isPending || !playerId}
-					>
-						Añadir
-					</Button>
-				</form>
 			)}
-			<div className="space-y-1">
-				{roster.length === 0 ? (
-					<EmptyState
-						icon={Users}
-						title="Plantel vacío"
-						description={
-							players.length === 0
-								? "Cuando haya jugadores en el catálogo podrás añadirlos a este equipo."
-								: "Añade jugadores al plantel con el formulario de arriba."
-						}
-						className="mt-2"
-					/>
-				) : (
-					<div className="space-y-1">
-						{roster.map(({ roster: r, player }) => (
-							<div
-								key={r.id}
-								className="demo-list-item flex items-center justify-between gap-2 text-sm"
-							>
-								<span className="flex flex-wrap items-center gap-1">
-									<span>
-										{player.firstName} {player.lastName}
-									</span>
-									{r.jerseyNumber != null && (
-										<Badge variant="outline">#{r.jerseyNumber}</Badge>
-									)}
-									{r.position && (
-										<Badge variant="secondary">{r.position}</Badge>
-									)}
-									{r.isCaptain && <Badge>capitán</Badge>}
-								</span>
-								<span className="flex gap-1">
-									<Button
-										variant="ghost"
-										size="icon-sm"
-										icon={Pencil}
-										aria-label="Editar"
-										title="Editar"
-										onClick={() => setEditingEntry({ roster: r, player })}
-									/>
-									<Button
-										variant="destructive"
-										size="sm"
-										icon={Trash2}
-										onClick={() =>
-											onRemovePlayer(
-												r.id,
-												`${player.firstName} ${player.lastName}`,
-											)
-										}
-									>
-										Quitar
-									</Button>
-								</span>
-							</div>
-						))}
-					</div>
-				)}
-			</div>
-			{editingEntry && (
-				<RosterEditDialog
-					entry={editingEntry.roster}
-					playerName={`${editingEntry.player.firstName} ${editingEntry.player.lastName}`}
-					onClose={() => setEditingEntry(null)}
-				/>
-			)}
-		</div>
-	);
-}
-
-function RosterEditDialog({
-	entry,
-	playerName,
-	onClose,
-}: {
-	entry: {
-		id: string;
-		jerseyNumber?: number | null;
-		position?: string | null;
-		isCaptain?: boolean | null;
-	};
-	playerName: string;
-	onClose: () => void;
-}) {
-	const updateEntry = useUpdateRosterEntry(api);
-	const [jersey, setJersey] = React.useState(
-		entry.jerseyNumber != null ? String(entry.jerseyNumber) : "",
-	);
-	const [position, setPosition] = React.useState(entry.position ?? "");
-	const [isCaptain, setIsCaptain] = React.useState(entry.isCaptain ?? false);
-
-	const onSubmit = async (e: React.SyntheticEvent) => {
-		e.preventDefault();
-		try {
-			await updateEntry.mutateAsync({
-				id: entry.id,
-				body: {
-					jerseyNumber: jersey === "" ? null : Number(jersey),
-					position: position || null,
-					isCaptain,
-				},
-			});
-			toast.success("Ficha del jugador actualizada");
-			onClose();
-		} catch (err) {
-			toast.error("No se pudo actualizar la ficha", getApiErrorMessage(err));
-		}
-	};
-
-	return (
-		<EditDialog
-			open
-			onClose={onClose}
-			title={`Editar ${playerName}`}
-			description="El backend valida dorsal 0–99 libre y capitán único por equipo."
-			footer={
-				<>
-					<Button variant="ghost" size="sm" onClick={onClose}>
-						Cancelar
-					</Button>
-					<Button
-						size="sm"
-						icon={Save}
-						onClick={onSubmit}
-						disabled={updateEntry.isPending}
-					>
-						Guardar
-					</Button>
-				</>
-			}
-		>
-			<form onSubmit={onSubmit} className="space-y-3">
-				<div className="grid gap-3 sm:grid-cols-2">
-					<div>
-						<Label>Dorsal (0–99)</Label>
-						<Input
-							type="number"
-							min={0}
-							max={99}
-							value={jersey}
-							onChange={(e) => setJersey(e.target.value)}
-							placeholder="Sin dorsal"
-						/>
-					</div>
-					<div>
-						<Label>Posición</Label>
-						<Input
-							value={position}
-							onChange={(e) => setPosition(e.target.value)}
-							placeholder="DEL / DEF / ..."
-							maxLength={30}
-						/>
-					</div>
-				</div>
-				<div>
-					<Label>Capitán</Label>
-					<Select
-						value={String(isCaptain)}
-						onChange={(e) => setIsCaptain(e.target.value === "true")}
-					>
-						<option value="false">no</option>
-						<option value="true">sí</option>
-					</Select>
-				</div>
-			</form>
-		</EditDialog>
+		</form>
 	);
 }

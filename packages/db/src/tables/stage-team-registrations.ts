@@ -22,6 +22,9 @@ export const stageTeamRegistrations = pgTable(
 			.references(() => teams.id, { onDelete: "cascade" })
 			.notNull(),
 		seedNumber: integer("seed_number"),
+		// Orden dentro del grupo (0-based). `seedNumber` sigue siendo la semilla
+		// global de la etapa; esto solo mueve filas en el tablero de grupos.
+		position: integer("position"),
 	},
 	(t) => [
 		unique("stage_team_unique").on(t.stageId, t.teamId),
@@ -29,6 +32,7 @@ export const stageTeamRegistrations = pgTable(
 			.on(t.groupId, t.teamId)
 			.where(sql`${t.groupId} IS NOT NULL`),
 		check("seed_number_positive", sql`${t.seedNumber} > 0`),
+		check("registration_position_non_negative", sql`${t.position} >= 0`),
 		// Índices de consulta
 		index("stage_team_registrations_team_id_idx").on(t.teamId),
 	],

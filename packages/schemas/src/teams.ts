@@ -94,9 +94,11 @@ export const rosterCollectionParamsSchema = t.Object({
 	teamId: t.String({ format: "uuid" }),
 });
 
-// Payload para asignar/quitar grupo de una inscripción
+// Payload para asignar/quitar grupo y posición de una inscripción. `position`
+// es el índice dentro del grupo (0-based); sin `groupId` se conserva el actual.
 export const registrationGroupUpdateSchema = t.Object({
 	groupId: t.Optional(t.Union([t.String({ format: "uuid" }), t.Null()])),
+	position: t.Optional(t.Integer({ minimum: 0 })),
 });
 
 // Payload para registrar un equipo en una etapa (grupo opcional)
