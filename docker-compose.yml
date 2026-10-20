@@ -3,19 +3,22 @@ services:
     image: rustfs/rustfs:latest
     container_name: rustfs-dev
     ports:
-      - "9000:9000"
+      - "9000:9000" # API S3
+      - "9001:9001" # consola web
+    # La imagen ya arranca `rustfs server /data` (su entrypoint añade
+    # RUSTFS_VOLUMES, que vale /data). rustfs 1.0.0-beta.12 no tiene
+    # `--endpoint` ni `--bucket`: la dirección es `--address` (RUSTFS_ADDRESS)
+    # y el bucket lo crea el cliente S3, no el servidor. La consola viene
+    # apagada: se enciende con RUSTFS_CONSOLE_ENABLE (--console-enable).
     environment:
+      - RUSTFS_ADDRESS=0.0.0.0:9000
+      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
       - RUSTFS_ACCESS_KEY=minioadmin
       - RUSTFS_SECRET_KEY=minioadmin
-      - RUSTFS_BUCKET=sports-platform-dev
-    command: >
-      rustfs
-      --endpoint 0.0.0.0:9000
-      --access-key minioadmin
-      --secret-key minioadmin
-      --bucket sports-platform-dev
     volumes:
       - rustfs-data:/data
+    restart: unless-stopped
 
 volumes:
   rustfs-data:

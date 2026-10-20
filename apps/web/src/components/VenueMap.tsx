@@ -1,5 +1,11 @@
-import { MapContainer, Marker, Popup, TileLayer, useMapEvents } from "react-leaflet";
 import L from "leaflet";
+import {
+	MapContainer,
+	Marker,
+	Popup,
+	TileLayer,
+	useMapEvents,
+} from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
 // Fix default marker icons in Leaflet with bundlers
@@ -13,7 +19,11 @@ L.Icon.Default.mergeOptions({
 	shadowUrl,
 });
 
-function MapClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number) => void }) {
+function MapClickHandler({
+	onLocationSelect,
+}: {
+	onLocationSelect: (lat: number, lng: number) => void;
+}) {
 	useMapEvents({
 		click: (e) => {
 			onLocationSelect(e.latlng.lat, e.latlng.lng);
@@ -36,17 +46,23 @@ export function VenueMap({
 	height?: string;
 }) {
 	const defaultCenter: [number, number] = [-34.6037, -58.3816]; // Buenos Aires
-	const center: [number, number] = latitude && longitude ? [latitude, longitude] : defaultCenter;
+	const center: [number, number] =
+		latitude && longitude ? [latitude, longitude] : defaultCenter;
 
 	return (
-		<div style={{ height }} className="w-full overflow-hidden rounded-xl border border-(--line)">
+		<div
+			style={{ height }}
+			className="w-full overflow-hidden rounded-xl border border-(--line)"
+		>
 			<MapContainer
 				center={center}
 				zoom={latitude && longitude ? 15 : 10}
 				style={{ height: "100%", width: "100%" }}
 				scrollWheelZoom={true}
 			>
-				{onLocationSelect && <MapClickHandler onLocationSelect={onLocationSelect} />}
+				{onLocationSelect && (
+					<MapClickHandler onLocationSelect={onLocationSelect} />
+				)}
 				<TileLayer
 					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

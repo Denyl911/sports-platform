@@ -21,9 +21,9 @@ import {
 	useConfirm,
 } from "@sports/ui";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { VenueMap } from "../../../components/VenueMap";
 import * as React from "react";
 import { AdminListPager } from "../../../components/AdminListPager";
+import { VenueMap } from "../../../components/VenueMap";
 import {
 	type AdminListSearch,
 	adminListFilters,

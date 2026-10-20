@@ -13,9 +13,9 @@ import {
 } from "@sports/ui";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { VenueMap } from "../../../components/VenueMap";
 import * as React from "react";
 import { AdminBreadcrumbs } from "../../../components/AdminBreadcrumbs";
+import { VenueMap } from "../../../components/VenueMap";
 import { api } from "../../../lib/api";
 
 export const Route = createFileRoute("/admin/venues/$venueId")({
@@ -64,7 +64,13 @@ function AdminVenueDetailPage() {
 		try {
 			await update.mutateAsync({
 				id: venueId,
-				body: { name, address: address || null, fieldCount, latitude, longitude } as never,
+				body: {
+					name,
+					address: address || null,
+					fieldCount,
+					latitude,
+					longitude,
+				} as never,
 			});
 			toast.success("Sede guardada");
 		} catch (err) {
@@ -111,14 +117,14 @@ function AdminVenueDetailPage() {
 								setLatitude(lat);
 								setLongitude(lng);
 							}}
-								height="250px"
-							/>
-							<p className="text-xs text-(--sea-ink-soft)">
+							height="250px"
+						/>
+						<p className="text-xs text-(--sea-ink-soft)">
 							{latitude && longitude
 								? `Lat: ${latitude.toFixed(6)}, Lng: ${longitude.toFixed(6)}`
 								: "Haz clic en el mapa para seleccionar la ubicación"}
-							</p>
-						</div>
+						</p>
+					</div>
 					<div>
 						<Label>Canchas</Label>
 						<Input

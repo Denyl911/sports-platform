@@ -5,6 +5,7 @@ import type {
 	MediaAssetResponse,
 	PresignedUrlRequest,
 } from "@sports/schemas";
+import { S3Client } from "bun";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { DomainError } from "./errors";
 
@@ -15,14 +16,35 @@ import { DomainError } from "./errors";
 const S3_ENDPOINT = process.env.S3_ENDPOINT ?? "http://localhost:9000";
 const S3_REGION = process.env.S3_REGION ?? "us-east-1";
 const S3_BUCKET = process.env.S3_BUCKET ?? "sports-platform-dev";
-const S3_ACCESS_KEY = process.env.S3_ACCESS_KEY ?? "minioadmin";
 
 const S3_PUBLIC_URL =
-	process.env.S3_PUBLIC_URL ?? "http://localhost:9000/sports-platform-dev";
+	process.env.S3_PUBLIC_URL ?? `${S3_ENDPOINT}/${S3_BUCKET}`;
 const PRESIGNED_URL_EXPIRY = 300; // 5 minutos
 
 // ==========================================
-// Cliente S3 minimalista (sin SDK)
+// Cliente S3 (bindings nativos de Bun)
+// ==========================================
+
+/**
+ * Bun habla S3 sin SDK: firma las URLs en local (sin petición de red) y sube,
+ * lee, lista y borra objetos contra cualquier servicio compatible. Las
+ * credenciales salen de S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY (o de AWS_*);
+ * aquí se aceptan además los nombres cortos del compose para dev.
+ */
+const s3 = new S3Client({
+	accessKeyId:
+		process.env.S3_ACCESS_KEY_ID ?? process.env.S3_ACCESS_KEY ?? "minioadmin",
+	secretAccessKey:
+		process.env.S3_SECRET_ACCESS_KEY ??
+		process.env.S3_SECRET_KEY ??
+		"minioadmin",
+	endpoint: S3_ENDPOINT,
+	region: S3_REGION,
+	bucket: S3_BUCKET,
+});
+
+// ==========================================
+// Claves y URLs
 // ==========================================
 
 function generateMediaKey(fileName: string, mediaType: string): string {
@@ -30,31 +52,6 @@ function generateMediaKey(fileName: string, mediaType: string): string {
 	const timestamp = Date.now();
 	const random = Math.random().toString(36).substring(2, 10);
 	return `${mediaType}s/${timestamp}-${random}.${ext}`;
-}
-
-async function generatePresignedUrl(
-	key: string,
-	method: "PUT" | "GET" = "PUT",
-): Promise<string> {
-	const expires = Math.floor(Date.now() / 1000) + PRESIGNED_URL_EXPIRY;
-	const path = `/${S3_BUCKET}/${key}`;
-	const url = new URL(path, S3_ENDPOINT);
-	url.searchParams.set("X-Amz-Algorithm", "AWS4-HMAC-SHA256");
-	url.searchParams.set(
-		"X-Amz-Credential",
-		`${S3_ACCESS_KEY}/${S3_REGION}/s3/aws4_request`,
-	);
-	url.searchParams.set(
-		"X-Amz-Date",
-		new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z",
-	);
-	url.searchParams.set("X-Amz-Expires", PRESIGNED_URL_EXPIRY.toString());
-	url.searchParams.set("X-Amz-SignedHeaders", "host");
-	url.searchParams.set(
-		"X-Amz-Signature",
-		Buffer.from(`${method}${path}${expires}`).toString("hex").substring(0, 64),
-	);
-	return url.toString();
 }
 
 // ==========================================
@@ -66,7 +63,10 @@ export async function createPresignedUploadUrl(
 	userId: string,
 ) {
 	const key = generateMediaKey(data.fileName, data.mediaType);
-	const uploadUrl = await generatePresignedUrl(key, "PUT");
+	const uploadUrl = s3.presign(key, {
+		method: "PUT",
+		expiresIn: PRESIGNED_URL_EXPIRY,
+	});
 	const publicUrl = `${S3_PUBLIC_URL}/${key}`;
 
 	// Registrar el asset en la DB
