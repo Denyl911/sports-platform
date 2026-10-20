@@ -6,7 +6,6 @@ import {
 	useCreateClub,
 	useCreateGroup,
 	useCreateInvitation,
-	useCreateMatch,
 	useCreateTeam,
 	useDeleteGroup,
 	useGenerateBracket,
@@ -50,9 +49,9 @@ import {
 	useTournamentName,
 } from "../../../components/AdminBreadcrumbs";
 import { AdminFlowSteps } from "../../../components/AdminFlowSteps";
+import { StageFixture } from "../../../components/StageFixture";
 import {
 	type BoardGroup,
-	type BoardRegistration,
 	StageGroupsBoard,
 } from "../../../components/StageGroupsBoard";
 import { api } from "../../../lib/api";
@@ -710,31 +709,13 @@ function AdminStageDetailPage() {
 				</Card>
 			)}
 
-			<Card className="p-4">
-				<h3 className="font-bold">Fixture rápido</h3>
-				<p className="mt-1 max-w-2xl text-sm text-(--sea-ink-soft)">
-					Crea un partido entre dos equipos ya inscritos en la etapa. Si la
-					etapa tiene grupos, los equipos deben pertenecer al mismo grupo.
-				</p>
-				{registrations.length < 2 ? (
-					<div className="mt-3 rounded-xl border border-(--line) bg-(--chip-bg) p-3 text-sm text-(--sea-ink-soft)">
-						Necesitas al menos 2 equipos inscritos para crear un partido.
-						Inscribe equipos desde la sección de arriba.
-					</div>
-				) : tournamentId ? (
-					<CreateMatchInline
-						stageId={stageId}
-						tournamentId={tournamentId}
-						groups={groups}
-						registrations={registrations}
-					/>
-				) : (
-					<div className="text-sm text-(--sea-ink-soft)">
-						No llega el torneo por search params: vuelve a la edición para
-						inscribir partidos.
-					</div>
-				)}
-			</Card>
+			<StageFixture
+				stageId={stageId}
+				tournamentId={tournamentId}
+				stageType={currentStage?.stageType}
+				groups={groups}
+				registrations={registrations}
+			/>
 
 			{editingGroup && (
 				<GroupEditDialog
@@ -1104,134 +1085,5 @@ function RegistrationRow({
 				</Button>
 			</div>
 		</div>
-	);
-}
-
-function CreateMatchInline({
-	stageId,
-	tournamentId,
-	groups,
-	registrations,
-}: {
-	stageId: string;
-	tournamentId: string;
-	groups: Array<{ id: string; name: string }>;
-	registrations: BoardRegistration[];
-}) {
-	const createMatch = useCreateMatch(api);
-	const [homeTeamId, setHomeTeamId] = React.useState("");
-	const [awayTeamId, setAwayTeamId] = React.useState("");
-	const [groupId, setGroupId] = React.useState<string>(groups[0]?.id ?? "");
-
-	React.useEffect(() => {
-		setGroupId((current) =>
-			groups.some((group) => group.id === current)
-				? current
-				: (groups[0]?.id ?? ""),
-		);
-	}, [groups]);
-
-	const availableTeams = groupId
-		? registrations
-				.filter((item) => item.registration.groupId === groupId)
-				.map((item) => item.team)
-		: registrations.map((item) => item.team);
-
-	React.useEffect(() => {
-		setHomeTeamId((current) =>
-			availableTeams.some((team) => team.id === current)
-				? current
-				: (availableTeams[0]?.id ?? ""),
-		);
-		setAwayTeamId((current) =>
-			availableTeams.some((team) => team.id === current) &&
-			current !== availableTeams[0]?.id
-				? current
-				: (availableTeams[1]?.id ?? ""),
-		);
-	}, [availableTeams]);
-
-	const onCreate = async (e: React.SyntheticEvent) => {
-		e.preventDefault();
-		if (!homeTeamId || !awayTeamId || homeTeamId === awayTeamId) {
-			toast.error("Elige dos equipos distintos para el partido");
-			return;
-		}
-		try {
-			await createMatch.mutateAsync({
-				stageId,
-				groupId: groupId || null,
-				homeTeamId,
-				awayTeamId,
-				tournamentId,
-			});
-			toast.success("Partido creado");
-		} catch (err: unknown) {
-			toast.error("No se pudo crear el partido", getApiErrorMessage(err));
-		}
-	};
-	return (
-		<form onSubmit={onCreate} className="mt-3 flex flex-wrap gap-3">
-			<Field label="Grupo" htmlFor="match-group" className="w-40">
-				<Select
-					id="match-group"
-					value={groupId}
-					onChange={(e) => setGroupId(e.target.value)}
-				>
-					<option value="">Sin grupo</option>
-					{groups.map((g) => (
-						<option key={g.id} value={g.id}>
-							{g.name}
-						</option>
-					))}
-				</Select>
-			</Field>
-			<Field label="Local" htmlFor="match-home" className="min-w-40 flex-1">
-				<Select
-					id="match-home"
-					value={homeTeamId}
-					onChange={(e) => setHomeTeamId(e.target.value)}
-				>
-					{availableTeams.map((t) => (
-						<option key={t.id} value={t.id}>
-							{t.name}
-						</option>
-					))}
-				</Select>
-			</Field>
-			<span className="self-end pb-3 text-center text-xs font-bold text-(--sea-ink-soft)">
-				vs
-			</span>
-			<Field label="Visitante" htmlFor="match-away" className="min-w-40 flex-1">
-				<Select
-					id="match-away"
-					value={awayTeamId}
-					onChange={(e) => setAwayTeamId(e.target.value)}
-				>
-					{availableTeams.map((t) => (
-						<option key={t.id} value={t.id}>
-							{t.name}
-						</option>
-					))}
-				</Select>
-			</Field>
-			<Button
-				type="submit"
-				icon={Plus}
-				className="self-end"
-				disabled={
-					createMatch.isPending ||
-					availableTeams.length < 2 ||
-					homeTeamId === awayTeamId
-				}
-			>
-				Crear partido
-			</Button>
-			{availableTeams.length < 2 && (
-				<p className="basis-full text-xs text-(--sea-ink-soft)">
-					El grupo elegido necesita al menos 2 equipos asignados.
-				</p>
-			)}
-		</form>
 	);
 }
